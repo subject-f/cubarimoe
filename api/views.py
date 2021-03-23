@@ -12,7 +12,6 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 
-from reader.models import Chapter, ChapterIndex, Group, Series, Volume
 from reader.users_cache_lib import get_user_ip
 
 from .api import (
@@ -20,10 +19,8 @@ from .api import (
     chapter_post_process,
     clear_pages_cache,
     clear_series_cache,
-    create_chapter_obj,
     get_chapter_preferred_sort,
     series_data_cache,
-    zip_chapter,
 )
 
 
@@ -298,7 +295,7 @@ def black_hole_mail(request):
             em.set_footer(
                 text=f"IP hash: {hashlib.md5(user_ip.encode()).hexdigest()[:32]}"
             )
-            webhook.send(content=None, embed=em, username="Guya.moe")
+            webhook.send(content=None, embed=em, username="Cubari.moe")
         except (AttributeError, NameError):
             feedback_folder = os.path.join(settings.MEDIA_ROOT, "feedback")
             os.makedirs(feedback_folder, exist_ok=True)

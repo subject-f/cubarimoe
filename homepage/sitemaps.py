@@ -2,7 +2,6 @@ from django.contrib.sitemaps import Sitemap
 from django.shortcuts import reverse
 
 from misc.models import Page
-from reader.models import Chapter, Series
 
 
 class StaticViewSitemap(Sitemap):
@@ -22,19 +21,11 @@ class SeriesViewSitemap(Sitemap):
     priority = 0.5
     protocol = "https"
 
-    def items(self):
-        return Series.objects.all()
-
 
 class ChapterViewSitemap(Sitemap):
     changefreq = "monthly"
     priority = 0.4
     protocol = "https"
-
-    def items(self):
-        return Chapter.objects.filter(series__isnull=False).order_by(
-            "series__id", "-chapter_number"
-        )
 
 
 class PagesListViewSitemap(Sitemap):

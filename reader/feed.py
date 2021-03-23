@@ -3,8 +3,6 @@ from django.core.cache import cache
 from django.shortcuts import reverse
 from django.utils.feedgenerator import DefaultFeed
 
-from reader.models import Chapter, Series
-
 
 class CorrectMimeTypeFeed(DefaultFeed):
     content_type = "application/xml; charset=utf-8"
@@ -23,7 +21,7 @@ class AllChaptersFeed(Feed):
         return f"{item.series.name} - Chapter {Chapter.clean_chapter_number(item)}"
 
     def item_link(self, item):
-        return f"https://guya.moe/read/manga/{item.series.slug}/{Chapter.slug_chapter_number(item)}/1"
+        return f"https://cubari.moe/read/manga/{item.series.slug}/{Chapter.slug_chapter_number(item)}/1"
 
     def item_description(self, item):
         return f"Group: {item.group.name} - Title {item.title}"
@@ -44,7 +42,7 @@ class SeriesChaptersFeed(Feed):
         return obj.name
 
     def link(self, obj):
-        return f"https://guya.moe/read/manga/{obj.slug}/"
+        return f"https://cubari.moe/read/manga/{obj.slug}/"
 
     def description(self, obj):
         return obj.synopsis
@@ -53,7 +51,7 @@ class SeriesChaptersFeed(Feed):
         return f"{obj.series.name} - Chapter {Chapter.clean_chapter_number(obj)}"
 
     def item_link(self, obj):
-        return f"https://guya.moe/read/manga/{obj.series.slug}/{Chapter.slug_chapter_number(obj)}/1"
+        return f"https://cubari.moe/read/manga/{obj.series.slug}/{Chapter.slug_chapter_number(obj)}/1"
 
     def item_description(self, obj):
         return f"Group: {obj.group.name} - Title {obj.title}"

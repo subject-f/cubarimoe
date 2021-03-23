@@ -14,7 +14,6 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 
 from .middleware import OnlineNowMiddleware
-from .models import Chapter, HitCount, Series, Volume
 from .users_cache_lib import get_user_ip
 
 

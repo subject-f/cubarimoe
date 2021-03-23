@@ -12,8 +12,6 @@ from django.core.cache import cache
 from django.http import Http404
 from PIL import Image, ImageFilter
 
-from reader.models import Chapter, ChapterIndex, Group, Series, Volume
-
 
 def all_chapter_data_etag(request):
     etag = cache.get("all_chapter_data_etag")
@@ -142,62 +140,6 @@ def delete_chapter_pages_if_exists(folder_path, clean_chapter_number, group_id):
     )
     if os.path.exists(os.path.join(folder_path, f"{str(clean_chapter_number)}.zip")):
         os.remove(os.path.join(folder_path, f"{str(clean_chapter_number)}.zip"))
-
-
-def create_chapter_obj(
-    chapter: float, group: Group, series: Series, latest_volume: int, title: str,
-):
-    update = False
-    chapter_number = chapter
-    existing_chapter = Chapter.objects.filter(
-        chapter_number=chapter_number, series=series
-    ).first()
-    chapter_folder_numb = f"{int(chapter_number):04}"
-    chapter_folder_numb += (
-        f"-{str(chapter_number).rsplit('.')[1]}_"
-        if not str(chapter_number).endswith("0")
-        else "_"
-    )
-
-    if not existing_chapter:
-        uid = chapter_folder_numb + random_chars()
-    else:
-        uid = existing_chapter.folder
-    chapter_folder = os.path.join(
-        settings.MEDIA_ROOT, "manga", series.slug, "chapters", uid
-    )
-    group_folder = str(group.id)
-
-    # If chapter exists, see if release by group exists. if it does, delete the group's chapter pages
-    if existing_chapter:
-        ch_obj = Chapter.objects.filter(
-            chapter_number=chapter_number, series=series, group=group
-        ).first()
-        if ch_obj:
-            delete_chapter_pages_if_exists(
-                chapter_folder, existing_chapter.clean_chapter_number(), group_folder,
-            )
-            update = True
-
-    # Create the chapter model for the group if it didn't exist.
-    if not existing_chapter or not ch_obj:
-        ch_obj = Chapter.objects.create(
-            chapter_number=chapter_number,
-            group=group,
-            series=series,
-            folder=uid,
-            title=title,
-            volume=latest_volume,
-            uploaded_on=datetime.utcnow().replace(tzinfo=timezone.utc),
-        )
-    chapter_folder = os.path.join(
-        settings.MEDIA_ROOT, "manga", series.slug, "chapters", uid
-    )
-    os.makedirs(os.path.join(chapter_folder, str(group.id)))
-    os.makedirs(os.path.join(chapter_folder, f"{str(group.id)}_shrunk"))
-    os.makedirs(os.path.join(chapter_folder, f"{str(group.id)}_shrunk_blur"))
-    clear_pages_cache()
-    return ch_obj, chapter_folder, str(group.id), update
 
 
 def create_preview_pages(chapter_folder, group_folder, page_file):
@@ -363,23 +305,3 @@ def clear_pages_cache():
         cache.set(ip, ip, 450)
     cache.set("online_now", set(ip_list), 600)
     cache.set("peak_traffic", peak_traffic, 3600 * 6)
-
-
-def zip_chapter(chapter: Chapter):
-    chapter_dir = os.path.join(
-        settings.MEDIA_ROOT, "manga", chapter.series.slug, "chapters", chapter.folder
-    )
-    group_id = str(chapter.group.id)
-    chapter_pages = [
-        os.path.join(chapter_dir, group_id, f)
-        for f in os.listdir(os.path.join(chapter_dir, group_id))
-    ]
-    zip_filename = f"{chapter.group.id}_{chapter.slug_chapter_number()}.zip"
-    zf = zipfile.ZipFile(os.path.join(chapter_dir, zip_filename), "w")
-    for fpath in chapter_pages:
-        _, fname = os.path.split(fpath)
-        zf.write(fpath, fname)
-    zf.close()
-    with open(os.path.join(chapter_dir, zip_filename), "rb") as fh:
-        zip_file = fh.read()
-    return zip_file, zip_filename, fname

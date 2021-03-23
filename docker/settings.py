@@ -1,4 +1,4 @@
-from guyamoe.settings.base import *
+from cubarimoe.settings.base import *
 
 ALLOWED_HOSTS = ["web", "localhost"]
 
@@ -12,7 +12,7 @@ CACHES = {
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "kaguyamoe",
+        "NAME": "kacubarimoe",
         "USER": "POSTGRES_USER",
         "PASSWORD": "POSTGRES_PASSWORD",
         "HOST": "postgres",
