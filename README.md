@@ -1,10 +1,10 @@
-# Guya.moe
+# Cubari.moe
 Generalized manga reading framework. Adapted for Kaguya-sama manga, but can be used generically for any and all manga.
 
 Testing Supported By<br/>
 <img width="160" src="http://foundation.zurb.com/sites/docs/assets/img/logos/browser-stack.svg" alt="BrowserStack"/>
 
-⚠ **Note:** The install instructions below will not result in a general purpose CMS due to the amount of hardcoded assets in Guyamoe.
+⚠ **Note:** The install instructions below will not result in a general purpose CMS due to the amount of hardcoded assets in cubarimoe.
 
 ## Prerequisites 
 - git
@@ -13,37 +13,37 @@ Testing Supported By<br/>
 - virtualenv
 
 ## Install
-1. Create a venv for Guyamoe in your home directory.
+1. Create a venv for cubarimoe in your home directory.
 ```
-virtualenv ~/guyamoe
+virtualenv ~/cubarimoe
 ```
 
-2. Clone Guyamoe's source code into the venv.
+2. Clone cubarimoe's source code into the venv.
 ```
-git clone https://github.com/appu1232/guyamoe ~/guyamoe/app
+git clone https://github.com/appu1232/cubarimoe ~/cubarimoe/app
 ```
 
 3. Activate the venv.
 ```
-cd ~/guyamoe/app && source ../bin/activate
+cd ~/cubarimoe/app && source ../bin/activate
 ```
 
-4. Install Guyamoe's dependencies.
+4. Install cubarimoe's dependencies.
 ```
 pip3 install -r requirements.txt
 ```
 
 5. Change the value of the `SECRET_KEY` variable to a randomly generated string.
 ```
-sed -i "s|\"o kawaii koto\"|\"$(openssl rand -base64 32)\"|" guyamoe/settings/base.py
+sed -i "s|\"o kawaii koto\"|\"$(openssl rand -base64 32)\"|" cubarimoe/settings/base.py
 ```
 
-6. Generate the default assets for Guyamoe.
+6. Generate the default assets for cubarimoe.
 ```
 python3 init.py
 ```
 
-7. Create an admin user for Guyamoe.
+7. Create an admin user for cubarimoe.
 ```
 python3 manage.py createsuperuser
 ```

@@ -5,7 +5,7 @@ from django.views.decorators.cache import cache_control
 from api.api import all_chapter_data_etag, chapter_data_etag
 from reader import views
 from reader.feed import AllChaptersFeed, SeriesChaptersFeed
-from reader.models import Chapter
+
 
 urlpatterns = [
     re_path(
