@@ -1,6 +1,38 @@
 # Cubari.moe
 Generalized manga reading framework. Adapted for Kaguya-sama manga, but can be used generically for any and all manga.
 
+## Simplified Installation Instructions
+
+Make a new venv.
+
+```bash
+python3 -m venv venv
+```
+
+Activate it.
+
+```bash
+source venv/bin/activate
+```
+
+Install reqs.
+
+```bash
+pip3 install -r requirements.txt
+```
+
+Migrations.
+
+```bash
+python3 manage.py migrate
+```
+
+Start the local dev server.
+
+```bash
+python3 manage.py runserver
+```
+
 Testing Supported By<br/>
 <img width="160" src="http://foundation.zurb.com/sites/docs/assets/img/logos/browser-stack.svg" alt="BrowserStack"/>
 
