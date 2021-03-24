@@ -23,18 +23,14 @@ from django.urls import include, path
 from django.conf import settings
 
 from homepage.sitemaps import (
-    ChapterViewSitemap,
     PagesListViewSitemap,
     PageViewSitemap,
-    SeriesViewSitemap,
     StaticViewSitemap,
 )
 from proxy import sources
 
 sitemaps = {
     "static": StaticViewSitemap,
-    "series": SeriesViewSitemap,
-    "chapter": ChapterViewSitemap,
     "pageslist": PagesListViewSitemap,
     "page": PageViewSitemap,
 }
