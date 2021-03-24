@@ -49,16 +49,7 @@ class MangaDex(ProxySource):
             re_path(r"^chapter/(?P<chapter_id>[\d]{1,9})/$", chapter),
             re_path(
                 r"^chapter/(?P<chapter_id>[\d]{1,9})/(?P<page>[\d]{1,9})/$", chapter
-            ),
-            re_path(r"^(?:read|reader)/md_proxy/(?P<series_id>[\d]+)/$", series),
-            re_path(
-                r"^(?:read|reader)/md_proxy/(?P<series_id>[\d]+)/(?P<chapter>[\d]+)/$",
-                series_chapter,
-            ),
-            re_path(
-                r"^(?:read|reader)/md_proxy/(?P<series_id>[\d]+)/(?P<chapter>[\d]+)/(?P<page>[\d]+)/$$",
-                series_chapter,
-            ),
+            )
         ]
 
     def process_description(self, desc):
