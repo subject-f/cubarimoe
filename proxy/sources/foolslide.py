@@ -71,22 +71,6 @@ class FoolSlide(ProxySource):
 
         return [
             re_path(r"^fs/(?P<raw_url>[\w\d\/:.-]+)", handler),
-            re_path(r"^(?:read|reader)/fs_proxy/(?P<series_id>[\w\d.%-]+)/$", series),
-            re_path(
-                r"^(?:read|reader)/fs_proxy/(?P<series_id>[\w\d.%-]+)/(?P<chapter>[\d]+)/$",
-                series_chapter,
-            ),
-            re_path(
-                r"^(?:read|reader)/fs_proxy/(?P<series_id>[\w\d.%-]+)/(?P<chapter>[\d]+)/(?P<page>[\d]+)/$",
-                series_chapter,
-            ),
-            re_path(
-                r"^proxy/foolslide/(?P<series_id>[\w\d.%-]*%[\w\d.%-]*)/$", series,
-            ),
-            re_path(
-                r"^proxy/foolslide/(?P<series_id>[\w\d.%-]*%[\w\d.%-]*)/(?P<chapter>[\d-]+)/(?P<page>[\d]+)/$",
-                series_chapter,
-            ),
         ]
 
     def encode_slug(self, url):
