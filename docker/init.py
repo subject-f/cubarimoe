@@ -114,7 +114,4 @@ if __name__ == "__main__":
     os.system("python manage.py makemigrations")
     result = subprocess.check_output("python manage.py migrate", shell=True, text=True)
 
-    if "OK" in result or changed:
-        os.system(f"python manage.py loaddata {FIXTURES_PATH}")
-
     os.system("python -u manage.py runserver 0.0.0.0:8000")
