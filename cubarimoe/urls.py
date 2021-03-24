@@ -20,6 +20,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
+from django.conf import settings
 
 from homepage.sitemaps import (
     ChapterViewSitemap,
@@ -42,9 +43,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("homepage.urls")),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}),
-    path("reader/", include("reader.urls")),
-    path("read/", include("reader.urls")),
-    path("api/", include("api.urls")),
     path("pages/", include("misc.urls")),
     path(
         "",
@@ -52,7 +50,7 @@ urlpatterns = [
             [route for source in sources for route in source.register_shortcut_routes()]
         ),
     ),
-    path("proxy/", include("proxy.urls")),
+    path(f"{settings.PROXY_BASE_PATH}/", include("proxy.urls")),
 ]
 
 handler404 = "homepage.views.handle404"
