@@ -21,7 +21,8 @@ class PagesListViewSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        return [Page.objects.all()[0]]
+        items = Page.objects.all()
+        return [items[0]] if len(items) else []
 
     def location(self, item):
         return "/pages"
