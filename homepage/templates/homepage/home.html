@@ -1,596 +1,66 @@
-{% extends "layout.html" %}
 {% load static %}
-{% block head %}
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+	<meta charset="utf-8">
+	<title>Cubari.moe - The modern manga reader</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<meta property="og:title" content="">
+	<meta property="og:type" content="">
+	<meta property="og:url" content="">
+	<meta property="og:image" content="">
+
+	<link rel="apple-touch-icon" href="icon.png">
+	<!-- Place favicon.ico in the root directory -->
+	<link rel="stylesheet" href="{% static 'css/normalize.css' %}">
 	<style>
-	* {
-		border: 0px solid red;
-	}
+		
+	</style>
+	<link rel="stylesheet" href="{% static 'css/main.css' %}">
 
-	a:hover {
-		text-decoration: none;
-	}
-
-	.img {
-		height: auto;
-		/* width: 20vw; */
-		margin-bottom: 5vh;
-		transition: 0.2s ease-in-out;
-	}
-
-	.img:hover {
-		transform: scale(1.1, 1.1);
-		opacity: 0.8;
-		/* box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19); */
-	}
-
-	.sp-button {
-		padding: 5%;
-		background-color: #4b4b4b;
-		color: white;
-		transition: 0.2s ease-in-out;
-	}
-
-	.sp-button:hover {
-		background-color: #e72e8c;
-		transform: scale(1.1, 1.1);
-		box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
-	}
-
-	.sp-button:focus {
-		outline:0;
-	}
-
-	.sp-row-add {
-		margin: 0;
-	}
-
-	.caption {
-		margin-top: 2vh;
-		word-wrap: wrap break-word;
-	}
-
-	img>p {
-		width: inherit
-	}
-
-	.manga [class*="col-xs"] {
-		margin-bottom: 15px;
-	}
-	body.h-100 {
-		min-height: 100%;
-		height: auto !important;
-	}
-	.manga h3 {
-		color: #ddd;
-		font-size: 1.5em;
-		padding: 0 0.5em;
-	}
-
-	.tachi {
-		margin-bottom: 3em;
-		margin-right: 0;
-		margin-left: 0;
-	}
-
-	.tachi > div {
-		width: 100%;
-	}
-
-	.tachi img {
-		height: 33px;
-	}
-
-	.tachi-plus {
-		font-size: 1.5em;
-		padding: 0 0.6em 0 0.4em;
-	}
-
-	.tachi .ecks {
-		display: none;
-	}
-
-	@media only screen and (max-width: 760px) {
-		.tachi {
-			position: fixed;
-			bottom: 0;
-			width: 100%;
-			bottom: 0;
-			z-index: 1000;
-			background: #232323;
-			margin: 0;
-			left: 0;
-			padding: 1em 0 1.5em;
-			border-top: 2px #777 solid;
-		}
-
-		.tachi > div.mb-5 {
-			margin-bottom: 0 !important;
-		}
-
-		.tachi .ecks {
-			display: block;
-			position: absolute;
-			font-size: 2em;
-			color: white;
-			padding: 0.25em 0.25em;
-			box-sizing: content-box;
-			width: 1em;
-			line-height: 1em;
-			height: 1em;
-			right: 0;
-			top: 0;
-			cursor: pointer;
-		}
-
-	}
-
-	#quote:hover {
-		transform: scale(1.1);
-		border: 1px solid #3A3F44;
-	}
-</style>
-
-{% endblock %}
-
-{% block body %}
-<main role="main">
-<!-- 	<div class="splash-notice">
-		<a href="mailto:k@cubari.moe" style="text-decoration:underline;font-size: 0.8em;">Send us your feedback and ideas :)</a>
-	</div> -->
-	<div class="manga-card bigg">
-		<a class="picture" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/"><picture>
-			<source type="image/webp" srcset="{{ main_cover_webp }}" class="" alt="Kaguya-sama: Love is War">
-  			<img src="{{ main_cover }}" class="" alt="Kaguya-sama: Love is War">
-		</picture></a>
-		<article>
-			<a href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/"><h1>Kaguya-sama: Love is War</h1></a>
-			<h2>Kaguya-sama Wants to Be Confessed To: The Geniuses' War of Love and Brains</h2>
-			<h2>Kaguya-sama wa Kokurasetai: Tensai-tachi no Renai Zunousen</h2>
-			<div class="manga-links">
-				<span>
-					<a href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/" class="manga-link full guya">Read the manga ›</a>
-				</span>
-				<span>
-					<a id="list_exp" href="#chapter_listing_exp" onclick="
-						document.getElementById('chapter_listing').classList.add('vis');
-						document.getElementById('chapter_listing_exp').classList.add('vis');
-						document.getElementsByClassName('chapter-listing-expander')[0].classList.add('vis');
-						toggleHash(event);
-					" class="manga-link after-anime">Where to start after the anime ›</a><a href="//tachiyomi.org/extensions/#en.guya" class="manga-link tachiyom">Tachiyomi plugin</a>
-				</span>
-			</div>
-			<p>All’s fair when love is war!</p>
-			<p>Two geniuses. Two brains. Two hearts. One battle.</p>
-			<p>Kaguya Shinomiya and Miyuki Shirogane are the geniuses leading their prestigious academy’s student council, and inevitably they fell for each other. But they both are too prideful to be the first to confess, as that would be a loss in the competition of love! In the end, who will confess their love first?</p>
-			<p class="yeet">I like to call this the Death Note of school romantic comedies. If Death Note ever made you laugh out loud (on purpose).</p>
-			<div class="manga-links shill">
-				<span>
-					<a rel="noreferrer nofollow" href="https://www.viz.com/read/manga/kaguya-sama-love-is-war/all" class="manga-link viz">VIZ Media</a>
-					<a rel="noreferrer nofollow" href="https://www.amazon.com/gp/bookseries/B0778N11ZV" class="manga-link ama">Amazon</a>
-					<a rel="noreferrer nofollow" href="https://play.google.com/store/books/series?id=Cv3xGgAAABD65M&hl=en_US" class="manga-link gp">Google Play</a>
-					<a rel="noreferrer nofollow" href="https://apps.qoo-app.com/en/app/6233" class="manga-link yj jp">Young Jump Weekly</a>
-					<a rel="noreferrer nofollow" href="http://books.shueisha.co.jp/search/search.html?order=1&seriesid=37405" class="manga-link shu jp">Shueisha</a>
-				</span>
-			</div>
-		</article>
-		<span id="chapter_listing_exp" style="padding-top: 60px; margin-top: -60px">
-			<div  class="chapter-listing-expander" onmousedown="
-				event.stopImmediatePropagation();
-				document.getElementById('chapter_listing').classList.toggle('vis');
-				event.currentTarget.classList.toggle('vis');
-				toggleHash(event);
-			"><span>List of Kaguya-sama chapters</span></div>
-		</span>
-		<table id="chapter_listing" class="chapter-listing hidden">
-		</table>
-	</div>
-	<a href="/read/manga/We-Want-To-Talk-About-Kaguya/" class="manga-card smol" style="background-image: url({{ 4koma_cover_blur }})">
-		<picture>
-			<source type="image/webp" srcset="{{ 4koma_cover_webp }}" class="" alt="We Want to Talk About Kaguya">
-  			<img src="{{ 4koma_cover }}" class="" alt="We Want to Talk About Kaguya">
-		</picture>
-		<article>
-			<h2>We Want to Talk About Kaguya <span class="tag">Spin-off</span></h2>
-			<p>A comedic tale of two delusional girls who have absolutely no idea what goes on in the Student Council room! This manga provides context to a lot of stuff happening behind the scenes of the main story in Shuchiin.</p>
-		</article>
-	</a>
-	<a href="/read/manga/Kaguya-Wants-To-Be-Confessed-To-Official-Doujin/" class="manga-card smol" style="background-image: url({{ doujin_cover_blur }})">
-		<picture>
-			<source type="image/webp" srcset="{{ doujin_cover_webp }}" class="" alt="Kaguya Wants to Be Confessed To: Official Doujin">
-  			<img src="{{ doujin_cover }}" class="" alt="Kaguya Wants to Be Confessed To: Official Doujin">
-		</picture>
-		<article>
-			<h2>Kaguya Wants to Be Confessed To: Official Doujin <span class="tag">Spin-off</span></h2>
-			<p>Official non-canon spin-off that contains stories featuring characters from the main manga in lewd and foreign settings.</p>
-		</article>
-	</a>
-	<a href="//skythewood.blogspot.com/p/kaguya.html" target="_blank" class="manga-card smol" style="background-image: url({% static 'img/novelcover_blur.jpg' %})">
-		<picture>
-  			<img src="{% static 'img/novelcover.jpg' %}" class="" alt="Novel: The Seven Mysteries of Shuchiin Academy">
-		</picture>
-		<article>
-			<h2>Novel: The Seven Mysteries of Shuchiin Academy <span class="tag">Spin-off</span></h2>
-			<p>A light novel side story about the paranormal Legend of the Seven Mysteries of Shuchiin that the Student Council suddenly gets drawn into.</p>
-		</article>
-	</a>
-	<a href="/read/manga/Oshi-no-Ko" target="_blank" class="manga-card smol" style="background-image: url({% static 'onk-blur.jpg' %})">
-		<picture>
-  			<img src="{% static 'onk.jpg' %}" class="" alt="Fanmade Media">
-		</picture>
-		<article>
-			<h2>Oshi no Ko <span class="tag">Recommended</span></h2>
-			<p>Oshi no Ko is a manga about the hardships of idol life, unfolding after Hoshino Ai, the star idol, meets a grim fate. The manga is drawn by Mengo Yokoyari and story is by Akasaka Aka, the author of Kaguya-sama.</p>
-		</article>
-	</a>
-	<article class="spiel">
-		<h1>This is the best place to read Kaguya online.</h1>
-		<h3><i>And here are the reasons why.</i></h3>
-		<div class="card-container">
-			<div class="bullet-card">
-				<i class="bullet">•</i>
-				<div class="div">
-					<h2>No ads</h2>
-					<p>We don't have any ads - Cubari.moe is made by the fans, for the fans. We don't seek profit, we just love Kaguya.</p>
-				</div>
-			</div>
-			<div class="bullet-card">
-				<i class="bullet">•</i>
-				<div class="div">
-					<h2>Reader built from scratch</h2>
-					<p>This site runs <a href="https://github.com/appu1232/cubarimoe">Cubari</a>: our fast, modern, and configurable manga reader, developed for Kaguya with features you haven't seen anywhere else.</p>
-				</div>
-			</div>
-			<div class="bullet-card">
-				<i class="bullet">•</i>
-				<div class="div">
-					<h2>Full-text search</h2>
-					<p>We indexed the whole series, word for word. Open any manga chapter and press Ctrl+F to <a href="https://cubari.moe/1#s" target="_blank">search</a> for any text within the entire manga.</p>
-				</div>
-			</div>
-			<div class="bullet-card">
-				<i class="bullet">•</i>
-				<div class="div">
-					<h2>We ensure quality</h2>
-					<p>We pick the best English chapter scanlation available and only host translations that make sense.</p>
-				</div>
-			</div>
-		</div>
+	<meta name="theme-color" content="#fafafa">
+</head>
+<body class="home">
+	<div id="main">
+		<header>
+			<a class="help rhombutton" href="#about"></a>
+		</header>
 		<section>
-			<h2>Is this the official site for Kaguya-sama?</h2>
-			<p>No, this entire site is fan-made, and we only host fan-made translations. The official printed release is done by Viz Media.  There are no official translations for <i>We Want to Talk About Kaguya</i>, the official doujin, and <i>Oshi no Ko</i>.</p>
-			<h2>Why did you make this?</h2>
-			<p>At some point, the team that originally scanlated Kaguya (Jaimini's Box) removed their chapters from Mangadex and only hosted them on their own website. However, their website did not have the earlier chapters, meaning the series was incomplete there.  Meanwhile, the other releases posted on Mangadex at the time were of a much lower quality than the Jaimini's Box versions.</p>
-			<p>Therefore, we consolidated Kaguya-sama and its spinoffs under this website and made a useful reader, as well as some innovations like full-text search. We like the Kaguya-sama manga a lot and want more people to discover and enjoy Kaguya-sama in the best way possible.</p>
-			<h2>There is an official translation by Viz. Why host unofficial translations?</h2>
-			<img src="/static/kgscreenshot.png" class="img-aside" />
-			<p><b>First</b>, the Viz manga volumes have yet to catch up to the weekly release.  There is also no simultaneous release for Kaguya on MangaPlus.</p>
-			<p><b>Second</b>, by making the site as perfect as possible we direct a lot of traffic away from other "read Kaguya" websites that earn money with shady ads by taking fan releases and hosting them with no regard for quality or the fans - their only aim is views and ad revenue.</p>
-			<p><b>Third</b>, despite providing all the chapters for free, we still want to promote the official sources so readers can support the author and official translators. We believe that both official and non-official releases can coexist - by keeping readers actively interested with regular weekly fan translations, we think more readers will buy official volumes and help support the series.</p>
-			<a href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/" class="manga-link guya" style="margin-left: 0">Start reading ›</a>
+			<div class="header-wrapper">
+				<h1>CUBARI</h1>
+				<h2>While Mangadex is dead.</h2>
+			</div>
+			<div class="search-wrapper">
+				<div class="search-box cubari-logo">
+					<input type="text" id="search" placeholder="Paste an Imgur link..."><button class="ico-btn icon-ri"></button>
+				</div>
+				<div class="status"></div>
+			</div>
 		</section>
-	</article>
-</main>
-<footer class="container-fluid footer mt-auto">
-	<div class="row justify-content-between small" style="background-color:#2a2a2a;">
-		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 float-left">
-		</div>
-		<div id="quote-block" class="col-lg-8 col-md-8 col-sm-8 col-xs-8 text-center">
-		</div>
-		<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 float-right">
-			<img id="twintail-guya" class="img-fluid mx-auto d-block" style="height: 75px; width: 56px; float:right"
-				src="{% static 'img/img_comics-bottom.png' %}">
-		</div>
+		<footer>
+			<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
+			<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
+		</footer>
 	</div>
-	<!-- <a href="#" onclick="setTimeout(function () {  localStorage.setItem('reload', '1') }, 1);">reload stop</a><a href="#" onclick="setTimeout(function () {  localStorage.setItem('reload', '0')}, 1);">| start</a> -->
-</footer>
-
-<script>
-	let quoteNumb = Math.floor(Math.random() * 9) + 1;
-	document.getElementById("quote-block").innerHTML = `<a target="_blank" href="//discord.gg/4WPqwSY"><img id="quote" class="img-fluid mx-auto d-block" src="{% static 'img/' %}quote${quoteNumb}.png" style="max-height: 70px"></a>`;
-
-	let msd = {{ main_series_data|safe }};
-	let hash = false;
-
-	function toggleHash(e) {
-		if (e.target===document.getElementById('list_exp')) {
-			hash=true;
-			return
-		}
-		if(hash) history.replaceState('', '/', window.location.pathname);
-		if(!hash) history.replaceState(null, null, '#chapter_listing_exp');
-		hash = !hash;
-	}
-
-	var chapterList = doT.template(`
-		<tbody>
-		<tr class="chapter-row header">
-			<th class="chapter-n"></th>
-			<th class="chapter-name">
-				<span id="season-selector">
-					<a class="manga-link season selected" onmousedown="toggleAdaptedSeasons(this, {})">All</a>
-					<a class="manga-link season" onmousedown="toggleAdaptedSeasons(this, {notAdapted: true})">Not Adapted</a>
-					<a class="manga-link season" onmousedown="toggleAdaptedSeasons(this, {season: 1, showAnimeOrder: true})">S1</a>
-					<a class="manga-link season" onmousedown="toggleAdaptedSeasons(this, {season: 2, showAnimeOrder: true})">S2</a>
-				</span>
-				<span id="anime-order" class="hidden">
-					<a class="manga-link season" onmousedown="toggleAnimeOrderSort(this)">Anime Order</a>
-				</span>
-			</th>
-			<th class="chapter-date" onmousedown="if (!chapter_listing.classList.contains('anime-order-sorted')) {event.target.classList.toggle('desc'); chapter_listing.orderDate()}">Date</th>
-		</tr>
-		</tbody>
-		<tbody>
-		((~it :value:index))
-		<tr class="chapter-row
-			((? window.adapted.has(value[3]) )) adapted((?))
-			((? +value[3] in s2_anime_map )) s2((?))
-			((? +value[3] in s1_anime_map )) s1((?))"
-			((? +value[3] in s2_anime_map )) season="2"
-				((? 0 in s2_anime_map[+value[3]] )) episode="((=s2_anime_map[+value[3]][0]))"((?))
-				((? 1 in s2_anime_map[+value[3]] )) part="((=s2_anime_map[+value[3]][1]))"((?))
-			((?))
-			((? +value[3] in s1_anime_map )) season="1"
-				((? 0 in s1_anime_map[+value[3]] )) episode="((=s1_anime_map[+value[3]][0]))"((?))
-				((? 1 in s1_anime_map[+value[3]] )) part="((=s1_anime_map[+value[3]][1]))"((?))
-			((?))
-			chapter="((=value[1]))"
-		>
-			<td class="chapter-n">((=value[1]))</td>
-			<td class="chapter-name"><a target="_blank" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/((=value[3]))/1">((=value[2]))</a>((? window.adapted.has(value[3]) ))<span data-anime="((=getAnimeString(+value[3]) ))">((? +value[3] in s2_anime_map ))Season 2((??))Season 1((?))</span>((?))</td>
-			<td class="chapter-date">((= value[5][0] ))-((= zpad(1+value[5][1]) ))-((= zpad(value[5][2]) ))</td>
-		</tr>
-		((~))
-		<tbody>
-		`)
-
-var chaps_asc = msd.chapter_list.reverse();
-
-	// Map goes from {chapter: [episode (1-indexed), part (0-indexed)]}
-	s1_anime_map = {1:[1,0],5:[1,2],6:[2,2],7:[2,1],8:[3,1],9:[3,2],11:[2,0],12:[1,1],14:[3,0],16:[5,0],17:[4,0],18:[4,1],19:[4,2],20:[4,3],21:[5,2],23:[5,1],24:[6,0],25:[6,2],26:[7,0],27:[7,2],28:[6,1],29:[7,1],31:[8,1],33:[9,0],34:[9,1],35:[9,2],37:[10,0],38:[10,1],39:[8,0],40:[10,2],41:[11,2],42:[11,0],43:[11,1],44:[12,0],45:[12,1],46:[12,2],55:[8,2]}
-	s2_anime_map = {30:[1,0],36:[5,2],48:[1,1],51:[1,3],52:[2,0],53:[2,1],54:[2,2],56:[3,0],57:[1,2],58:[4,0],59:[3,1],60:[3,2],61:[4,1],63:[5,0],64:[5,1],65:[4,2],66:[5,3],67:[6,0],68:[6,1],69:[6,2],70:[7,0],71:[7,1],72:[8,0],73:[7,2],74:[7,3],78:[8,1],79:[8,2],80:[9,0],81:[9,1],82:[9,2],83:[10,0],84:[10,1],85:[10,2],86:[10,3],88:[11,0],89:[11,1],90:[11,2],100:[12,0],101:[12,1],91:[12,2]};
-	adapted = new Set([...Object.keys(s1_anime_map), ...Object.keys(s2_anime_map)]);
-	chapter_listing.innerHTML = chapterList(chaps_asc);
-
-	chapter_listing.orderDate = function () {
-		let elements = [...this.children[1].children];
-		let sortFunc = (this.querySelector("th.chapter-date").classList.contains("desc")) ?
-		(f, s) => Number(s.getAttribute("chapter")) - Number(f.getAttribute("chapter")):
-		(f, s) => Number(f.getAttribute("chapter")) - Number(s.getAttribute("chapter"));
-		elements.sort(sortFunc);
-		elements.forEach(e => this.children[1].appendChild(e));
-	};
-
-	chapter_listing.orderSeason = function () {
-		let seasons = [];
-		let unsorted = [];
-		this.children[1].children.forEach((e) => {
-			if (e.hasAttribute("season") && e.hasAttribute("episode")) {
-				if (!seasons[e.getAttribute("season")]) {
-					seasons[e.getAttribute("season")] = [];
-				}
-				if (!seasons[e.getAttribute("season")][e.getAttribute("episode")]) {
-					seasons[e.getAttribute("season")][e.getAttribute("episode")] = [];
-				}
-				seasons[e.getAttribute("season")][e.getAttribute("episode")][e.getAttribute("part")] = e;
-			} else {
-				unsorted.push(e);
-			}
-		});
-		let expander = (e) => {
-			if (e) {
-				if (Array.isArray(e)) {
-					e.forEach((e) => expander(e));
-				} else {
-					this.children[1].appendChild(e);
-				}
-			}
-		};
-		[...seasons, ...unsorted].forEach(e => expander(e));
-	};
-
-	function getAnimeString(num) {
-		let map, season;
-		if (num in s1_anime_map) {
-			map = s1_anime_map;
-			season = 1;
-		} else if (num in s2_anime_map) {
-			map = s2_anime_map;
-			season = 2;
-		} else {
-			throw new Error("Map error, this shouldn't be thrown.");
-		}
-		let episode = map[num][0] || "TBA";
-		let part = 1 + map[num][1] || "TBA";
-		return `Season ${season}, Episode ${episode}, part ${part}`;
-	}
-
-	function zpad(n){
-		if(n < 10) return '0'+n;
-		return n;
-	}
-
-	function toggleAnimeOrderSort(element) {
-		chapter_listing.classList.toggle("anime-order-sorted");
-		element.classList.toggle("selected");
-		if (chapter_listing.classList.contains("anime-order-sorted")) {
-			chapter_listing.orderSeason();
-		} else {
-			chapter_listing.orderDate();
-		}
-	}
-
-	function toggleAdaptedSeasons(element, options) {
-		document.getElementById("season-selector").children.forEach(e => e.classList.remove("selected"));
-		element.classList.add("selected");
-		if (options.showAnimeOrder) {
-			document.getElementById("anime-order").classList.remove("hidden");
-		} else {
-			document.getElementById("anime-order").classList.add("hidden");
-			if (chapter_listing.classList.contains("anime-order-sorted")) {
-				toggleAnimeOrderSort(document.getElementById("anime-order").firstChild);
-			}
-		}
-		chapter_listing.children[1].children.forEach(e => {
-			if (options.season) {
-				if (e.getAttribute("season") === options.season.toString()) {
-					e.classList.remove("hidden");
-				} else {
-					e.classList.add("hidden");
-				}
-			} else if (options.notAdapted) {
-				if (e.hasAttribute("season")) {
-					e.classList.add("hidden");
-				} else {
-					e.classList.remove("hidden");
-				}
-			} else {
-				e.classList.remove("hidden");
-			}
-		});
-	}
-</script>
-
-<!-- History script -->
-<!-- This badly needs linting but I can't be assed. -->
-<script>
-
-let MAX_CLICKS = 7;
-
-let refreshProxyElements = () => {
-	document.querySelectorAll(".proxy").forEach(e => e.remove());
-	proxyInitElements();
-}
-
-let deleteItem = async (event, element, source, slug) => {
-	event.preventDefault();
-	await globalHistoryHandler.removeSeries(slug, source);
-	element.parentElement.parentElement.parentElement.remove();
-};
-
-let pinItem = async (event, element, source, slug) => {
-	event.preventDefault();
-	await globalHistoryHandler.pinSeries(slug, source);
-	refreshProxyElements();
-};
-
-let proxyDestroyElements = () => {
-	document.querySelectorAll(".proxy").forEach(e => e.remove());
-	document.getElementById("rs-widget").remove();
-}
-
-let proxyInitElements = async () => {
-	let firstUse = true;
-	let mangaAppender = (item, pinned) => {
-		if (item.url && item.coverUrl && item.title && item.source && item.slug) {
-			document.querySelector("[role='main']").insertAdjacentHTML(
-				"beforeend",
-				`<a href="${item.url}" class="manga-card smol proxy" style="background-image: url('${item.coverUrl}')">
-				<picture>
-					<img src="${item.coverUrl}">
-				</picture>
-				<article>
-					<h2>${item.title} <span class="tag">${item.source.replace("_", " ")}</span> <i class="fa fa-trash" onclick="deleteItem(event, this, '${item.source}', '${item.slug}');">${pinned ? "" : `</i> <i class="fa fa-heart" onclick="pinItem(event, this, '${item.source}', '${item.slug}');">`}</i></h2>
-				</article>
-				</a>`
-			);
-		}
-	};
-	let pinnedSeries = (await globalHistoryHandler.getAllPinnedSeries()).filter(e => e.source !== "default");
-	if (pinnedSeries.length) {
-		firstUse = false;
-		document
-			.querySelector("[role='main']")
-			.insertAdjacentHTML(
-				"beforeend",
-				"<h3 class='proxy' style='width:100%; padding-left:1rem;'>Proxy Favourites</h3>"
-			);
-		pinnedSeries.forEach((item) => mangaAppender(item, true));
-	}
-	let unpinnedSeries = await globalHistoryHandler.getAllUnpinnedSeries();
-	if (unpinnedSeries.length) {
-		firstUse = false;
-		document
-			.querySelector("[role='main']")
-			.insertAdjacentHTML(
-				"beforeend",
-				"<h3 class='proxy' style='width:100%; padding-left:1rem;'>Proxy History</h3>"
-			);
-		unpinnedSeries.forEach((item) => mangaAppender(item));
-	}
-
-  	if (firstUse) {
-		document.querySelector("[role='main']").insertAdjacentHTML(
-			"beforeend",
-			`<div class="manga-card proxy" style="width:100%">
-				<article>
-					<p>Looks like you haven't used the proxy yet! This card will give you a short tutorial about how it works.</p>
-					<p>Note that your history is unique to you, and won't be shared with cubari.moe.</p>
-					<br>
-					<h4>MangaDex</h4>
-					<p>Replace <code>mangadex.org</code> in the URL with <code>cubari.moe</code>. For example, <code>https://mangadex.org/title/17274/</code> becomes <code>https://cubari.moe/title/17274/</code>.</p>
-					<br>
-					<h4>NHentai</h4>
-					<p>Replace <code>nhentai.net</code> in the URL with <code>cubari.moe</code>. For example, <code>https://nhentai.net/g/1/</code> becomes <code>https://cubari.moe/g/1/</code>.</p>
-					<br>
-					<h4>FoolSlide Sites</h4>
-					<p>Append the FoolSlide site's URL to the end of <code>https://cubari.moe/fs/</code>. For example, <code>https://jaiminisbox.com/reader/series/kaguya-wants-to-be-confessed-to</code> becomes <code>https://cubari.moe/fs/https://jaiminisbox.com/reader/series/kaguya-wants-to-be-confessed-to</code>.</p>
-					<p>Some FoolSlide enabled sites include:</p>
-					<ul>
-					<li><code>https://hentai.cafe/</code></li>
-					<li><code>https://jaiminisbox.com/</code></li>
-					<li><code>https://helveticascans.com/</code></li>
-					</ul>
-					<p>Once you start reading, this card will disappear and this section will fill up with your last <strong>${globalHistoryHandler.max}</strong> series.</p>
-					<p>You can manually remove a series from your history by clicking on the <i class="fa fa-trash"></i> next to the title, or alternatively pin it with the <i class="fa fa-heart"></i> icon.</p>
-					<p>You can also disable/enable this history feature at any time by clicking on the twintail Kaguya ${MAX_CLICKS + 1} times. Note that it'll clear ALL your read history every time.</p>
-					<br>
-					<h4>Advanced Features</h4>
-					<p>You can now synchronize your reading history and favourites across different devices. This is done using a third party service which <i>you</i> control.</p>
-					<p>To get started, create an account with any <code>remotestorage</code> provider. We recommend <code><a href="https://5apps.com/storage">5apps</a></code> since it's free.</p>
-					<p>Once you've created an account, use your <code>user@provider.com</code> (eg. <code>guya@5apps.com</code>) account to log in using the <code>remotestorage</code> icon in the navbar. Then you're ready!</p>
-					<br>
-					<br>
-					<p><i>Got a suggestion on how we could improve this feature? Use the feedback box with the envelope symbol on your top left!</i></p>
-				</article>
-			</div>`
-		);
-	}
-};
-
-window.addEventListener("load", () => {
-	let enabled = globalHistoryHandler.enabled();
-	let clicked = 0;
-	document.getElementById("twintail-guya").addEventListener("click", (e) => {
-		if (clicked < MAX_CLICKS) {
-		clicked++;
-		(e.target || e.srcElement).style.opacity = `${1 - clicked / 10}`;
-		} else {
-		(e.target || e.srcElement).style.opacity = "1";
-		clicked = 0;
-		if (enabled) {
-			globalHistoryHandler.toggle.disable();
-			location.reload();
-		} else {
-			globalHistoryHandler.toggle.enable();
-			location.reload();
-		}
-		enabled = !enabled;
-		}
-	});
-	if (enabled) {
-		proxyInitElements();
-	}
-});
-</script>
-<script>
-// Expand the series listing if requested
-window.addEventListener("load", () => {
-	if(window.location.hash == '#chapter_listing_exp') {
-		document.getElementById('chapter_listing').classList.add('vis');
-		document.getElementById('chapter_listing_exp').classList.add('vis');
-		document.getElementsByClassName('chapter-listing-expander')[0].classList.add('vis');
-		hash = true;
-	}
-});
-</script>
-{% endblock %}
+	<div id="layers">
+		<article id="about">
+			<h2>What's this thing?</h2>
+			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate image-proxying service. We don't host anything, this is just a web image viewer that can parse other websites.</p>
+			<h2>What are the sites you can proxy?</h2>
+			<p>Currently it supports imgur.com and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
+			<h2>Are you the next Mangadex?</h2>
+			<p>No, but we might become a web version Tachiyomi. This is not a guarantee, though.</p>
+			<h2>Add [X]!</h2>
+			<p>For now we wont accept feature requests because we have a pretty straightforward roadmap that we need to realize first. Keep an eye on us, something new might pop up soon.</p>
+			<h2>What will happen to Guya?</h2>
+			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
+		</article>
+		<a href="#" class="layers-close"></a>
+		<a href="#" class="rhombutton close"></a>
+	</div>
+	<script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
