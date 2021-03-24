@@ -14,7 +14,7 @@ from .helpers import *
 
 
 class ProxySource(metaclass=abc.ABCMeta):
-    # /proxy/:reader_prefix/slug
+    # /{PROXY_BASE_PATH}/:reader_prefix/slug
     @abc.abstractmethod
     def get_reader_prefix(self) -> str:
         raise NotImplementedError
@@ -36,7 +36,7 @@ class ProxySource(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def wrap_chapter_meta(self, meta_id):
-        return f"/proxy/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
+        return f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
 
     def process_description(self, desc):
         return escape(desc)
@@ -49,10 +49,10 @@ class ProxySource(metaclass=abc.ABCMeta):
                 data = data.objectify()
                 if chapter.replace("-", ".") in data["chapters"]:
                     data["version_query"] = settings.STATIC_VERSION
-                    data["relative_url"] = f"proxy/{self.get_reader_prefix()}/{meta_id}"
-                    data["api_path"] = f"/proxy/api/{self.get_reader_prefix()}/series/"
+                    data["relative_url"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}/{meta_id}"
+                    data["api_path"] = f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/series/"
                     data["image_proxy_url"] = settings.IMAGE_PROXY_URL
-                    data["reader_modifier"] = f"proxy/{self.get_reader_prefix()}"
+                    data["reader_modifier"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
                     data["chapter_number"] = chapter.replace("-", ".")
                     return render(request, "reader/reader.html", data)
             return HttpResponse(status=500)
@@ -68,8 +68,8 @@ class ProxySource(metaclass=abc.ABCMeta):
             data = data.objectify()
             data["synopsis"] = self.process_description(data["synopsis"])
             data["version_query"] = settings.STATIC_VERSION
-            data["relative_url"] = f"proxy/{self.get_reader_prefix()}/{meta_id}"
-            data["reader_modifier"] = f"proxy/{self.get_reader_prefix()}"
+            data["relative_url"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}/{meta_id}"
+            data["reader_modifier"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
             return render(request, "reader/series.html", data)
         else:
             return HttpResponse(status=500)
@@ -96,7 +96,7 @@ class ProxySource(metaclass=abc.ABCMeta):
             return HttpResponse(status=500)
 
     def register_api_routes(self):
-        """Routes will be under /proxy/api/<route>"""
+        """Routes will be under /{settings.PROXY_BASE_PATH}/api/<route>"""
         return [
             path(
                 f"{self.get_reader_prefix()}/series/<str:meta_id>/",

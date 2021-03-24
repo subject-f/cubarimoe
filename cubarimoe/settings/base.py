@@ -31,7 +31,6 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
-    "api.apps.ApiConfig",
     "reader.apps.ReaderConfig",
     "homepage.apps.HomepageConfig",
     "misc.apps.MiscConfig",
@@ -163,3 +162,5 @@ HOME_BRANDING_DESCRIPTION = "Read the Kaguya-sama: Love is War / Kaguya Wants to
 HOME_BRANDING_IMAGE_URL = "https://i.imgur.com/jBhT5LV.png"
 
 IMAGE_PROXY_URL = "https://proxy.f-ck.me"
+
+PROXY_BASE_PATH = "read"
