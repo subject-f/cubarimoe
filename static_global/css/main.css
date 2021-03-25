@@ -34,7 +34,7 @@
 
 a {
 	color: #e25656;
-	text-decoration: none;
+	text-decoration: none !important;
 }
 
 html {
@@ -49,7 +49,7 @@ body {
 	min-height: 100%;
 	background: #1C1C1C;
 	position: relative;
-	overflow: hidden;
+	/* overflow: hidden; */
 	font-family: 'Open Sans', sans-serif;
 	color: white;
 }
@@ -76,13 +76,17 @@ body:before {
 	height: 100%;
 }
 
-#main > header {
+header {
 	flex-grow: 0;
 	width: 100%;
 	display: flex;
+	position: fixed;
+	top: 0;
+	z-index: 300;
 	justify-content: flex-end;
 }
-#main > .help {
+
+.help {
 	flex-grow: 0;
 	width: 100%;
 	display: flex;
@@ -178,7 +182,7 @@ body:before {
 }
 
 .cubari-logo:before {
-	content: "c";
+	/* content: "c"; */
 	font-family: 'icomoon';
 	font-size: 30rem;
 	position: absolute;
@@ -187,6 +191,11 @@ body:before {
 	transform: translateX(-50%) translateY(-50%) rotate(-31deg);
 	z-index: -1;
 	opacity: 0.03;
+}
+
+.series-content {
+	border: 1px solid rgba(255,255,255,0.4);
+	border-radius: 2px;
 }
 
 .rhombutton {
@@ -211,7 +220,7 @@ a:hover, a:hover span {
 	transform: rotate(-45deg);
 }
 
-.rhombutton.close:before {
+.rhombutton.rhombutton-close:before {
 	content: "×";
 	font-size: 1.5em;
 }
@@ -250,7 +259,7 @@ footer .guya img {
 }
 
 #layers {
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -260,7 +269,7 @@ footer .guya img {
 }
 
 #layers > a, #layers > article {
-	display: none
+	/* display: none; */
 }
 
 #layers > article:target, #layers > article:target .layers-close {
@@ -271,7 +280,7 @@ footer .guya img {
 	display: block;
 }
 
-#layers > article:target ~ .close {
+#layers > article:target ~ .rhombutton-close {
 	display: inline-flex;
 }
 
@@ -286,15 +295,15 @@ footer .guya img {
 	text-align: right;
 }
 
-.rhombutton.close {
+.rhombutton.rhombutton-close {
 	position: fixed;
 	cursor: pointer;
 	top: 0;
 	right: 0;
-	z-index: 10;
+	z-index: 1000;
 }
 
-.home article {
+#layers article {
 	position: relative;
 	width: 100%;
 	max-width: 50rem;
@@ -304,7 +313,8 @@ footer .guya img {
 	min-height: 100vh;
 	z-index: 2;
 }
-.home article .close {
+
+article .rhombutton-close {
 	position: absolute;
 	top: 0;
 	right: 0;

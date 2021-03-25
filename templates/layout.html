@@ -4,8 +4,10 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+	<link rel="stylesheet" href="{% static 'css/normalize.css' %}{{ version_query }}">
+	<link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}{{ version_query }}">
 	<link rel="stylesheet" href="{% static 'css/index.css' %}{{ version_query }}">
+	<link rel="stylesheet" href="{% static 'css/main.css' %}{{ version_query }}">
 	<link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<script src="{% static 'js/jquery.min.js' %}"></script>
 	<script src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
@@ -49,102 +51,46 @@
 	{% include "history.html" %}
 </head>
 
-<body class="d-flex flex-column h-100">
+<body>
 	{% include "tracking.html" %}
 	{% load cache %} {% cache 1 sidebar %}
 	<header>
-		<nav class="navbar navbar-expand-lg">
-			<div class="container-fluid">
-				<a class="navbar-brand-logo col-lg-2" href="/" rel="home">
-					<img src="{% static 'img/Guya-moe.png' %}" alt="Cubari.moe">
-				</a>
-				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse col-lg-8" id="navbarSupportedContent">
-					<ul class="navbar-nav">
-						<li class="nav-item dropdown">
-							<a class="nav-link dropdown-toggle" href="#" id="readManga" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Read
-						</a>
-							<div class="dropdown-menu" aria-labelledby="readManga">
-								<a class="dropdown-item" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/">Kaguya-sama: Love is War</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="/read/manga/We-Want-To-Talk-About-Kaguya/">We Want To Talk About Kaguya</a>
-								<a class="dropdown-item" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To-Official-Doujin/">Official Doujin</a>
-								<a class="dropdown-item" href="//skythewood.blogspot.com/p/kaguya.html">Novel: Seven Mysteries of Shuchiin</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="/read/manga/Oshi-no-Ko/">Oshi no Ko</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="https://tachiyomi.org/extensions/#en.guya">Tachiyomi Plugin</a>
-							</div>
-						</li>
-						<li class="nav-item dropdown">
-							<a class="nav-link dropdown-toggle" href="#" id="fanContent" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Fan-content
-						</a>
-							<div class="dropdown-menu" aria-labelledby="fanContent">
-								<a class="dropdown-item" href="//kaguya-archive.tumblr.com/tagged/Fancomic">Fancomics</a>
-								<a class="dropdown-item" href="//kaguya-archive.tumblr.com/tagged/fandub">Fandub</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" target="_blank" href="//kaguyasama-wa-kokurasetai.fandom.com/wiki/Kaguya-sama_wa_Kokurasetai_Wikia">Wiki</a>
-								<a class="dropdown-item" target="_blank" href="//kaguya-archive.tumblr.com/">Archive</a>
-							</div>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="/pages/">Kaguya Articles</a>
-						</li>
-						<div class="pusher"></div>
-						<li class="nav-item">
-							<a class="nav-link" href="/about/">About</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="//www.reddit.com/r/Kaguya_sama/"><img alt="/r/Kaguya_sama" src="/static/img/reddit.svg"></img>
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="//discord.gg/gAUAkzr"><img alt="Discord" src="/static/img/discord.svg"></img>
-							</a>
-						</li>
-						<li class="nav-item">
-							<div id="rs-widget"></div>
-						</li>
-					</ul>
-				</div>
-			</div>
-		</nav>
+		<a href="" class="help rhombutton" id="help-button"></a>
 	</header>
-	<script>
-		var links = document.querySelectorAll('header .nav-link');
-		[].forEach.call(links, link => {
-			if (link.classList.contains('dropdown-toggle')) {
-				var items;
-				if (link.nextElementSibling)
-					items = link.nextElementSibling.children;
-				else
-					return;
-				for (var i = 0; i < items.length; i++) {
-					if (document.location.href.indexOf(items[i].href) > -1) {
-						link.classList.add('s')
-					}
-				}
-			} else {
-				if (document.location.href.indexOf(link.href) > -1)
-					link.classList.add('s')
-			}
-		});
-
-		function autosize() {
-			var el = this;
-			setTimeout(function() {
-				el.style.height = "";
-				el.style.height = Math.min(el.scrollHeight, 500) + "px";
-				el.nextElementSibling.style.top = Math.min(el.scrollHeight, 500) + "px";
-			}, 0);
-		}
-
-	</script>
 	{% endcache %} {% block body %} {% endblock %}
+	<div id="layers" class="hidden">
+		<article id="about">
+			<h2>What's this thing?</h2>
+			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate image-proxying service. We don't host anything, this is just a web image viewer that can parse other websites.</p>
+			<h2>What are the sites you can proxy?</h2>
+			<p>Currently it supports imgur.com and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
+			<h2>Are you the next Mangadex?</h2>
+			<p>No, but we might become a web version Tachiyomi. This is not a guarantee, though.</p>
+			<h2>Add [X]!</h2>
+			<p>For now we wont accept feature requests because we have a pretty straightforward roadmap that we need to realize first. Keep an eye on us, something new might pop up soon.</p>
+			<h2>What will happen to Guya?</h2>
+			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
+		</article>
+		<a href="" class="layers-close" id="layers-close"></a>
+		<a href="" class="rhombutton rhombutton-close" id="close-button"></a>
+	</div>
+	<script>
+		const closeModal = (e) => {
+			e.preventDefault();
+			document.getElementById("layers").classList.add("hidden");
+			document.querySelector("body").style.overflow = "auto";
+			document.getElementById("help-button").style.display = "";
+
+		};
+		document.getElementById("layers-close").addEventListener("click", closeModal);
+		document.getElementById("close-button").addEventListener("click", closeModal);
+		document.getElementById("help-button").addEventListener("click", (e) => {
+			e.preventDefault();
+			document.getElementById("layers").classList.remove("hidden");
+			document.querySelector("body").style.overflow = "hidden";
+			e.target.style.display = "none";
+		});
+	</script>
 	<script>
 		isiOSAux = (window.navigator.standalone == true);
 		if(isiOSAux) {

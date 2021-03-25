@@ -135,47 +135,6 @@ var reading_button = null;
 		reading_button = document.querySelector('.series-content article').appendChild(new readingButton());
 	}
 
-	{% if "admin" in available_features %}
-	window.addEventListener("load", () => {
-		document.getElementById("submitForm").addEventListener("click", (e) => {
-			e.preventDefault();
-			document.getElementById("modalSubmit").insertAdjacentHTML("afterbegin", `<div id="uploadingChapter" class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>`);
-			let formElement = document.getElementById("newChapterForm");
-			let formData = new FormData(formElement);
-			formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-			fetch("/api/upload_new_chapter/{{ slug }}/", {
-				method: 'POST',
-				body: formData
-			}).then(data => data.json()).then(data => {
-				document.getElementById("uploadingChapter").remove();
-				if (data["response"] === "success") {
-					document.getElementById("modalSubmit").insertAdjacentHTML("afterbegin", `<div id="uploadResult" class="btn btn-success"><i class="fa fa-check"></i></div>`);
-				} else {
-					document.getElementById("modalSubmit").insertAdjacentHTML("beforebegin", `<p id="uploadResult">Error uploading chapter.</p>`);
-				}
-				setTimeout(() => document.getElementById("uploadResult").remove(), 5000);
-			}).catch(e => {
-				document.getElementById("uploadingChapter").remove();
-				document.getElementById("modalSubmit").insertAdjacentHTML("beforebegin", `<p id="uploadResult">Unspecified error, the chapter may be partially uploaded.</p>`);
-				setTimeout(() => document.getElementById("uploadResult").remove(), 5000);
-			});
-		});
-	});
-
-	function loadGroups(slug) {
-		let scanGroup = document.getElementById("scanGroup");
-		if (scanGroup.options.length === 0) {
-			fetch("/api/get_all_groups/")
-				.then(data => data.json())
-				.then(data => {
-					for (let group in data) {
-						scanGroup.insertAdjacentHTML("beforeend", `<option value="${data[group]}">${data[group]}</option>`);
-					}
-				});
-		}
-	}
-	{% endif %}
-
 	function readingButton() {
 		this.html = `<a class="manga-link chapter">
 			<span class="manga-link-chap"></span><span class="manga-link-text"></span>
@@ -369,145 +328,9 @@ var reading_button = null;
 
 </script>
 {% endblock %} {% block body %}
-<style>
-	.active {
-		background-color: red;
-		color: white;
-	}
-
-	h1 {
-		font-size: 1.4em;
-	}
-
-	p {
-		color: #dedede;
-	}
-
-	html,
-	html.h-100 {
-		background-attachment: fixed;
-		background-position: 50% 10%;
-		background-size: 1500px;
-		background-image: url("/static/img/bg_box.png");
-		background-color: black !important;
-	}
-
-	body {
-		background: none !important;
-		background-color: none !important;
-	}
-</style>
-<div class="modal fade" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-body">
-				<img src="" id="imagepreview" style="width: 100%; height: 100%;" />
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" id="volumePrev">
-					Prev
-				</button>
-				<button type="button" class="btn btn-default" id="volumeNext">
-					Next
-				</button>
-				<button type="button" class="btn btn-default" id="openOriginal">
-					Open original
-				</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal">
-					Close
-				</button>
-			</div>
-		</div>
-	</div>
-</div>
-{% if "admin" in available_features %}
-<div class="modal" id="uploadModal">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 id="formVal1" class="modal-title">Upload New Chapter</h4>
-				<button type="button" class="close" data-dismiss="modal">&times;</button>
-			</div>
-			<form id="newChapterForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-5">
-							<label for="chapterNumber" >Chapter Number</label>
-							<input required type="number" step="1.0" class="form-control-sm col-6" name="chapterNumber" id="chapterNumber" value="{{ chapter_list.0.0|add:'1' }}">
-						</div>
-						<div class="col-3">
-							<label for="volumeNumber" >Volume</label>
-							<input required type="number" step="1.0" class="form-control-sm col-8" name="volumeNumber" id="volumeNumber" value="{{ chapter_list.0.5 }}">
-						</div>
-					</div>
-					<div class="row mt-4">
-						<div class="col-7">
-							<label for="scanGroup" >Group</label>
-							<div class="input-group">
-								<select required class="form-control-sm" name="scanGroup" id="scanGroup">
-								</select>
-							</div>
-						</div>
-					</div>
-					<div class="row mt-4">
-						<div class="col-12">
-							<label for="chapterTitle" class="d-block" >Chapter Title</label>
-							<input required type="text" class="form-control-sm col-12" name="chapterTitle" id="chapterNumber">
-						</div>
-					</div>
-					<div class="row mt-4">
-						<div class="col">
-							<label for="chapterPages">Chapter Pages (as .zip)</label>
-							<input required type="file" accept=".zip" name="chapterPages" class="form-control-file" id="chapterPages">
-						</div>
-					</div>
-					<input type="hidden" name="slug" value="{{ slug }}">
-				</div>
-				<div id="modalSubmit" class="modal-footer">
-					<button type="button" id="submitForm" class="btn btn-primary">Upload Chapter</button>
-					<button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-{% endif %}
 <div class="container-fluid page-series">
 	<div class="bs-docs-section clearfix mt-1">
 		<div class="row justify-content-center">
-			<div class="col-lg-2 col-md-3 col-sm-11 col-xs-12 mb-4 side-cover">
-				<div class="list-item">
-					<div class="list-content">
-						<div class="list-body d-flex justify-content-center">
-							<span class="text-white text-white font-weight-bold"> </span>
-						</div>
-					</div>
-					<div class="media media-3x4 justify-content-center">
-						<picture>
-							{% if cover_vol_url_webp %}
-							<source type="image/webp" srcset="{{ cover_vol_url_webp }}" class="img-fluid"
-								alt="{{ series }} manga" />
-							{% endif %}
-							<img src="{{ cover_vol_url }}" class="img-fluid" alt="{{ series }} manga" />
-						</picture>
-					</div>
-				</div>
-				<div class="card sidecard">
-					<div class="card-body">
-						<table class="table table-borderless table-sm small">
-							<tbody>
-								{% for type, value in metadata %}
-								<tr>
-									<th>{{ type }}</th>
-									<td class="text-sm">{{ value }}</td>
-
-								</tr>
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
 			<div class="col-lg-8 col-md-7 col-sm-11 col-xs-12 series-content">
 				<article>
 					<picture>
@@ -546,50 +369,7 @@ var reading_button = null;
 						Detailed
 					</button>
 					{% endif %}
-					{% if "compact" in available_features %}
-					<button type="button" id="compactMode" class="tag-display-mode-toggle btn"
-						onclick="listMode('compact');">
-						Compact
-					</button>
-					{% endif %}
-					{% if "volumeCovers" in available_features %}
-					<button type="button" id="volumeCoversMode" class="tag-display-mode-toggle btn"
-						onclick="listMode('volumeCovers')">
-						Volume Covers
-					</button>
-					{% endif %}
-					{% if "rss" in available_features %}
-					<a href="http://{{ root_domain }}/read/other/rss/{{ slug }}" target="_blank"><i
-							class="fa fa-rss"></i></a>
-					{% endif %}
-					{% if "admin" in available_features %}
-					<a href="#" onclick="loadGroups('{{ slug }}')" data-toggle="modal" data-target="#uploadModal"><i class="float-right fa fa-upload fa-lg" ></i></a>
-					{% endif %}
 				</div>
-				{% if "compact" in available_features %}
-				<div id="compactView" class="d-none" style="font-size: 0.75rem;">
-					{% for volume, data in volume_list %}
-					<div class="card col-12 mb-3" style="border-radius: 0px;">
-						<h6 class="card-title mt-2 mb-0">Volume {{ volume }}</h6>
-						<div class="row mb-0 pt-0">
-							{% for chapter in data %}
-							<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 col-3" data-chapter="{{ chapter.0 }}">
-								<a href="/read/manga/{{ slug }}/{{ chapter.1 }}/1/" class="chapter-box">
-									<p class="text-center mb-1 chapter-number">
-										{{ chapter.0 }}
-									</p>
-									<p class="text-center small mb-1 compact-chapter-upload-date"></p>
-									<p class="text-center text-muted small mb-1 chapter-group">
-										{{ chapter.2 }}
-									</p>
-								</a>
-							</div>
-							{% endfor %}
-						</div>
-					</div>
-					{% endfor %}
-				</div>
-				{% endif %}
 				{% if "detailed" in available_features %}
 				<div id="detailedView" class="d-none table-responsive">
 					<table id="chapters" class="table table-hover">
@@ -639,9 +419,6 @@ var reading_button = null;
 						</tbody>
 					</table>
 				</div>
-				{% endif %}
-				{% if "volumeCovers" in available_features %}
-				<div id="volumeCoversView" class="d-none"></div>
 				{% endif %}
 			</div>
 		</div>
