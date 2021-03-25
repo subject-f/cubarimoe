@@ -1,4 +1,30 @@
+{% extends "layout.html" %}
 {% load static %}
+{% block head %}
+{% endblock %}
+{% block body %}
+<div id="main">
+	<section>
+		<div class="header-wrapper">
+			<h1>CUBARI</h1>
+			<h2>While Mangadex is dead.</h2>
+		</div>
+		<div class="search-wrapper">
+			<div class="search-box cubari-logo">
+				<input type="text" id="search" placeholder="Paste an Imgur link..."><button class="ico-btn icon-ri"></button>
+			</div>
+			<div class="status"></div>
+		</div>
+	</section>
+	<footer>
+		<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
+		<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
+	</footer>
+</div>
+{% endblock %}
+
+
+<!-- {% load static %}
 <!doctype html>
 <html class="no-js" lang="">
 
@@ -14,7 +40,6 @@
 	<meta property="og:image" content="">
 
 	<link rel="apple-touch-icon" href="icon.png">
-	<!-- Place favicon.ico in the root directory -->
 	<link rel="stylesheet" href="{% static 'css/normalize.css' %}">
 	<style>
 		
@@ -24,10 +49,10 @@
 	<meta name="theme-color" content="#fafafa">
 </head>
 <body class="home">
+	<header>
+		<a class="help rhombutton" href="#about"></a>
+	</header>
 	<div id="main">
-		<header>
-			<a class="help rhombutton" href="#about"></a>
-		</header>
 		<section>
 			<div class="header-wrapper">
 				<h1>CUBARI</h1>
@@ -59,8 +84,8 @@
 			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
 		</article>
 		<a href="#" class="layers-close"></a>
-		<a href="#" class="rhombutton close"></a>
+		<a href="#" class="rhombutton rhombutton-close"></a>
 	</div>
 	<script src="{% static 'js/main.js' %}"></script>
 </body>
-</html>
+</html> -->

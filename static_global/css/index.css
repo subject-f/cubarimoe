@@ -27,19 +27,8 @@ body {
 	background-attachment: fixed;
 	background-position: 50% 10%;
 	background-size: 1500px;
-	background-image: url('/static/img/bg_box.png');
 	background-color:black;
 	padding-top: 5em;
-}
-
-
-header {
-	background: linear-gradient(0deg,rgba(0,0,0,0.65) 0%, rgb(0, 0, 0) 100%);
-	position: fixed;
-	top: 0;
-	z-index: 300;
-	width: 100%;
-
 }
 
 .navbar {
@@ -394,12 +383,6 @@ header {
 
 .navbar .dropdown-item {
 	padding: 0.45rem 1rem;
-}
-
-
-.home header {
-	display: flex;
-	justify-content: center;
 }
 
 .home .navbar-brand-logo {
@@ -1153,7 +1136,7 @@ main a {
 	margin-right: 1.4em;
 	border-radius: 4px;
 	margin-bottom: 0.5em;
-	display: none;
+	/* display: none; */
 }
 
 
