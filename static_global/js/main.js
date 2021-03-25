@@ -7,19 +7,19 @@ let error = '';
 	message('')
 	switch(true) {
 		case /imgur/.test(text):
-			result = /(\/)([A-Z0-9a-z]{7})/.exec(text);
-			if(!result || !result[2]) return message('Reader could not understand the url.', 1)
+			result = /(a\/|gallery\/)([A-Z0-9a-z]{7})/.exec(text);
+			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/imgur/' + result[2] + '/1/1';
 			break;
 		case /git\.io/.test(text):
 			result = /(git.io\/)(.*)/.exec(text);
-			if(!result || !result[2]) return message('Reader could not understand the url.', 1)
+			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/gist/' + result[2];
 			break;
-		case (/nhentai/.test(text) || /\b[0-9]{6}\b/.test(text)):
-			result = /(\b[0-9]{6}\b)/.exec(text);
-			if(!result || !result[0]) return message('Reader could not understand the url.', 1)
-			result = '/read/nhentai/' + result[0];
+		case (/\b[0-9]{5}[0-9]?\b/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
+			result = /(\/?)(\b[0-9]+\b)/.exec(text);
+			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
+			result = '/read/nhentai/' + result[2];
 			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
