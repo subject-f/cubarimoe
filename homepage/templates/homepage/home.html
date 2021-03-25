@@ -1,66 +1,42 @@
+{% extends "layout.html" %}
 {% load static %}
-<!doctype html>
-<html class="no-js" lang="">
-
-<head>
-	<meta charset="utf-8">
-	<title>Cubari.moe - The modern manga reader</title>
-	<meta name="description" content="">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-
-	<meta property="og:title" content="">
-	<meta property="og:type" content="">
-	<meta property="og:url" content="">
-	<meta property="og:image" content="">
-
-	<link rel="apple-touch-icon" href="icon.png">
-	<!-- Place favicon.ico in the root directory -->
-	<link rel="stylesheet" href="{% static 'css/normalize.css' %}">
-	<style>
-		
-	</style>
-	<link rel="stylesheet" href="{% static 'css/main.css' %}">
-
-	<meta name="theme-color" content="#fafafa">
-</head>
-<body class="home">
-	<div id="main">
-		<header>
-			<a class="help rhombutton" href="#about"></a>
-		</header>
-		<section>
-			<div class="header-wrapper">
-				<h1>CUBARI</h1>
-				<h2>While Mangadex is dead.</h2>
+{% block head %}
+{% endblock %}
+{% block body %}
+<div id="main">
+	<section>
+		<div class="header-wrapper">
+			<h1>CUBARI</h1>
+			<h2>While Mangadex is dead.</h2>
+		</div>
+		<div class="search-wrapper">
+			<div class="search-box">
+				<div class="cubari-logo"></div>
+				<input type="text" id="search" placeholder="Paste an Imgur link, the numbers, or git.io link..."><button class="ico-btn icon-ri" id="search-button"></button>
 			</div>
-			<div class="search-wrapper">
-				<div class="search-box cubari-logo">
-					<input type="text" id="search" placeholder="Paste an Imgur link..."><button class="ico-btn icon-ri"></button>
-				</div>
-				<div class="status"></div>
-			</div>
-		</section>
-		<footer>
-			<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
-			<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
-		</footer>
-	</div>
-	<div id="layers">
-		<article id="about">
-			<h2>What's this thing?</h2>
-			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate image-proxying service. We don't host anything, this is just a web image viewer that can parse other websites.</p>
-			<h2>What are the sites you can proxy?</h2>
-			<p>Currently it supports imgur.com and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
-			<h2>Are you the next Mangadex?</h2>
-			<p>No, but we might become a web version Tachiyomi. This is not a guarantee, though.</p>
-			<h2>Add [X]!</h2>
-			<p>For now we wont accept feature requests because we have a pretty straightforward roadmap that we need to realize first. Keep an eye on us, something new might pop up soon.</p>
-			<h2>What will happen to Guya?</h2>
-			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
-		</article>
-		<a href="#" class="layers-close"></a>
-		<a href="#" class="rhombutton close"></a>
-	</div>
-	<script src="{% static 'js/main.js' %}"></script>
-</body>
-</html>
+			<div id="status"></div>
+		</div>
+	</section>
+</div>
+<footer>
+	<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
+	<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
+</footer>
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+	document.querySelector('.header-wrapper h2').innerHTML =
+	([
+		'That one cool web manga reader.',	
+		`${Math.round((new Date().getTime() - new Date("07/15/2019").getTime()) / (1000 * 3600 * 24))} days of uptime.`,
+		`No accounts, no problems.`,
+		`Read Kaguya.`,
+		`For legal reasons, we don't host <i>anything</i>.`,
+		`The reader could be better.`,
+		`Did you know that the reader has, like, options and stuff?`,
+		`<i>Advanced.</i>`,
+		`We gotchu, Mangadex.`,
+		`Everyone get on the lifeboats, the main ship is down!`,
+		`We're under heavy load, please come back later...<br>Just kidding.`,
+	])[Math.round(Math.random()*10)]
+</script>
+{% endblock %}
