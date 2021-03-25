@@ -5,21 +5,21 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<link rel="stylesheet" href="{% static 'css/normalize.css' %}{{ version_query }}">
-	<link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}{{ version_query }}">
-	<link rel="stylesheet" href="{% static 'css/index.css' %}{{ version_query }}">
+	<!-- <link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}{{ version_query }}"> -->
+	<!-- <link rel="stylesheet" href="{% static 'css/index.css' %}{{ version_query }}"> -->
 	<link rel="stylesheet" href="{% static 'css/main.css' %}{{ version_query }}">
-	<link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-	<script src="{% static 'js/jquery.min.js' %}"></script>
+	<!-- <link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+	<!-- <script src="{% static 'js/jquery.min.js' %}"></script> -->
 	<script src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
-	<script defer src="{% static 'js/bootstrap.min.js' %}"></script>
+	<!-- <script defer src="{% static 'js/bootstrap.min.js' %}"></script> -->
 	<link rel="canonical" href="{{ absolute_url }}" />
 	<link rel="manifest" href="{% static 'manifest.json' %}{{ version_query }}">
-	<link rel="shortcut icon" sizes="128x128" type="image/png" href="{% static 'logo_small.png' %}{{ version_query }}" defer />
-	<link rel="icon" sizes="128x128" type="image/png" href="{% static 'logo_small.png' %}{{ version_query }}" />
-	<link rel="icon" sizes="512x512" type="image/png" href="{% static 'logo.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="128x128" href="{% static 'safari-touch-128x128.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="256x256" href="{% static 'safari-touch-256x256.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="512x512" href="{% static 'safari-touch-512x512.png' %}{{ version_query }}" />
+	<link rel="shortcut icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" defer />
+	<link rel="icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="icon" sizes="512x512" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="128x128" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="256x256" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="512x512" href="{% static 'favicon.png' %}{{ version_query }}" />
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<meta name="theme-color" content="#2b2f33" />
@@ -52,44 +52,68 @@
 </head>
 
 <body>
+	<div class="body-wrapper">
+	<div class="home-background"></div>
 	{% include "tracking.html" %}
 	{% load cache %} {% cache 1 sidebar %}
 	<header>
-		<a href="" class="help rhombutton" id="help-button"></a>
+		<span></span>
+		<a href="/" class="cubari-logo"></a>
+		<a class="rhombutton btn-help" id="help-button" onclick="openModal('about')"></a>
 	</header>
 	{% endcache %} {% block body %} {% endblock %}
-	<div id="layers" class="hidden">
-		<article id="about">
+	<div id="layers">
+		<article id="about" class="hidden">
+			<a class="rhombutton btn-close"></a>
 			<h2>What's this thing?</h2>
-			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate image-proxying service. We don't host anything, this is just a web image viewer that can parse other websites.</p>
+			<p>This website is an image proxy. It takes images from other websites and displays them in a better manga-oriented reader, Cubari.</p>
+			<p>Cubari does not host any of the content you are viewing. Just like your computer does not store or own all the images you see on the internet, Cubari is doing the same thing. We are simply a service that lets you view other data on the internet using our custom UI.</p>
+			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate domain. We don't host anything, this is just a web image viewer that can parse other websites.</p>
 			<h2>What are the sites you can proxy?</h2>
-			<p>Currently it supports imgur.com and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
+			<p>Currently it supports imgur, nhentai and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
 			<h2>Are you the next Mangadex?</h2>
 			<p>No, but we might become a web version Tachiyomi. This is not a guarantee, though.</p>
 			<h2>Add [X]!</h2>
 			<p>For now we wont accept feature requests because we have a pretty straightforward roadmap that we need to realize first. Keep an eye on us, something new might pop up soon.</p>
 			<h2>What will happen to Guya?</h2>
 			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
+
+			<h2>Github Gists</h2>
+			<p>Supplying the reader with special code that tells the reader where the images are lets you display series of chapters. A thorough guide can be found in this <a href="https://www.reddit.com/r/manga/comments/mcicbp/sl_how_to_host_a_series_on_imgur_with_guyamoe/">reddit post</a> while we work on making a user-friendly constructor for this.</p>
 		</article>
-		<a href="" class="layers-close" id="layers-close"></a>
-		<a href="" class="rhombutton rhombutton-close" id="close-button"></a>
 	</div>
 	<script>
-		const closeModal = (e) => {
-			e.preventDefault();
-			document.getElementById("layers").classList.add("hidden");
-			document.querySelector("body").style.overflow = "auto";
-			document.getElementById("help-button").style.display = "";
+		const layerHandler = e => {
+		let article = e.target.closest('article');
+			if(article == null || e.target.classList.contains('btn-close')) {
+				closeModal();
+			}
+		}
 
-		};
-		document.getElementById("layers-close").addEventListener("click", closeModal);
-		document.getElementById("close-button").addEventListener("click", closeModal);
-		document.getElementById("help-button").addEventListener("click", (e) => {
-			e.preventDefault();
-			document.getElementById("layers").classList.remove("hidden");
-			document.querySelector("body").style.overflow = "hidden";
-			e.target.style.display = "none";
-		});
+		const openModal = (modal) => {
+			document.getElementById(modal).classList.remove('hidden');
+		}
+
+		const closeModal = (m) => {
+		let children = Array.prototype.reverse.call(document.getElementById('layers').children);
+			for (var i = 0; i < children.length; i++) {
+			let l = children[i];
+				if(!l.classList.contains('hidden')) {
+					l.classList.add('hidden');
+					break;
+				}
+			}
+		}
+		document.getElementById('layers').addEventListener("click", layerHandler);
+
+		const toggleFocus = (e) => {
+			if(e.target.closest('.search-box')) {
+				document.body.classList.add('search-focus');
+			}else{
+				document.body.classList.remove('search-focus');
+			}
+		}
+		document.body.addEventListener("click", toggleFocus);
 	</script>
 	<script>
 		isiOSAux = (window.navigator.standalone == true);
@@ -107,5 +131,6 @@
 			}
 		}
 	</script>
+	</div>
 </body>
 </html>
