@@ -30,16 +30,23 @@ let error = '';
 		fetch(location.origin + result)
 		.then(response => {
 			if(response.status != 200) {
+			let spin = getComputedStyle(sbox.children[0]).transform;
+			var values = spin.split('(')[1].split(')')[0].split(',');
+			var a = values[0];
+			var b = values[1];
+			var c = values[2];
+			var d = values[3];
+			var scale = Math.sqrt(a*a + b*b);
+			var sin = b/scale;
+			var angle = Math.round(Math.atan2(b, a) * (180/Math.PI));
+				sbox.children[0].style.transform = `rotate(${angle}deg)`;
+				sbox.classList.remove('spin');
 				setTimeout(() => {
-				let spin = getComputedStyle(sbox.children[0]).transform;
-					sbox.classList.remove('spin');
+					sbox.children[0].style.transform = 'rotate(0deg)';
 					setTimeout(() => {
-						sbox.children[0].style.transform = spin;
-						setTimeout(() => {
-							sbox.children[0].style.transform = '';
-						}, 1);
-					}, 1);
-				}, 1);
+						sbox.children[0].style.transform = '';
+					}, 600);
+				}, 20);
 				return message('Failed loading the proxy for the given URL.', 1);
 			}
 			location.href = location.origin + result;
