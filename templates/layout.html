@@ -4,20 +4,22 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-	<link rel="stylesheet" href="{% static 'css/index.css' %}{{ version_query }}">
-	<link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-	<script src="{% static 'js/jquery.min.js' %}"></script>
+	<link rel="stylesheet" href="{% static 'css/normalize.css' %}{{ version_query }}">
+	<!-- <link defer rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}{{ version_query }}"> -->
+	<!-- <link rel="stylesheet" href="{% static 'css/index.css' %}{{ version_query }}"> -->
+	<link rel="stylesheet" href="{% static 'css/main.css' %}{{ version_query }}">
+	<!-- <link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+	<!-- <script src="{% static 'js/jquery.min.js' %}"></script> -->
 	<script src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
-	<script defer src="{% static 'js/bootstrap.min.js' %}"></script>
+	<!-- <script defer src="{% static 'js/bootstrap.min.js' %}"></script> -->
 	<link rel="canonical" href="{{ absolute_url }}" />
 	<link rel="manifest" href="{% static 'manifest.json' %}{{ version_query }}">
-	<link rel="shortcut icon" sizes="128x128" type="image/png" href="{% static 'logo_small.png' %}{{ version_query }}" defer />
-	<link rel="icon" sizes="128x128" type="image/png" href="{% static 'logo_small.png' %}{{ version_query }}" />
-	<link rel="icon" sizes="512x512" type="image/png" href="{% static 'logo.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="128x128" href="{% static 'safari-touch-128x128.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="256x256" href="{% static 'safari-touch-256x256.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="512x512" href="{% static 'safari-touch-512x512.png' %}{{ version_query }}" />
+	<link rel="shortcut icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" defer />
+	<link rel="icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="icon" sizes="512x512" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="128x128" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="256x256" href="{% static 'favicon.png' %}{{ version_query }}" />
+	<link rel="apple-touch-icon" sizes="512x512" href="{% static 'favicon.png' %}{{ version_query }}" />
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<meta name="theme-color" content="#2b2f33" />
@@ -49,102 +51,70 @@
 	{% include "history.html" %}
 </head>
 
-<body class="d-flex flex-column h-100">
+<body>
+	<div class="body-wrapper">
+	<div class="home-background"></div>
 	{% include "tracking.html" %}
 	{% load cache %} {% cache 1 sidebar %}
 	<header>
-		<nav class="navbar navbar-expand-lg">
-			<div class="container-fluid">
-				<a class="navbar-brand-logo col-lg-2" href="/" rel="home">
-					<img src="{% static 'img/Guya-moe.png' %}" alt="Cubari.moe">
-				</a>
-				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse col-lg-8" id="navbarSupportedContent">
-					<ul class="navbar-nav">
-						<li class="nav-item dropdown">
-							<a class="nav-link dropdown-toggle" href="#" id="readManga" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Read
-						</a>
-							<div class="dropdown-menu" aria-labelledby="readManga">
-								<a class="dropdown-item" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To/">Kaguya-sama: Love is War</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="/read/manga/We-Want-To-Talk-About-Kaguya/">We Want To Talk About Kaguya</a>
-								<a class="dropdown-item" href="/read/manga/Kaguya-Wants-To-Be-Confessed-To-Official-Doujin/">Official Doujin</a>
-								<a class="dropdown-item" href="//skythewood.blogspot.com/p/kaguya.html">Novel: Seven Mysteries of Shuchiin</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="/read/manga/Oshi-no-Ko/">Oshi no Ko</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="https://tachiyomi.org/extensions/#en.guya">Tachiyomi Plugin</a>
-							</div>
-						</li>
-						<li class="nav-item dropdown">
-							<a class="nav-link dropdown-toggle" href="#" id="fanContent" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Fan-content
-						</a>
-							<div class="dropdown-menu" aria-labelledby="fanContent">
-								<a class="dropdown-item" href="//kaguya-archive.tumblr.com/tagged/Fancomic">Fancomics</a>
-								<a class="dropdown-item" href="//kaguya-archive.tumblr.com/tagged/fandub">Fandub</a>
-								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" target="_blank" href="//kaguyasama-wa-kokurasetai.fandom.com/wiki/Kaguya-sama_wa_Kokurasetai_Wikia">Wiki</a>
-								<a class="dropdown-item" target="_blank" href="//kaguya-archive.tumblr.com/">Archive</a>
-							</div>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="/pages/">Kaguya Articles</a>
-						</li>
-						<div class="pusher"></div>
-						<li class="nav-item">
-							<a class="nav-link" href="/about/">About</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="//www.reddit.com/r/Kaguya_sama/"><img alt="/r/Kaguya_sama" src="/static/img/reddit.svg"></img>
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="//discord.gg/gAUAkzr"><img alt="Discord" src="/static/img/discord.svg"></img>
-							</a>
-						</li>
-						<li class="nav-item">
-							<div id="rs-widget"></div>
-						</li>
-					</ul>
-				</div>
-			</div>
-		</nav>
+		<span></span>
+		<a href="/" class="cubari-logo"></a>
+		<a class="rhombutton btn-help" id="help-button" onclick="openModal('about')"></a>
 	</header>
-	<script>
-		var links = document.querySelectorAll('header .nav-link');
-		[].forEach.call(links, link => {
-			if (link.classList.contains('dropdown-toggle')) {
-				var items;
-				if (link.nextElementSibling)
-					items = link.nextElementSibling.children;
-				else
-					return;
-				for (var i = 0; i < items.length; i++) {
-					if (document.location.href.indexOf(items[i].href) > -1) {
-						link.classList.add('s')
-					}
-				}
-			} else {
-				if (document.location.href.indexOf(link.href) > -1)
-					link.classList.add('s')
-			}
-		});
+	{% endcache %} {% block body %} {% endblock %}
+	<div id="layers">
+		<article id="about" class="hidden">
+			<a class="rhombutton btn-close"></a>
+			<h2>What's this thing?</h2>
+			<p>This website is an image proxy. It takes images from other websites and displays them in a better manga-oriented reader, Cubari.</p>
+			<p>Cubari does not host any of the content you are viewing. Just like your computer does not store or own all the images you see on the internet, Cubari is doing the same thing. We are simply a service that lets you view other data on the internet using our custom UI.</p>
+			<p>This reader was born while developing Guya.moe, the website to host Kaguya. After a while we added a lot of useful features, and now we branched it into a separate domain. We don't host anything, this is just a web image viewer that can parse other websites.</p>
+			<h2>What are the sites you can proxy?</h2>
+			<p>Currently it supports imgur, nhentai and custom appropriately-formatted JSON hosted on GitHub Gists. This is an advanced feature and will be explained in detail below.</p>
+			<h2>Are you the next Mangadex?</h2>
+			<p>No, but we might become a web version Tachiyomi. This is not a guarantee, though.</p>
+			<h2>Add [X]!</h2>
+			<p>For now we wont accept feature requests because we have a pretty straightforward roadmap that we need to realize first. Keep an eye on us, something new might pop up soon.</p>
+			<h2>What will happen to Guya?</h2>
+			<p>Nothing. We're still fans of Kaguya, so it will just stay there on Guya.moe and will continue utilizing our nice manga reader. We're just branching out the proxy stuff.</p>
 
-		function autosize() {
-			var el = this;
-			setTimeout(function() {
-				el.style.height = "";
-				el.style.height = Math.min(el.scrollHeight, 500) + "px";
-				el.nextElementSibling.style.top = Math.min(el.scrollHeight, 500) + "px";
-			}, 0);
+			<h2>Github Gists</h2>
+			<p>Supplying the reader with special code that tells the reader where the images are lets you display series of chapters. A thorough guide can be found in this <a href="https://www.reddit.com/r/manga/comments/mcicbp/sl_how_to_host_a_series_on_imgur_with_guyamoe/">reddit post</a> while we work on making a user-friendly constructor for this.</p>
+		</article>
+	</div>
+	<script>
+		const layerHandler = e => {
+		let article = e.target.closest('article');
+			if(article == null || e.target.classList.contains('btn-close')) {
+				closeModal();
+			}
 		}
 
+		const openModal = (modal) => {
+			document.getElementById(modal).classList.remove('hidden');
+		}
+
+		const closeModal = (m) => {
+		let children = Array.prototype.reverse.call(document.getElementById('layers').children);
+			for (var i = 0; i < children.length; i++) {
+			let l = children[i];
+				if(!l.classList.contains('hidden')) {
+					l.classList.add('hidden');
+					break;
+				}
+			}
+		}
+		document.getElementById('layers').addEventListener("click", layerHandler);
+
+		const toggleFocus = (e) => {
+			if(e.target.closest('.search-box')) {
+				document.body.classList.add('search-focus');
+			}else{
+				document.body.classList.remove('search-focus');
+			}
+		}
+		document.body.addEventListener("click", toggleFocus);
 	</script>
-	{% endcache %} {% block body %} {% endblock %}
 	<script>
 		isiOSAux = (window.navigator.standalone == true);
 		if(isiOSAux) {
@@ -161,5 +131,6 @@
 			}
 		}
 	</script>
+	</div>
 </body>
 </html>
