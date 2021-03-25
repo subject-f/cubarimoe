@@ -163,7 +163,8 @@ function themeHandler() {
 		let reset = Settings.get('thm.reset');
 		let theme = Settings.get('thm.theme');
 		if(theme === 'Custom')	this.setTheme(Settings.get('thm.primaryCol'), Settings.get('thm.readerBg'), Settings.get('thm.accentCol'), Settings.get('thm.textCol'));
-		else if (theme === 'Dark')	this.setTheme('#3a3f44', '#272b30', '#b2dffb','#eeeeee');
+		else if (theme === 'Cubari') this.setTheme('#28292B', '#000000', '#B73636','#EEEEEE');
+		else if (theme === 'Classic') this.setTheme('#3a3f44', '#272b30', '#b2dffb','#eeeeee');
 		else if (theme === 'Reaper') this.setTheme('#272836', '#121223', '#487DE4', '#EEEEEE');
 		else if (theme === 'Zaibatsu') this.setTheme('#1D1D1D', '#000000', '#BA1F1F', '#EEEEEE');
 		else if (theme === 'Light') this.setTheme('#F1F4FF', '#FFFFFF', '#5889F0','#2B2B2B');
@@ -232,9 +233,9 @@ function themeHandler() {
 	this.resetCustom = () => {
 		Settings.set('thm.reset', false);
 		if(Settings.get('thm.theme') === 'Custom') {
-			Settings.set('thm.primaryCol', '#3A3F44');
-			Settings.set('thm.readerBg', '#272B30');
-			Settings.set('thm.accentCol', '#B2DFFB');
+			Settings.set('thm.primaryCol', '#28292B');
+			Settings.set('thm.readerBg', '#000000');
+			Settings.set('thm.accentCol', '#B73636');
 			Settings.set('thm.textCol', '#EEEEEE');
 		}
 	}
@@ -722,10 +723,11 @@ function SettingsHandler(){
 	.newSetting({
 		addr: 'thm.theme',
 		prettyName: 'Reader Theme',
-		options: ['Dark', 'Reaper', 'Zaibatsu', 'Light', 'Custom'],
-		default: 'Dark',
+		options: ['Cubari', 'Classic', 'Reaper', 'Zaibatsu', 'Light', 'Custom'],
+		default: 'Cubari',
 		strings: {
-			Dark: 'Dark',
+			Cubari: 'Cubari',
+			Classic: 'Classic',
 			Reaper: 'Reaper',
 			Light: 'Light',
 			Zaibatsu: 'Zaibatsu',
@@ -1922,7 +1924,7 @@ function UI_ReaderImageView(o) {
 					url: images[index],
 					index: index,
 				}))
-			})
+			}).S.link(this)
 		);
 
 		this.imageList = [];
@@ -2279,6 +2281,7 @@ const SCROLL_X = 3;
 		if(e.type == 'click') {
 			switch (areas.indexOf(e.pageX)) {
 				case 1:
+					if(Settings.get('lyt.direction') == 'ttb') break;
 					(Settings.get('lyt.direction') == 'rtl')?
 						this.next(e):
 						this.prev(e);
@@ -2289,6 +2292,7 @@ const SCROLL_X = 3;
 						Settings.cycle('apr.selPinned', undefined, undefined, true); //RMD: notip
 					break;
 				case 4:
+					if(Settings.get('lyt.direction') == 'ttb') break;
 					(Settings.get('lyt.direction') == 'rtl')?
 						this.prev(e):
 						this.next(e);
@@ -2352,9 +2356,15 @@ const SCROLL_X = 3;
 
 	this.resizeSensor = new ResizeSensor(this.$, this.updateWides);
 
-	// this.S.mapIn({
-	// 	'imageWidth': this.
-	// })
+	this.S.mapIn({
+	 	'imageDimensions': (a,b) => {
+	 		if(a.h/a.w > 3 && !this.webtoonPrompt) {
+	 			this.webtoonPrompt = true;
+	 			if(Settings.get('lyt.direction') == 'ttb') return;
+	 			Loda.display('webtoon');
+	 		}
+	 	}
+	 })
 }
 
 
@@ -2418,7 +2428,7 @@ function UI_ReaderImageWrapper(o) {
 		'imageWidth': this.checkTooWide
 	})
 	this.S.proxyOut('loaded');
-	this.S.proxyOut('imageHeight');
+	this.S.proxyOut('imageDimensions');
 }
 
 
@@ -2521,7 +2531,7 @@ function UI_ReaderImage(o) {
 		this.RAF = requestAnimationFrame(this.watchImageDimensions);
 		if(this.$.naturalWidth > 0) {
 			this.S.out('imageWidth', this.$.offsetWidth);
-			this.S.out('imageHeight', this.$.offsetHeight);
+			this.S.out('imageDimensions', {h: this.$.offsetHeight, w: this.$.offsetWidth});
 			cancelAnimationFrame(this.RAF);
 			this.RAF = null;
 			return;
@@ -2814,7 +2824,9 @@ function UI_LodaManager(o) {
 		test: new UI_Loda().S.link(this),
 		search: new UI_Loda_Search().S.link(this),
 		settings: new UI_Loda_Settings().S.link(this),
-		jump: new UI_Loda_Jump().S.link(this)
+		jump: new UI_Loda_Jump().S.link(this),
+		notice: new UI_Loda_Notice().S.link(this),
+		webtoon: new UI_Loda_Webtoon().S.link(this),
 	}
 
 	this.scrollTop = 0;
@@ -2882,6 +2894,48 @@ function UI_Loda(o) {
 
 	this._.close.onclick = this.close.bind(this)
 }
+
+function UI_Loda_Notice(o) {
+	o=be(o);
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Notice'].concat(o.kind || []),
+		name: 'Notice',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header">Notice</header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				You have been redirected to cubari.moe. This is where the image proxy lives now. Happy reading!
+			</content><button data-bind="button"></button></div>`
+	});
+	this.name = 'Notice';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.button.onclick = this.close.bind(this);
+
+}	
+
+function UI_Loda_Webtoon(o) {
+	o=be(o);
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Webtoon'].concat(o.kind || []),
+		name: 'Long images detected',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header"></header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				Switch to webtoon mode? You can use the options menu to switch reading direction later.
+			</content>
+			<div class="buttons">
+			<button data-bind="yes" class="yes"></button><button data-bind="no" class="no"></button>
+			</div></div>`
+	});
+	this.name = 'Webtoon';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.no.onclick = this.close.bind(this);
+	this._.yes.onclick = () => {
+		Settings.set('lyt.direction', 'ttb');
+		Settings.set('lyt.gap', false);
+		this.close();
+	}
+
+}	
 
 function UI_Loda_Search(o) {
 	o=be(o);
@@ -3616,18 +3670,18 @@ function UI_About(o) {
 	UI.call(this, Object.assign(o, {
 		kind: ['About'].concat(o.kind || []),
 		html: `<div>
-			<img src="/static/img/Guya-moe.png">
-			<p class="muted">Version: v2.20.20200820</p>
+			<p class="muted"> </p>
+			<p class="muted"> </p>
+			<p class="muted">Powered by</p>
+			<div class="cubari" data-bind="cubari"><div></div></div>
 			<hr>
 			<p>Design, UX: Algoinde</p>
 			<p>Reader code: Algoinde, funkyhippo, Einlion</p>
 			<p>Backend: appu</p>
 			<hr>
-			<a href="https://github.com/appu1232/guyamoe" target="_blank">Github</a>
-			<a href="https://discord.gg/4WPqwSY" target="_blank">Discord</a>
+			<a href="https://ko-fi.com/cubari" target="_blank">Send coffee :P</a>
 			<hr>
-			<p class="muted">Powered by</p>
-			<div class="cubari" data-bind="cubari"><div></div></div>
+			<p style="max-width: 15em; text-align: center; line-height: 1.5">Cubari does not host any of the content you are viewing. Just like your computer does not store or own all the images you see on the internet, Cubari is doing the same thing. We are simply a service that lets you view other data on the internet using our custom UI.</p>
 		</div>`
 	}));
 
@@ -3693,8 +3747,19 @@ ThemeManager.S.link(Settings);
 //Settings.sendInit();
 ThemeManager.themeUpdated();
 
-if(window.location.hash == '#s') Loda.display('search');
+function _redirects (){
+	if(window.location.hash == '#s') Loda.display('search');
+	if(window.location.hash == '#redirect') {
+		if(localStorage) {
+			if(localStorage.getItem('redirected')) return window.location.hash = '';
+			localStorage.setItem('redirected', 1);
+		}
+		window.location.hash = '';
+		Loda.display('notice');
+	}
+}
 
+_redirects();
 
 function debug() {
 	var el = document.createElement('div');
