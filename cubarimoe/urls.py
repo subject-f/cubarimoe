@@ -47,7 +47,6 @@ urlpatterns = [
         ),
     ),
     path(f"{settings.PROXY_BASE_PATH}/", include("proxy.urls")),
-    path(f"proxy/", include("proxy.urls")),
 ]
 
 handler404 = "homepage.views.handle404"
