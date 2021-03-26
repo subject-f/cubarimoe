@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.utils.decorators import decorator_from_middleware
 from django.views.decorators.cache import cache_control
+from django.http.response import HttpResponsePermanentRedirect
 
 from homepage.middleware import ForwardParametersMiddleware
 from reader.middleware import OnlineNowMiddleware
@@ -66,3 +67,7 @@ def about(request):
 
 def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
+
+
+def proxy_redirect(request, path):
+    return HttpResponsePermanentRedirect(f"/read/{path}")
