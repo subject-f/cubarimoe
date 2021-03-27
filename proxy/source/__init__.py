@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, re_path
 from django.views.decorators.cache import cache_control
-from django.utils.html import escape
+from django.utils.html import conditional_escape
 
 from .data import *
 from .helpers import *
@@ -39,7 +39,7 @@ class ProxySource(metaclass=abc.ABCMeta):
         return f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
 
     def process_description(self, desc):
-        return escape(desc)
+        return conditional_escape(desc)
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def reader_view(self, request, meta_id, chapter, page=None):
