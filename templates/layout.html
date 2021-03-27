@@ -11,6 +11,7 @@
 	<!-- <link defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
 	<!-- <script src="{% static 'js/jquery.min.js' %}"></script> -->
 	<script src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
+	<script src="{% static 'js/UI2.js' %}{{ version_query }}"></script>
 	<!-- <script defer src="{% static 'js/bootstrap.min.js' %}"></script> -->
 	<link rel="canonical" href="{{ absolute_url }}" />
 	{% include "meta.html" %}
@@ -47,14 +48,15 @@
 	{% include "tracking.html" %}
 	{% load cache %} {% cache 1 sidebar %}
 	<header>
-		<span></span>
+		<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
 		<a href="/" class="cubari-logo"></a>
-		<a class="rhombutton btn-help" id="help-button" onclick="openModal('about')"></a>
+		<a class="rhombutton icon-help" id="help-button" onclick="openModal('about')"></a>
 	</header>
 	{% endcache %} {% block body %} {% endblock %}
+	</div>
 	<div id="layers">
 		<article id="about" class="hidden">
-			<a class="rhombutton btn-close"></a>
+			<a class="rhombutton icon-close"></a>
 			<h2>What's this thing?</h2>
 			<p>This website is an image proxy. It takes images from other websites and displays them in a better manga-oriented reader, Cubari.</p>
 			<p>Cubari does not host any of the content you are viewing. Just like your computer does not store or own all the images you see on the internet, Cubari is doing the same thing. We are simply a service that lets you view other data on the internet using our custom UI.</p>
@@ -70,20 +72,19 @@
 
 			<h2>Github Gists</h2>
 			<p>Supplying the reader with special code that tells the reader where the images are lets you display series of chapters. A thorough guide can be found in this <a href="https://www.reddit.com/r/manga/comments/mcicbp/sl_how_to_host_a_series_on_imgur_with_guyamoe/">reddit post</a> while we work on making a user-friendly constructor for this.</p>
-			<h2>Syncing Reading History</h2>
-			<div id="rs-widget"></div>
 		</article>
 	</div>
 	<script>
 		const layerHandler = e => {
 		let article = e.target.closest('article');
-			if(article == null || e.target.classList.contains('btn-close')) {
+			if(article == null || e.target.classList.contains('icon-close')) {
 				closeModal();
 			}
 		}
 
 		const openModal = (modal) => {
 			document.getElementById(modal).classList.remove('hidden');
+			document.body.style.overflow = 'hidden';
 		}
 
 		const closeModal = (m) => {
@@ -95,6 +96,7 @@
 					break;
 				}
 			}
+			document.body.style.overflow = '';
 		}
 		document.getElementById('layers').addEventListener("click", layerHandler);
 
@@ -123,6 +125,5 @@
 			}
 		}
 	</script>
-	</div>
 </body>
 </html>

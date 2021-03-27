@@ -9,7 +9,7 @@
 
 @font-face {
 	font-family: 'coobaree';
-	src: url('../fonts/icomoon.woff') format('woff');
+	src: url('../fonts/icomoon.woff?eee') format('woff');
 	font-weight: normal;
 	font-style: normal;
 	font-display: block;
@@ -32,20 +32,25 @@
 	font-size: 1.6em;
 }
 
-.btn-help:before {
+.icon-help:before {
 	content: "?";
 }
 
-.btn-close:before {
+.icon-close:before {
 	content: "×";
 	font-size: 1.5em;
+}
+.icon-pin:before {
+	content: "\e906";
+}
+.icon-close:before {
+	content:"\e907";
 }
 
 .cubari-logo:before {
 	content: "c";
 	font-family: 'coobaree';
 	display: inline-block;
-	transform: rotate(-31deg);
 }
 
 html * {
@@ -71,6 +76,16 @@ body {
 	position: relative;
 	color: white;
 	padding: 0;
+}
+
+p {
+	line-height: 1.5;
+}
+
+code {
+	font-family: monospace;
+	font-size: 1.2em;
+	margin: 0 0.2em;
 }
 
 .home body {
@@ -123,6 +138,14 @@ body {
 	height: 100%;
 }
 
+.donate {
+	visibility: hidden;
+}
+
+.home .donate {
+	visibility: visible;
+}
+
 header {
 	flex-grow: 0;
 	width: 100%;
@@ -131,9 +154,12 @@ header {
 	align-items: center;
 }
 
-header > span:first-child {
-	width: 7rem;
-	display: inline-block;
+header > * {
+	width: 33%;
+}
+
+header .donate {
+	margin-left: 3rem;
 }
 
 header .cubari-logo {
@@ -165,13 +191,14 @@ header .cubari-logo:hover {
 }
 
 #main .header-wrapper h1 {
+	margin-top: 0;
+	margin-right: -0.7em;
+	margin-bottom: 0.1rem;
+	user-select: none;
+	font-size: 3.5rem;
 	font-weight: 100;
 	letter-spacing: 0.7em;
 	text-align: center;
-	margin-right: -0.7em;
-	font-size: 3.5rem;
-	margin-bottom: 0.1rem;
-	user-select: none;
 }
 
 #main .header-wrapper h2 {
@@ -186,9 +213,9 @@ header .cubari-logo:hover {
 
 .search-focus .header-wrapper {
 	opacity: 0;
-	margin-top: -100%;
 }
 
+.search-focus .donate,
 .search-focus footer {
 	opacity: 0;
 	pointer-events: none;
@@ -287,6 +314,7 @@ header .cubari-logo:hover {
 	justify-content: center;
 	align-items: center;
 	background: black;
+	font-family: 'Open Sans', 'coobaree', 'guya';
 }
 
 .rhombutton:before {
@@ -309,7 +337,8 @@ header .cubari-logo:hover {
 footer {
 	display: flex;
 	justify-content: space-between;
-	padding: 0 4rem;
+	padding: 0 3rem;
+	align-items: flex-start;
 }
 
 footer a {
@@ -317,7 +346,7 @@ footer a {
 	max-height: 100%;
 }
 
-footer .donate span {
+.donate span {
 	font-size: 1.8em;
 	position: relative;
 	top: 0.09em;
@@ -325,7 +354,7 @@ footer .donate span {
 }
 
 footer .guya img {
-	width: 140px;
+	width: 7rem;
 }
 
 #layers {
@@ -349,7 +378,7 @@ footer .guya img {
 	z-index: 2;
 }
 
-#layers article .btn-close {
+#layers article .icon-close {
 	position: fixed;
 	cursor: pointer;
 	top: 0;
@@ -370,7 +399,7 @@ article h2 {
 }
 
 .hidden {
-	display: none;
+	display: none !important;
 }
 
 /* ---- series listing css ---- */
@@ -391,15 +420,15 @@ article h2 {
 }
 
 .series-content:after {
+/*#history:after {*/
 	content: "c";
 	font-family: "coobaree";
 	display: block;
-	width: 100%;
 	text-align: center;
+	width: 100%;
 	padding: 1rem 0 2rem;
 	font-size: 3rem;
 	opacity: 0.1;
-	transform: rotate(-31deg);
 }
 
 .series-content .sidecard {
@@ -734,6 +763,7 @@ aside .table td, aside .table th {
 	font-size: 0.8em;
 	margin: 0 1rem 0 0;
 	user-select: none;
+	cursor: pointer;
 }
 .manga-link.external {
 	margin: 0;
@@ -767,6 +797,331 @@ aside .table td, aside .table th {
 }
 .manga-link.chapter.no-chapter .manga-link-chap {
 	display: none;
+}
+
+.manga-card {
+	display: block;
+	border-radius: 5px;
+	background: #141414;
+	box-shadow: 0px 2px 10px rgba(0,0,0,0.5);
+	overflow: hidden;
+	margin: 0rem 0 1rem 0;
+	color: #eee;
+	background-size: cover;
+	background-repeat: no-repeat;
+	position: relative;
+	font-size: 1em;
+	flex-grow: 1;
+	transform: translateZ(0);
+}
+
+.manga-card {
+	min-height: 9em;
+}
+.manga-card picture img { 
+	height: 9em;
+}
+
+.manga-card:before {
+	content:"";
+	display: block;
+	position: absolute;
+	top: 4em;
+	left: 4em;
+	right: 4em;
+	bottom: 4em;
+	outline: 2px solid rgba(0,0,0,1);
+	background: rgba(0,0,0,1);
+	box-shadow: 0px 0px 4em 6em rgba(0,0,0,1);
+	z-index: 0;
+	opacity: 0.95;
+	background-clip: padding-box;
+}
+
+.manga-card > * {
+	z-index: 2;
+	position: relative;
+}
+
+.manga-card > a.picture,
+.manga-card > picture {
+	display: inline-block;
+	float: left;
+	margin-right: 2em;
+	z-index: 4;
+}
+
+.manga-card picture:after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	box-shadow: 3em 3em 3em -3em rgba(10,10,10,0.7) inset;
+}
+
+.manga-card article {
+	padding-top: 1em;
+	padding-right: 2em;
+	padding-left: 1em;
+	padding-bottom: 1em;
+	flex-direction: column;
+}
+
+.manga-card article h1 {
+	font-size: 2em;
+	line-height: 1.5;
+	display: inline;
+	margin-right: auto;
+}
+.manga-card article > a:hover h1 {
+	text-decoration: underline;
+}
+.manga-card article h2 {
+	font-size: 0.9em;
+	color: #aaa;
+	font-weight: normal;
+	line-height: 1.5;
+	margin-top: 0.5em;
+}
+.manga-card article p {
+	margin: 0.4em 0 0 0;
+	color: #ddd;
+	font-size: 0.9em;
+}
+
+.manga-card.proxy picture img {
+	max-width: 6.5rem;
+	min-width: 6.5rem;
+	object-fit: cover;
+}
+
+.manga-card.smol {
+	margin: 0.75rem 0.5rem;
+	transition: top 0.3s ease;
+	background-position: 50% 30%;
+	text-decoration: none;
+	position: relative;
+	top: 0px;
+	outline: none;
+	display: flex;
+}
+
+.manga-card.smol .bloor {
+	position: absolute;
+	top: -10px;
+	left: -10px;
+	right: -10px;
+	bottom: -10px;
+	background:	rgba(15,15,15,1);
+	filter: blur(20px);
+	opacity: 0.3;
+	box-shadow: none !important;
+
+}
+.manga-card.smol:hover .bloor {
+	opacity: 0.2;
+}
+.manga-card.smol:hover picture {
+	opacity: 0.7;
+}
+
+.manga-card.smol h2 {
+	font-size: 1.3em;
+	color: white;
+	line-height: 1.5;
+	margin-top: 0;
+}
+.manga-card.smol h3 {
+	font-size: 1em;
+}
+.manga-card.smol p {
+	color: #ccc;
+}
+
+.manga-card.smol picture {
+	margin-right: 1em;
+	float: none;
+}
+.manga-card.smol article {
+	padding-top: 0.5em;
+	padding-right: 1em;
+	flex-grow: 1;
+}
+.manga-card.smol .button-drawer {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	width: 0;
+	overflow: hidden;
+}
+.manga-card.smol:hover .button-drawer {
+	width: auto;
+	min-width: 3.8rem;
+}
+.manga-card.smol .button-drawer > i {
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	font-size: 1.4em;
+	width: 100%;
+}
+.manga-card.smol .button-drawer > i:hover {
+	background: rgba(0,0,0,0.2);
+	color: white;
+}
+
+.manga-card.full {
+	flex-basis: 100%;
+	flex-shrink: 1;
+	max-width: 100%;
+}
+
+.history-scroller {
+	overflow: hidden;
+	padding-bottom: 1em;
+	position: relative;
+	text-shadow: 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black, 0px 0px 2px black;
+	letter-spacing: 3px;
+	padding-left: 3px;
+	font-size: 0.9em;
+	cursor: pointer;
+	user-select: none;
+}
+
+.history-scroller:before {
+	content: "";
+	display: block;
+	position: absolute;
+	width: 0.8rem;
+	height: 0.8rem;
+	border-right: 1px solid white;
+	border-bottom: 1px solid white;
+	transform: translateX(-50%) rotate(45deg);
+	transform-origin: 50% 50%;
+	left: 50%;
+	z-index: -1;
+	margin-top: 1em;
+}
+
+#history {
+	padding: 1rem;
+	padding-top: 1rem;
+	box-shadow: 0px 39px 10px -40px black inset;
+	margin: 0 auto;
+}
+
+#history .history-button {
+	margin: 2rem 0 0;
+	font-size: 1.3em;
+}
+
+#history .HistoryView .history-header {
+	justify-content: space-between;
+}
+#history .HistoryView .history-header .manga-link {
+	font-size: 0.5em;
+	margin: 0;
+	font-weight: normal;
+}
+
+#history .HistoryView > h2 {
+	padding: 0 0.75rem;
+	font-weight: normal;
+	font-size: 1.9em;
+}
+
+#history .HistoryView .pinned-header,
+#history .HistoryView .pinned,
+#history .HistoryView .history-header,
+#history .HistoryView .history {
+	display: none;
+}
+#history .HistoryView.has-pinned .pinned-header,
+#history .HistoryView.has-history .history-header {
+	align-items: center;
+	display: flex;
+	max-width: 150rem;
+	margin: 2rem auto 0.2rem;
+}
+#history .HistoryView.has-history .history,
+#history .HistoryView.has-pinned .pinned {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+#history .HistoryView .List > div {
+	flex-grow: 1;
+	flex-basis: 33%;
+	flex-shrink: 0;
+	min-width: 32em;
+	max-width: 50em;
+}
+
+#history .HistoryView .List:before,
+#history .HistoryView .List:after {
+	content: "";
+	box-sizing: border-box;
+	box-shadow: 0 1px 8px 1px rgba(0,0,0,0.4) inset; 
+	display: inline-block;
+	flex-grow: 1;
+	flex-basis: 33%;
+	flex-shrink: 0;
+	min-width: 32em;
+	border: 0px solid transparent;
+	border-width: 0.75rem 0.5rem 0.75rem 0.5rem;
+	border-radius: 1rem;
+	max-width: 50em;
+}
+
+#history .HistoryView .List[data-things="2"]:before {
+	display: none;
+}
+#history .HistoryView .List[data-things="3"]:after {
+	display: none;
+}
+
+@media (max-width: 80em) {
+	#history .HistoryView .List:after {
+		display: none;
+	}
+}
+@media (max-width: 120em) {
+	#history .HistoryView .List:before {
+		display: none;
+	}
+}
+
+.history-desc,
+.history-sync {
+	max-width: 650px;
+	margin: 0 auto;
+}
+
+.history-desc {
+	padding-top: 3rem;
+}
+
+#history #rs-widget {
+	display: flex;
+	justify-content: center;
+	margin: 2rem 0 2rem 0;
+}
+
+#history .rs-widget {
+	box-sizing: content-box;
+	padding: 0.7rem 0rem 0.5rem;
+	border: 1px solid rgba(255,255,255,0.2);
+	border-radius: 4px;
+}
+
+#history #rs-main-logo-remotestorage {
+	margin: 0 0.8rem;
+}
+#history .rs-widget-icon {
+	text-align: center;
 }
 
 

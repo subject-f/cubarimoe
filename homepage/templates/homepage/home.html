@@ -19,8 +19,8 @@
 	</section>
 </div>
 <footer>
-	<a class="donate" href="https://ko-fi.com/cubari"><span>‹</span>&nbsp;&nbsp;send coffee&nbsp;&nbsp;<span>›</span></a>
 	<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
+	<div class="history-scroller" onclick="window.scrollTo({top: document.getElementById('history').offsetTop, behavior: 'smooth'})">HISTORY</div>
 </footer>
 <script src="{% static 'js/main.js' %}"></script>
 <script>
@@ -39,4 +39,6 @@
 		`We're under heavy load, please come back later...<br>Just kidding.`,
 	])[Math.round(Math.random()*10)]
 </script>
+</div>
+<div id="history">
 {% endblock %}

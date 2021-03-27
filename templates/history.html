@@ -188,19 +188,23 @@
 
     const enable = () => {
       let settings = localStorage.getItem("settings");
+      let redirected = localStorage.getItem("redirected");
+      let storageOnce = localStorage.getItem("storageOnce");
       localStorage.clear();
-      if (settings) {
-        localStorage.setItem("settings", settings);
-      }
+      if (settings) localStorage.setItem("settings", settings);
+      if (redirected) localStorage.setItem("redirected", redirected);
+      if (storageOnce) localStorage.setItem("storageOnce", storageOnce);
       localStorage.setItem(STORAGE_KEY, true);
     };
 
     const disable = () => {
       let settings = localStorage.getItem("settings");
+      let redirected = localStorage.getItem("redirected");
+      let storageOnce = localStorage.getItem("storageOnce");
       localStorage.clear();
-      if (settings) {
-        localStorage.setItem("settings", settings);
-      }
+      if (settings) localStorage.setItem("settings", settings);
+      if (redirected) localStorage.setItem("redirected", redirected);
+      if (storageOnce) localStorage.setItem("storageOnce", storageOnce);
     };
 
     const pushSeries = async (slug, coverUrl, source, url, title) => {
@@ -228,6 +232,15 @@
     const removeSeries = async (slug, source) => {
       await sync();
       return remoteStorage[RS_PATH].removeSeries(slug, source);
+    };
+
+    const removeAllUnpinnedSeries = async () => {
+      let series = await globalHistoryHandler.getAllUnpinnedSeries();
+      if(series) {
+        Array.prototype.forEach.call(series, srs => {
+            removeSeries(srs.slug, srs.source)
+        })
+      }
     };
 
     const addChapters = async (slug, source, chapters) => {
@@ -311,6 +324,7 @@
       enabled,
       pushSeries,
       removeSeries,
+      removeAllUnpinnedSeries,
       addChapters,
       addChapter,
       removeChapter,
@@ -376,15 +390,11 @@
       // Do nothing, silently fail.
     }
   };
-
-  // Widget management should be on the templates but eh it's easier to put it in one place
-  window.addEventListener("load", () => {
-    if (!globalHistoryHandler.enabled()) {
-      globalHistoryHandler.toggle.enable();
-    }
-    if (document.getElementById("rs-widget")) {
-      let widget = new Widget(remoteStorage, {autoCloseAfter: 10});
-      widget.attach("rs-widget");
-    }
-  });
+window.addEventListener("load", async () => {
+  if((await localStorage.getItem('storageOnce')) == "1") return;
+  if (!globalHistoryHandler.enabled()) {
+    globalHistoryHandler.toggle.enable();
+    localStorage.setItem('storageOnce', "1")
+  }
+})
 </script>
