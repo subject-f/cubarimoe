@@ -277,6 +277,7 @@ function UI(o) {
 	}
 
 	this.destroy = () => {
+		alg.createBin();
 		alg.discardElement(this.$);
 		for(var key in this._) {
 			if(this._[key]._struct) this._[key]._struct.destroy();
