@@ -53,9 +53,6 @@ def home(request):
 def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
 
-def handle500(request):
-    return render(request, "homepage/how_cute_404.html", status=500)
-
 
 def proxy_redirect(request, path):
     return HttpResponsePermanentRedirect(f"/read/{path}")
