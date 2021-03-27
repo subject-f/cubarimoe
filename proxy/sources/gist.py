@@ -4,6 +4,7 @@ import random
 
 from django.shortcuts import redirect
 from django.urls import re_path
+from django.utils.html import conditional_escape
 
 from ..source import ProxySource
 from ..source.data import SeriesAPI, SeriesPage
@@ -84,9 +85,9 @@ class Gist(ProxySource):
             if not title or not description:
                 return None
 
-            artist = api_data.get("artist", "")
-            author = api_data.get("author", "")
-            cover = api_data.get("cover", "")
+            artist = conditional_escape(api_data.get("artist", ""))
+            author = conditional_escape(api_data.get("author", ""))
+            cover = conditional_escape(api_data.get("cover", ""))
 
             groups_set = {
                 group
@@ -98,13 +99,13 @@ class Gist(ProxySource):
 
             chapter_dict = {
                 ch: {
-                    "volume": data.get("volume", "Uncategorized"),
-                    "title": data.get("title", ""),
+                    "volume": conditional_escape(data.get("volume", "Uncategorized")),
+                    "title": conditional_escape(data.get("title", "")),
                     "groups": {
                         groups_map[group]: metadata
                         for group, metadata in data["groups"].items()
                     },
-                    "last_updated": data.get("last_updated", None),
+                    "last_updated": conditional_escape(data.get("last_updated", None)),
                 }
                 for ch, data in api_data["chapters"].items()
             }
