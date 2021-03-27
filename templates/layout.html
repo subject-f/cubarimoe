@@ -13,17 +13,7 @@
 	<script src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
 	<!-- <script defer src="{% static 'js/bootstrap.min.js' %}"></script> -->
 	<link rel="canonical" href="{{ absolute_url }}" />
-	<link rel="manifest" href="{% static 'manifest.json' %}{{ version_query }}">
-	<link rel="shortcut icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" defer />
-	<link rel="icon" sizes="128x128" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
-	<link rel="icon" sizes="512x512" type="image/png" href="{% static 'favicon.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="128x128" href="{% static 'favicon.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="256x256" href="{% static 'favicon.png' %}{{ version_query }}" />
-	<link rel="apple-touch-icon" sizes="512x512" href="{% static 'favicon.png' %}{{ version_query }}" />
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<meta name="theme-color" content="#2b2f33" />
-	<meta name="format-detection" content="telephone=no">
+	{% include "meta.html" %}
   {% block meta %}
   {% if page_title %}
   <title>{{ page_title }} | {{ brand.name }}</title>
