@@ -22,7 +22,7 @@
 	<a class="guya" href="https://guya.moe/"><img src="{% static 'img/gmprj.png' %}" /></a>
 	<div class="history-scroller" onclick="window.scrollTo({top: document.getElementById('history').offsetTop, behavior: 'smooth'})">HISTORY</div>
 </footer>
-<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/main.js' %}{{ version_query }}"></script>
 <script>
 	document.querySelector('.header-wrapper h2').innerHTML =
 	([
