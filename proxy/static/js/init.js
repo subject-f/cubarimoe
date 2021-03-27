@@ -1073,7 +1073,7 @@ function UI_Tooltippy(o) {
 	this.set = function(text) {
 		if(text.length < 1) return;
 		text = text.replace(/\[(.|Ctrl|Shift|Meta|Alt)\]/g, '<span class="Tooltippy-key">$1</span>');
-		this.$.textContent = text;
+		this.$.innerHTML = text;
 		if(!this.attached || IS_MOBILE) {
 			this.$.style.display = 'block';
 			if(IS_MOBILE) {
@@ -1237,7 +1237,6 @@ function UI_Reader(o) {
 		this.SCP.lastChapter = this.current.chaptersIndex[this.current.chaptersIndex.length - 1];
 		this.SCP.firstChapter = this.current.chaptersIndex[0];
 		let path = window.location.pathname.split("/").map(e => decodeURIComponent(e));
-		// Potentially unsafe, but backend should sanitize titles
 		this._.title.innerHTML = `<a href="${path.splice(0, path.indexOf(decodeURIComponent(this.current.slug))).join("/")}/${this.current.slug}/">${this.current.title}</a>`;
 		this.$.querySelector('aside').classList.remove('unload');
 	var chapterElements = [];
@@ -1630,7 +1629,7 @@ function UI_Reader(o) {
 			'nextPage': () => this.nextPage(),
 			'prevPage': () => this.prevPage(),
 			'newPageIndex': (page) => {
-				this._.image_description.textContent = this.current.chapters[this.SCP.chapter].descriptions[this.SCP.group][page];
+				this._.image_description.innerHTML = this.current.chapters[this.SCP.chapter].descriptions[this.SCP.group][page];
 			}
 		})[event.type](event.data)
 	}
@@ -2576,7 +2575,7 @@ function UI_PageSelector(o) {
 			for (var i = 0; i < SCP.pageCount; i++) {
 			var key = new UI_Dummy();
 				// key.$.onmouseover = e => this.hoverChange(e);
-				key.$.textContent = i+1;
+				key.$.innerHTML = i+1;
 				keys.push(key);
 			}
 			this.keys.clear().add(keys)
@@ -2590,7 +2589,7 @@ function UI_PageSelector(o) {
 				key.$.classList.remove('shown');
 			}
 		})
-		this._.page_keys_count.textContent = SCP.page + 1 + '/' + (SCP.pageCount);
+		this._.page_keys_count.innerHTML = SCP.page + 1 + '/' + (SCP.pageCount);
 	}
 	this.proxy = function(i) {
 		this.S.out('page', i);
@@ -2717,10 +2716,10 @@ function UI_MessageBox(o) {
 				this.$.classList.remove('fadeOut');
 			}, 1)
 		}
-		this.$.textContent = text;
+		this.$.innerHTML = text;
 		this.timers.push(setTimeout(() => this.$.classList.add('fadeOut'), time));
 		this.timers.push(setTimeout(() => {
-			this.$.textContent = '';
+			this.$.innerHTML = '';
 			this.allowedStyles.forEach(style => this.$.classList.remove(style));
 		}, time + this.fadeTime));
 	}
@@ -2808,7 +2807,7 @@ function UI_SimpleListItem(o) {
 	this.value = o.value;
 	this.$.value = o.value;
 	if(this.$.innerHTML.length < 1)
-		this.$.textContent = o.text || o.value || 'List Element';
+		this.$.innerHTML = (o.text || o.value || 'List Element');
 }
 
 
@@ -2835,7 +2834,7 @@ function UI_LodaManager(o) {
 	this.display = function(loda) {
 		this.open = true;
 		this.$.classList.remove('hidden');
-		this.$.textContent = '';
+		this.$.innerHTML = '';
 		this.$.appendChild(this.library[loda].$);
 
 		this.$.focus();
@@ -2849,7 +2848,7 @@ function UI_LodaManager(o) {
 
 	this.close = function() {
 		this.$.classList.add('hidden');
-		this.$.textContent = '';
+		this.$.innerHTML = '';
 		Reader.$.focus();
 		this.open = false;
 	}
@@ -2882,7 +2881,7 @@ function UI_Loda(o) {
 	});
 	Linkable.call(this);
 	this.manager = o.manager;
-	if(o.name) this._.header.textContent = o.name;
+	if(o.name) this._.header.innerHTML = o.name;
 
 	this.close = function() {
 		this.S.out('close');
@@ -3284,7 +3283,7 @@ function UI_ChapterUnit(o) {
 		node: this._.pages,
 		held: true
 	})
-	this._.title.textContent = (o.chapter.id + ' - ' + o.chapter.title).replace(new RegExp('('+o.substring+')', 'gi'), '<i>$1</i>');
+	this._.title.innerHTML = (o.chapter.id + ' - ' + o.chapter.title).replace(new RegExp('('+o.substring+')', 'gi'), '<i>$1</i>');
 	for(var group in o.chapter.images) {
 		this._.figure.style.backgroundImage = 'url('+(this.pages?o.chapter.previews[group][+this.pages[0]-1]:o.chapter.previews[group][0])+')';
 		break;
@@ -3380,7 +3379,7 @@ function UI_SettingUnit(o) {
 
 	this.setting = o.setting;
 
-	this._.header.textContent = this.setting.prettyName;
+	this._.header.innerHTML = this.setting.prettyName;
 	this.controls = new UI_SettingDisplay({
 		node: this._.field,
 		setting: this.setting
