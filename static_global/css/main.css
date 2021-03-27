@@ -159,7 +159,7 @@ header > * {
 }
 
 header .donate {
-	margin-left: 3rem;
+	margin-left: 2rem;
 }
 
 header .cubari-logo {
@@ -337,7 +337,7 @@ header .cubari-logo:hover {
 footer {
 	display: flex;
 	justify-content: space-between;
-	padding: 0 3rem;
+	padding: 0 2rem;
 	align-items: flex-start;
 }
 
