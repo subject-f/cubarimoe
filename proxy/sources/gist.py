@@ -80,8 +80,8 @@ class Gist(ProxySource):
             "text/plain"
         ):
             api_data = json.loads(resp.text)
-            title = api_data.get("title")
-            description = api_data.get("description")
+            title = conditional_escape(api_data.get("title"))
+            description = conditional_escape(api_data.get("description"))
             if not title or not description:
                 return None
 
@@ -90,7 +90,7 @@ class Gist(ProxySource):
             cover = conditional_escape(api_data.get("cover", ""))
 
             groups_set = {
-                group
+                conditional_escape(group)
                 for ch_data in api_data["chapters"].values()
                 for group in ch_data["groups"].keys()
             }
@@ -102,13 +102,25 @@ class Gist(ProxySource):
                     "volume": conditional_escape(data.get("volume", "Uncategorized")),
                     "title": conditional_escape(data.get("title", "")),
                     "groups": {
-                        groups_map[group]: metadata
+                        groups_map[conditional_escape(group)]: [
+                            {
+                                "src": conditional_escape(sub["src"]),
+                                "description": conditional_escape(sub["description"]),
+                            }
+                            if type(sub) is dict
+                            else conditional_escape(sub)
+                            for sub in metadata
+                        ]
+                        if type(metadata) is list
+                        else metadata
                         for group, metadata in data["groups"].items()
                     },
                     "last_updated": conditional_escape(data.get("last_updated", None)),
                 }
                 for ch, data in api_data["chapters"].items()
             }
+
+            # for ch in chapter_dict.items():
 
             chapter_list = [
                 [
