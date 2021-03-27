@@ -50,23 +50,11 @@ def home(request):
     )
 
 
-@cache_control(public=True, max_age=3600, s_maxage=300)
-@decorator_from_middleware(OnlineNowMiddleware)
-def about(request):
-    return render(
-        request,
-        "homepage/about.html",
-        {
-            "relative_url": "about/",
-            "template": "about",
-            "page_title": "About",
-            "version_query": settings.STATIC_VERSION,
-        },
-    )
-
-
 def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
+
+def handle500(request):
+    return render(request, "homepage/how_cute_404.html", status=500)
 
 
 def proxy_redirect(request, path):
