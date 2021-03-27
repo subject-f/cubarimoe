@@ -1629,7 +1629,7 @@ function UI_Reader(o) {
 			'nextPage': () => this.nextPage(),
 			'prevPage': () => this.prevPage(),
 			'newPageIndex': (page) => {
-				this._.image_description.innerHTML = this.current.chapters[this.SCP.chapter].descriptions[this.SCP.group][page];
+				this._.image_description.textContent = this.current.chapters[this.SCP.chapter].descriptions[this.SCP.group][page];
 			}
 		})[event.type](event.data)
 	}
