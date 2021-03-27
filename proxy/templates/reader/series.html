@@ -1,14 +1,14 @@
 {% extends "layout.html" %} {% load static %}
 {% block meta %}
-<title>Read {{ series | safe }} | {{ brand.name }}</title>
-<meta name="twitter:description" content="Read {{ series | safe }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
-<meta property="og:description" content="Read {{ series | safe }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
-<meta name="description" content="Read {{ series | safe }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<title>Read {{ series }} | {{ brand.name }}</title>
+<meta name="twitter:description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<meta property="og:description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<meta name="description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
 <meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="Read {{ series | safe }} | {{ brand.name }}" />
+<meta name="twitter:title" content="Read {{ series }} | {{ brand.name }}" />
 <meta name="twitter:image" content="{{ brand.image_url }}" />
 <meta property="og:image" content="{{ brand.image_url }}" />
-<meta name="author" content="{{ author | safe }}" />
+<meta name="author" content="{{ author }}" />
 {% endblock %}
 
 {% block head %}
@@ -339,15 +339,15 @@ var reading_button2 = null;
 		<aside>
 			<picture>
 				<source type="image/webp" srcset="{{ cover_vol_url_webp }}" class="img-fluid"
-					alt="{{ series | safe }} manga" />
-				<img src="{{ cover_vol_url }}" class="img-fluid" alt="{{ series | safe }} manga" />
+					alt="{{ series }} manga" />
+				<img src="{{ cover_vol_url }}" class="img-fluid" alt="{{ series }} manga" />
 			</picture>
 			<table class="table table-borderless table-sm small">
 				<tbody>
 					{% for type, value in metadata %}
 					<tr>
-						<th>{{ type | safe }}</th>
-						<td class="text-sm">{{ value | safe }}</td>
+						<th>{{ type }}</th>
+						<td class="text-sm">{{ value }}</td>
 
 					</tr>
 					{% endfor %}
@@ -355,11 +355,11 @@ var reading_button2 = null;
 			</table>
 		</aside>
 		<content>
-			<h1>{{ series | safe }}</h1>
+			<h1>{{ series }}</h1>
 			{% if alt_titles %}
 			{% for alt in alt_titles %}
 			<h2>
-				{{ alt | safe }}
+				{{ alt }}
 			</h2>
 			{% endfor %}
 			{% endif %}
