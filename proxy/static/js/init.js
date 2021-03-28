@@ -1160,6 +1160,18 @@ function UI_Reader(o) {
 		.attach('prev', ['ArrowRight'], e => this.prevPage())
 		.attach('next', ['ArrowLeft'], e => this.nextPage());
 
+	let refocus = (e) => {
+		if(this.imageView.getScrollElement()) this.imageView.getScrollElement().focus();
+	}
+
+	new KeyListener(document.body)
+		.pass()
+		.attach('pgdn', ['PageDown'], refocus)
+		.attach('pgup', ['PageUp'], refocus)
+		.attach('home', ['Home'], refocus)
+		.attach('end', ['End'], refocus)
+		.attach('space', ['Space'], refocus)
+
 
 	this.selector_chap = new UI_FauxDrop({
 		node: this._.selector_chap
@@ -1441,7 +1453,6 @@ function UI_Reader(o) {
 		} catch (e) {
 			this.SCP.page = this.SCP.page;
 		}
-
 		this.imageView.selectPage(this.SCP.page, dry);
 		this.SCP.visiblePages = this.imageView.visiblePages;
 
@@ -1568,6 +1579,7 @@ function UI_Reader(o) {
 			this.recalculateBuffer();
 			this.stickHeader();
 		})
+		document.documentElement.style.overflow = "auto";
 
 		if(!silent) {
 			this.imageView.drawImages(this.current.chapters[this.SCP.chapter].images[this.SCP.group], this.current.chapters[this.SCP.chapter].wides[this.SCP.group]);
@@ -1583,6 +1595,7 @@ function UI_Reader(o) {
 
 	this.recalculateBuffer = () => {
 		if (IS_MOBILE) {
+			this.headerScroll = this.imageView.getScrollElement().scrollTop;
 			if (Settings.get('lyt.direction') === 'ttb' && Settings.get('apr.selPinned')) {
 			var tOH = this._.title.offsetHeight;
 			var sOH = this._.rdr_selector.offsetHeight;
@@ -1603,13 +1616,21 @@ function UI_Reader(o) {
 			}else{
 				this.$.classList.remove('stick');
 			}
+			if(this.headerScroll && this.imageView.getScrollElement().scrollTop != this.headerScroll) {
+				this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+				requestAnimationFrame(() => {
+					this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+					requestAnimationFrame(() => {
+						this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+					})
+				})
+			}
 		}
 	}
 
 	this.setZoom = function(zoom) {
-		this.imageView.updateScrollPosition();
-		Settings.setClass('lyt.zoom'); //broke
-		setTimeout(this.imageView.updateWides, 1);
+		Settings.setClass('lyt.zoom');
+		this.imageView.updateWides();
 	}
 
 	this.toggleSidebar = function(state) {
@@ -1715,8 +1736,14 @@ function UI_Reader(o) {
 	// this._.fit_button.onmousedown = e => {
 	// 	this.asideViews.S.call('number', 0);
 	// }
-	this._.zoom_level_plus.onmousedown = e => Settings.next('lyt.zoom', undefined, true);
-	this._.zoom_level_minus.onmousedown = e => Settings.prev('lyt.zoom', undefined, true);
+	this._.zoom_level_plus.onmousedown = e => {
+		this.imageView.updateScrollPosition();
+		Settings.next('lyt.zoom', undefined, true);
+	}
+	this._.zoom_level_minus.onmousedown = e => {
+		this.imageView.updateScrollPosition();
+		Settings.prev('lyt.zoom', undefined, true);
+	}
 	this._.share_button.onmousedown = e => this.copyShortLink(e);
 	this._.search.onclick = e => Loda.display('search');
 	this._.jump.onclick = e => Loda.display('jump');
@@ -1825,7 +1852,7 @@ function UI_ReaderImageView(o) {
 		if(!this.imageList) return true;
 		if(Settings.get('lyt.direction') != 'ttb') return true;
 
-		Reader.stickHeader();
+		// Reader.stickHeader();
 	var scrollTop = (e.target.scrollingElement)?
 				e.target.scrollingElement.scrollTop:
 				undefined
@@ -1847,7 +1874,7 @@ function UI_ReaderImageView(o) {
 		for(var i=0; i<index; i++) {
 			this.imageList[i].load();
 		}
-		Reader.displayPage(index, true);
+		setTimeout(() => Reader.displayPage(index, true), 1);
 		return true;
 	}
 
@@ -2033,7 +2060,7 @@ function UI_ReaderImageView(o) {
 			if(this.wrappers.right) this.touch.affectedWrappers.push(this.wrappers.right);
 		}
 		if(snap) {
-			this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style.transition = `transform ${this.touch.transitionTime}s cubic-bezier(${this.touch.transitionTime},.55,.4,1)`);
+			this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style.transition = `opacity 0.3s ease, transform ${this.touch.transitionTime}s cubic-bezier(${this.touch.transitionTime},.55,.4,1)`);
 			this.touch.transitionTimer = promiseTimeout(Math.round(this.touch.transitionTime*1000), true);
 			this.touch.transitionTimer.then(() => {
 					this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style = '');
@@ -2184,11 +2211,11 @@ const SCROLL_X = 3;
 		this.touch.measures = [];
 		this.touch.transitionTime = Math.max(0, 0.30 - Math.abs(velocity)/2.5);
 		if(isNaN(this.touch.transitionTime)) this.touch.transitionTime = 0;
-		if(isNaN(this.touch.transitionTime)) debugger;
 		if((velocity < this.touch.escapeVelocity * -1
 		|| this.touch.delta < this.touch.escapeDelta * -1)
 		&& !(Reader.SCP.chapter == Reader.SCP.lastChapter
-		&& Reader.SCP.page == Reader.SCP.lastPage)) {
+			&& Reader.SCP.page == Reader.SCP.lastPage
+			&& Settings.get('lyt.direction') == 'rtl')) {
 			this.moveWrappers(-1, true);
 			switch(Settings.get('lyt.direction')){
 				case 'ltr':
@@ -2208,7 +2235,8 @@ const SCROLL_X = 3;
 		if((velocity > this.touch.escapeVelocity
 		|| this.touch.delta > this.touch.escapeDelta)
 		&& !(Reader.SCP.chapter == Reader.SCP.firstChapter
-		&& Reader.SCP.page == 0)) {
+			&& Reader.SCP.page == 0
+			&& Settings.get('lyt.direction') == 'ltr')) {
 			this.moveWrappers(1, true);
 			switch(Settings.get('lyt.direction')){
 				case 'ltr':
@@ -2625,7 +2653,7 @@ function URLChanger(o) {
 	this.hostname = location.hostname[0].toUpperCase() + location.hostname.slice(1);
 	this.recentState = {};
 
-	this.updateURL = function(SCP) {
+	this.updateURL = function (SCP) {
 		if(Reader.SCP.chapterObject.notice)
 			return;
 		if(this.recentState.chapter == SCP.chapter && this.recentState.page == SCP.page)
@@ -2644,8 +2672,8 @@ function URLChanger(o) {
 				break;
 			case 'replace':
 				title = `${SCP.chapter} - ${SCP.chapterName}, Page ${SCP.page + 1} - ${Reader.current.title} | ${this.hostname}`
-				window.history.replaceState(null, title, pathName);
-				document.title = title;
+				setTimeout(() => window.history.replaceState(null, title, pathName), 300);
+				// document.title = title;
 				break;
 			case 'chap':
 				title = `${SCP.chapter} - ${SCP.chapterName}, Page ${SCP.page + 1} - ${Reader.current.title} | ${this.hostname}`
@@ -2687,8 +2715,26 @@ function URLChanger(o) {
 	}
 	window.addEventListener('popstate', this.onHistory);
 
+	this.scrollDefer = (fn) => {
+		this.deferFn = fn;
+		if(this.deferScrolling) clearTimeout(this.deferScrolling);
+		var scroller = () => {
+			if(fallbackDefer) clearTimeout(fallbackDefer);
+			fallbackDefer = undefined;
+			clearTimeout(this.deferScrolling);
+			this.deferScrolling = setTimeout(() => {
+				window.removeEventListener('scroll', scroller);
+				this.deferFn();
+			}, 100);
+		}
+		window.addEventListener('scroll', scroller, false);
+		let fallbackDefer = setTimeout(() => {
+			this.deferFn();
+		}, 20);
+	};
+
 	this.S.mapIn({
-		SCP: this.updateURL
+		SCP: (SCP) => {this.scrollDefer(() => this.updateURL(SCP))}
 	})
 }
 
@@ -2931,7 +2977,7 @@ function UI_Loda_Webtoon(o) {
 	this._.no.onclick = this.close.bind(this);
 	this._.yes.onclick = () => {
 		Settings.set('lyt.direction', 'ttb');
-		Settings.set('lyt.gap', false);
+		Settings.set('lyt.gap', true);
 		this.close();
 	}
 
