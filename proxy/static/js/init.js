@@ -2853,7 +2853,7 @@ function UI_SimpleListItem(o) {
 	this.value = o.value;
 	this.$.value = o.value;
 	if(this.$.innerHTML.length < 1)
-		this.$.innerHTML = (o.text || o.value || 'List Element');
+		this.$.innerHTML = (o.text || o.value || '1');
 }
 
 
