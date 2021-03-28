@@ -96,6 +96,9 @@
 
 		const openModal = (modal) => {
 			document.getElementById(modal).classList.remove('hidden');
+		let offset = window.innerWidth - document.documentElement.scrollWidth;
+			document.body.firstElementChild.style.paddingRight = offset + 'px';
+			Array.prototype.forEach.call(document.querySelectorAll('article .rhombutton.icon-close'), x => {x.style.right = offset + 'px'})
 			document.body.style.overflow = 'hidden';
 		}
 
@@ -108,7 +111,9 @@
 					break;
 				}
 			}
+			Array.prototype.forEach.call(document.querySelectorAll('article .rhombutton.icon-close'), x => {x.style.right = ''})
 			document.body.style.overflow = '';
+			document.body.firstElementChild.style.paddingRight = '';
 		}
 		document.getElementById('layers').addEventListener("click", layerHandler);
 

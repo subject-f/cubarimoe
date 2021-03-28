@@ -2,7 +2,7 @@
 
 @font-face {
 	font-family: 'guya';
-	src: url('../fonts/guya.woff?bsas2') format('woff');
+	src: url('../fonts/guya.woff?bsaass2') format('woff');
 	font-weight: normal;
 	font-style: normal;
 }
@@ -41,7 +41,10 @@
 	font-size: 1.5em;
 }
 .icon-pin:before {
-	content: "\e906";
+	content: "\e93b";
+}
+.icon-pin-x:before {
+	content: "\e93c";
 }
 .icon-close:before {
 	content:"\e907";
@@ -237,11 +240,11 @@ header .cubari-logo:hover {
 	background: none;
 	padding: 0;
 	text-align: center;
-	line-height: 3rem;
 	color: #E25656;
 	font-family: 'coobaree';
 	display: inline-block;
 	margin: 0;
+	line-height: 2.88rem;
 	outline: none !important;
 }
 
@@ -1061,6 +1064,10 @@ aside .table td, aside .table th {
 	max-width: 50em;
 }
 
+#history .pinned .button-drawer .icon-close {
+	display: none;
+}
+
 #history .HistoryView .List:before,
 #history .HistoryView .List:after {
 	content: "";
@@ -1080,6 +1087,7 @@ aside .table td, aside .table th {
 #history .HistoryView .List[data-things="2"]:before {
 	display: none;
 }
+#history .HistoryView .List[data-things="3"]:before,
 #history .HistoryView .List[data-things="3"]:after {
 	display: none;
 }

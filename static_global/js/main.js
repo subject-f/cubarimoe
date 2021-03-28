@@ -214,6 +214,7 @@ function UI_HistoryUnit(o) {
 			</article>
 			<div class="button-drawer">
 				<i class="ico-btn" data-bind="pin"></i>
+				<i class="ico-btn icon-close" data-bind="remove"></i>
 			</div>
 			</a><div>`
 	}));
@@ -233,13 +234,14 @@ function UI_HistoryUnit(o) {
 		this._.title.innerText = this.title;
 		this._.title.source = this.source.replace('_',' ');
 		if(this.pinned) {
-			this._.pin.classList.add('icon-close');
+			this._.pin.classList.add('icon-pin-x');
 			this._.pin.classList.remove('icon-pin');
 		}else{
 			this._.pin.classList.add('icon-pin');
-			this._.pin.classList.remove('icon-close');
+			this._.pin.classList.remove('icon-pin-x');
 		}
 		this._.pin.onclick = this.pinHandler;
+		this._.remove.onclick = this.removeHandler;
 	}
 
 	this.pinHandler = (e) => {
@@ -254,6 +256,11 @@ function UI_HistoryUnit(o) {
 				this.S.out('pinned', this);
 			});
 		}
+	}
+	this.removeHandler = (e) => {
+		e.preventDefault();
+		globalHistoryHandler.removeSeries(this.slug, this.source);
+		this.destroy();
 	}
 	this.render();
 }
