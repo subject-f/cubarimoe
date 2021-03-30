@@ -504,7 +504,8 @@ article h2 {
 	margin-right: 1.4em;
 	border-radius: 4px;
 	overflow: hidden;
-	margin-bottom: 0.5em;	/* display: none; */
+	margin-bottom: 0.5em;
+	max-height: 19em;
 }
 
 .series-content .card {
