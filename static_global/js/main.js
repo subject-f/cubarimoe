@@ -7,7 +7,7 @@ let error = '';
 	message('')
 	switch(true) {
 		case /imgur/.test(text):
-			result = /(a\/|gallery\/)([A-Z0-9a-z]{7})/.exec(text);
+			result = /(a\/|gallery\/)([A-Z0-9a-z]{5}[A-Z0-9a-z]*\b)/.exec(text);
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/imgur/' + result[2] + '/1/1';
 			break;
