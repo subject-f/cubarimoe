@@ -3592,7 +3592,7 @@ function thirdPartySeriesHandler(url, chapter, group) {
 							wides.push(i);
 						}
 					} else {
-						descriptions[group].push(p.description);
+						descriptions.push(p.description);
 						images.push(p.src);
 						if (p.src.includes(WIDE_FLAG)) {
 							wides.push(i);

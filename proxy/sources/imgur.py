@@ -88,7 +88,11 @@ class Imgur(ProxySource):
                     ],
                 ],
                 "pages_list": [
-                    self.image_url_handler(obj) for obj in api_data["images"]
+                    {
+                        "description": obj["description"] or "",
+                        "src": self.image_url_handler(obj),
+                    }
+                    for obj in api_data["images"]
                 ],
                 "original_url": api_data["link"],
             }
@@ -152,7 +156,13 @@ class Imgur(ProxySource):
                         "1",
                     ],
                 ],
-                "pages_list": [self.image_url_handler(obj) for obj in images],
+                "pages_list": [
+                    {
+                        "description": obj["description"] or "",
+                        "src": self.image_url_handler(obj),
+                    }
+                    for obj in images
+                ],
                 "original_url": f"https://imgur.com/a/{api_data['id']}",
             }
         else:
