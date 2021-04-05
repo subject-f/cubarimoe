@@ -6,6 +6,7 @@ from .sources.nhentai import NHentai
 from .sources.readmanhwa import ReadManhwa
 from .sources.hitomi import Hitomi
 from .sources.gist import Gist
+from .sources.mangakatana import MangaKatana
 
 sources = [
     MangaDex(),
@@ -16,4 +17,5 @@ sources = [
     MangaBox(),
     Hitomi(),
     Gist(),
+    MangaKatana()
 ]
