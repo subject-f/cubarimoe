@@ -16,7 +16,7 @@ let error = '';
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/gist/' + result[2];
 			break;
-		case (/\b[0-9]{5}[0-9]?\b/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
+		case (/^[0-9]{5}[0-9]?$/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
 			result = /(\/?)(\b[0-9]+\b)/.exec(text);
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/nhentai/' + result[2];
