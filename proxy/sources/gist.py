@@ -4,7 +4,6 @@ import random
 
 from django.shortcuts import redirect
 from django.urls import re_path
-from django.utils.html import conditional_escape
 
 from ..source import ProxySource
 from ..source.data import SeriesAPI, SeriesPage
@@ -80,17 +79,17 @@ class Gist(ProxySource):
             "text/plain"
         ):
             api_data = json.loads(resp.text)
-            title = conditional_escape(api_data.get("title"))
-            description = conditional_escape(api_data.get("description"))
+            title = api_data.get("title")
+            description = api_data.get("description")
             if not title or not description:
                 return None
 
-            artist = conditional_escape(api_data.get("artist", ""))
-            author = conditional_escape(api_data.get("author", ""))
-            cover = conditional_escape(api_data.get("cover", ""))
+            artist = api_data.get("artist", "")
+            author = api_data.get("author", "")
+            cover = api_data.get("cover", "")
 
             groups_set = {
-                conditional_escape(group)
+                group
                 for ch_data in api_data["chapters"].values()
                 for group in ch_data["groups"].keys()
             }
@@ -99,23 +98,23 @@ class Gist(ProxySource):
 
             chapter_dict = {
                 ch: {
-                    "volume": conditional_escape(data.get("volume", "Uncategorized")),
-                    "title": conditional_escape(data.get("title", "")),
+                    "volume": data.get("volume", "Uncategorized"),
+                    "title": data.get("title", ""),
                     "groups": {
-                        groups_map[conditional_escape(group)]: [
+                        groups_map[group]: [
                             {
-                                "src": conditional_escape(sub["src"]),
-                                "description": conditional_escape(sub["description"]),
+                                "src": sub["src"],
+                                "description": sub["description"],
                             }
                             if type(sub) is dict
-                            else conditional_escape(sub)
+                            else sub
                             for sub in metadata
                         ]
                         if type(metadata) is list
                         else metadata
                         for group, metadata in data["groups"].items()
                     },
-                    "last_updated": conditional_escape(data.get("last_updated", None)),
+                    "last_updated": data.get("last_updated", None),
                 }
                 for ch, data in api_data["chapters"].items()
             }
