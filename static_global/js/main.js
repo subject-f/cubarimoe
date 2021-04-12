@@ -86,7 +86,7 @@ function UI_HistoryView(o) {
 				<div class="history-desc" data-bind="history_desc"></div>
 				<h2 class="pinned-header" data-bind="pinned-header">Pinned</h2>
 				<div class="pinned" data-bind="pinned"></div>
-				<h2 class="history-header" data-bind="history-header"><span>Reader history</span><a class="manga-link" data-bind="clear">Clear history</a></h2>
+				<h2 class="history-header" data-bind="history-header"><span>Your history</span><a class="manga-link" data-bind="clear">Clear history</a></h2>
 				<div class="history" data-bind="history"></div>
 				<div class="history-sync" data-bind="history_sync"></div>
 				<div data-bind="history_kill" style="text-align: center; padding: 3rem 0 2rem; border-top: 1px solid rgba(255,255,255,0.1)"><a class="manga-link" data-bind="disable">Turn off history and destroy local data</a></div>
