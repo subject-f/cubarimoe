@@ -231,7 +231,7 @@ function UI_HistoryUnit(o) {
 		this.$.firstElementChild.href = this.url;
 		this._.bloor.style.backgroundImage = `url('${this.coverUrl}')`;
 		this._.cover.src = this.coverUrl;
-		this._.title.innerText = this.title;
+		this._.title.textContent = this.title || "No title";
 		this._.title.source = this.source.replace('_',' ');
 		if(this.pinned) {
 			this._.pin.classList.add('icon-pin-x');

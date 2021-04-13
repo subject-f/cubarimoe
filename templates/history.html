@@ -2,6 +2,39 @@
 <meta name="referrer" content="same-origin" />
 <script src="{% static 'js/remotestorage.min.js' %}"></script>
 <script src="{% static 'js/widget.min.js' %}"></script>
+{% if cover_vol_url %}
+{{ cover_vol_url|json_script:"history_coverUrl" }}
+{% elif cover %}
+{{ cover|json_script:"history_coverUrl" }}
+{% else %}
+{{ ""|json_script:"history_coverUrl" }}
+{% endif %}
+
+{% if reader_modifier %}
+{{ reader_modifier|json_script:"history_source" }}
+{% else %}
+{{ ""|json_script:"history_source" }}
+{% endif %}
+
+{% if slug %}
+{{ slug|json_script:"history_slug" }}
+{% else %}
+{{ ""|json_script:"history_slug" }}
+{% endif %}
+
+{% if relative_url %}
+{{ relative_url|json_script:"history_url" }}
+{% else %}
+{{ ""|json_script:"history_url" }}
+{% endif %}
+
+{% if series %}
+{{ series|json_script:"history_title" }}
+{% elif title %}
+{{ title|json_script:"history_title" }}
+{% else %}
+{{ ""|json_script:"history_title" }}
+{% endif %}
 <script>
   // remoteStorage backend that'll be our plugged in module
   // This should be abstracted from what actually handles updates,
@@ -343,42 +376,28 @@
 
   const tag = () => {
     try {
-      {% if cover_vol_url %}
-      let coverUrl = "{{ cover_vol_url }}";
-      {% elif cover %}
-      let coverUrl = "{{ cover }}";
-      {% else %}
-      let coverUrl = "";
-      {% endif %}
+      let coverUrl = JSON.parse(document.getElementById("history_coverUrl").textContent);
 
-      {% if reader_modifier %}
-      let source = "{{ reader_modifier }}".split("/")[1];
-      {% else %}
-      let source = window.location.pathname
+      let source = JSON.parse(document.getElementById("history_source").textContent);
+
+      if (!source) {
+        source = window.location.pathname
         .split("/")
         .filter(e => e)[1]
         .replace("_", " ");
-      {% endif %}
+      } else {
+        source = source.split("/")[1];
+      }
 
-      {% if slug %}
-      let slug = "{{ slug }}";
-      {% else %}
-      let slug = "";
-      {% endif %}
+      let slug = JSON.parse(document.getElementById("history_slug").textContent);
 
-      {% if relative_url %}
-      let url = "/{{ relative_url }}".split(slug)[0] + slug;
-      {% else %}
-      let url = "";
-      {% endif %}
+      let url = JSON.parse(document.getElementById("history_url").textContent);
 
-      {% if series %}
-      let title = "{{ series }}";
-      {% elif title %}
-      let title = "{{ title }}";
-      {% else %}
-      let title = "";
-      {% endif %}
+      if (url) {
+        url = `/${url}`.split(slug)[0] + slug;
+      }
+
+      let title = JSON.parse(document.getElementById("history_title").textContent);
 
       if (source && slug && url && title) {
         remoteStorage.on("ready", async () => {
