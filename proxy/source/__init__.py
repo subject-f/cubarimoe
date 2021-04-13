@@ -79,7 +79,6 @@ class ProxySource(metaclass=abc.ABCMeta):
         data = self.series_api_handler(meta_id)
         if data:
             data = data.objectify()
-            data["description"] = self.process_description(data["description"])
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:
             return render(request, "homepage/thonk_500.html", status=500)
