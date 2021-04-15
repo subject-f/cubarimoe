@@ -170,7 +170,7 @@ class Imgur(ProxySource):
 
     @api_cache(prefix="imgur_api_dt", time=300)
     def imgur_common(self, meta_id):
-        return self.imgur_api_common(meta_id)
+        return self.imgur_embed_common(meta_id)
 
     @api_cache(prefix="imgur_series_dt", time=300)
     def series_api_handler(self, meta_id):
