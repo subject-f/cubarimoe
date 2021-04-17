@@ -125,7 +125,7 @@ class Imgur(ProxySource):
                     ch,
                     ch,
                     obj["title"],
-                    "1",
+                    ch,
                     "--",
                     "--",
                     "1",
