@@ -7,7 +7,7 @@ from .sources.readmanhwa import ReadManhwa
 from .sources.hitomi import Hitomi
 from .sources.gist import Gist
 from .sources.mangakatana import MangaKatana
-
+from .sources.nepnep import NepNep
 sources = [
     MangaDex(),
     NHentai(),
@@ -17,5 +17,6 @@ sources = [
     MangaBox(),
     Hitomi(),
     Gist(),
-    MangaKatana()
+    MangaKatana(),
+    NepNep()
 ]
