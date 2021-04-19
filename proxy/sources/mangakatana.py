@@ -47,6 +47,7 @@ class MangaKatana(ProxySource):
             denormal = denormal.strip("/").split("/")
             denormal.pop(-1)
             denormal = "/".join(denormal)
+        denormal = 'https://' + re.sub(r'https?:\/\/', '', denormal)
         return denormal #technically normal now lol
 
     @staticmethod
