@@ -9,29 +9,28 @@ from django.urls import re_path
 
 from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
-from ..source.helpers import api_cache, decode, encode, get_wrapper
-
+from ..source.helpers import api_cache, get_wrapper
 
 class NepNep(ProxySource):
     def get_reader_prefix(self):
-        return "nepnep"
+        return "mangasee"
 
     def shortcut_instantiator(self):
         def handler(request, raw_url):
             if "/read-online/" in raw_url:
-                self.generate_cmap(decoded_url=self.normalize_slug(raw_url))
+                self.generate_cmap(self.normalize_slug(raw_url))
                 canonical_chapter = self.parse_chapter(raw_url)
                 canonical_chapter = self.cmap[canonical_chapter]
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-chapter-page",
-                    encode(self.normalize_slug(raw_url)),
+                    self.get_slug_name(self.normalize_slug(raw_url)),
                     canonical_chapter,
                     "1",
                 )
             else:
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-series-page",
-                    encode(self.normalize_slug(raw_url)),
+                    self.get_slug_name(self.normalize_slug(raw_url)),
                 )
 
         return [
@@ -41,6 +40,7 @@ class NepNep(ProxySource):
 
     @staticmethod
     def normalize_slug(denormal):
+        denormal = denormal.strip('/').replace('.html', '')
         if "/read-online/" in denormal:
             copy = denormal
             denormal = [part for part in denormal.replace('/read-online/', '/manga/').split('-chapter-')[0].split('/') if part]
@@ -50,13 +50,12 @@ class NepNep(ProxySource):
         return denormal
 
     @staticmethod
-    def construct_url(raw):
-        decoded = decode(raw)
-        return ("" if decoded.startswith("http") else "https://") + decoded
+    def get_slug_name(normalized_url):
+        return normalized_url.split("/")[-1]
 
     @staticmethod
     def parse_chapter(raw_url):
-        raw_url = raw_url.replace('.html', '')
+        raw_url = raw_url.strip('/').replace('.html', '')
         raw_split = raw_url.split('-')
         if 'index' in raw_url:
             if 'page' in raw_url:
@@ -87,32 +86,39 @@ class NepNep(ProxySource):
         return series_url.replace('/manga/', '/read-online/') + '-chapter-' + cls.parse_chapter_number(_) + ('-index-' + _[0] if _[0] != '1' else '')
     
     @classmethod
-    def generate_cmap(cls, decoded_url, chapter_data = None):
+    def generate_cmap(cls, series_url, chapter_data = None):
         if chapter_data is None:
-            resp = get_wrapper(decoded_url)
+            resp = get_wrapper(series_url)
             if resp.status_code == 200:
+                cls.common_scrape_content = resp
                 data = resp.text
                 m = re.search(r'vm\.Chapters\s?=\s?.+\]', data)
                 chapter_data = re.split(r'vm\.Chapters\s?=\s', m.group(0))[1]
                 chapter_data = json.loads(chapter_data)
             else:
-                chapter_data = None
+                chapter_data = []
         cls.cmap = {}
         ch = len(chapter_data)
         for chapter in chapter_data:
-            cls.cmap[cls.parse_chapter(cls.generate_chapter_url(decoded_url, chapter['Chapter']))] = str(ch)
+            cls.cmap[cls.parse_chapter(cls.generate_chapter_url(series_url, chapter['Chapter']))] = str(ch)
             ch -= 1
 
     def nn_scrape_common(self, meta_id):
-        decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
+        series_url = 'https://mangasee123.com/manga/' + meta_id
+        if(hasattr(self, 'common_scrape_content')):
+            resp = self.common_scrape_content
+        else:
+            resp = get_wrapper(series_url)
+
         if resp.status_code == 200:
             data = resp.text
             soup = BeautifulSoup(data, "html.parser")
+
             try:
                 title = soup.find("h1").text
             except AttributeError:
                 return None
+
             author = "None"
             description = "No Description."
             for _ in soup.find_all("span", class_ = "mlabel"):
@@ -120,6 +126,7 @@ class NepNep(ProxySource):
                     author = _.findNext().text
                 elif("Description" in _.text):
                     description = _.findNext().text
+
             try:
                 cover = soup.find_all("img")[3]["src"]
             except IndexError:
@@ -130,14 +137,23 @@ class NepNep(ProxySource):
             chapter_dict = {}
 
             m = re.search(r'vm\.Chapters\s?=\s?.+\]', data)
-            chapter_data = re.split(r'vm\.Chapters\s?=\s', m.group(0))[1]
+            try:
+                chapter_data = re.split(r'vm\.Chapters\s?=\s', m.group(0))[1]
+                if chapter_data == '':
+                    return None
+            except IndexError:
+                return None
+
             chapter_data = json.loads(chapter_data)
-            self.generate_cmap(decoded_url, chapter_data)
+            self.generate_cmap(series_url, chapter_data)
+            if(len(self.cmap) == 0):
+                return None
+
             chapters = list(
                 map(
                     lambda a: [
                         a['Type'] + " " + self.parse_chapter_number(a['Chapter']),
-                        self.generate_chapter_url(decoded_url, a['Chapter']),
+                        self.generate_chapter_url(series_url, a['Chapter']),
                         a['Date'].split(" ")[0] if a['Date'] else "No Date."
                     ],
                     chapter_data,
@@ -161,7 +177,7 @@ class NepNep(ProxySource):
                 chapter_dict[canonical_chapter] = {
                     "volume": "1",
                     "title": chapter[0],
-                    "groups": {"1": self.wrap_chapter_meta(encode(chapter[1]))},
+                    "groups": {"1": self.wrap_chapter_meta(self.get_slug_name(chapter[1]))},
                 }
 
             return {
@@ -202,19 +218,30 @@ class NepNep(ProxySource):
 
     @api_cache(prefix="nn_chapter_dt", time=3600)
     def chapter_api_handler(self, meta_id):
-        decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
-        if resp.status_code == 200: #TO-DO improve readability
+        chapter_url = 'https://mangasee123.com/read-online/' + meta_id
+        resp = get_wrapper(chapter_url)
+        if resp.status_code == 200:
             data = resp.text
-            m = re.search(r'vm\.CurChapter\s?=\s?.+\;', data)
-            ch_info = json.loads(re.split(r'vm\.CurChapter\s?=\s', m.group(0))[1].strip(';'))
-            total_pages = int(ch_info['Page'])
-            current_chapter = self.parse_chapter_number(ch_info['Chapter'])
-            season = ch_info['Directory']
-            m = re.search(r'vm\.CurPathName\s?=\s?.+\;', data)
-            chapter_host = re.split(r'vm\.CurPathName\s?=\s', m.group(0))[1].strip(';"')
-            m = re.search(r'vm\.IndexName\s?=\s?.+\;', data)
-            slug_name = re.split(r'vm\.IndexName\s?=\s', m.group(0))[1].strip(';"')
+
+            try:
+                m = re.search(r'vm\.CurChapter\s?=\s?.+\;', data)
+                ch_info = json.loads(re.split(r'vm\.CurChapter\s?=\s', m.group(0))[1].strip(';'))
+                total_pages = int(ch_info['Page'])
+                current_chapter = self.parse_chapter_number(ch_info['Chapter'])
+                season = ch_info['Directory']
+
+                m = re.search(r'vm\.CurPathName\s?=\s?.+\;', data)
+                chapter_host = re.split(r'vm\.CurPathName\s?=\s', m.group(0))[1].strip(';"')
+
+                m = re.search(r'vm\.IndexName\s?=\s?.+\;', data)
+                slug_name = re.split(r'vm\.IndexName\s?=\s', m.group(0))[1].strip(';"')
+
+                if ch_info == '' or chapter_host == '' or slug_name == '':
+                    return None
+
+            except IndexError:
+                return None
+
             pages = []
             for i in range(1, total_pages + 1):
                 pages.append('https://' + chapter_host + '/manga/' + slug_name + "/" + season + ('/' if season else '') + ('0000' + current_chapter)[len('0000'+current_chapter) - 4:] + '-' + ('000' + str(i))[len('000'+str(i)) - 3:] + '.png') 
@@ -225,7 +252,7 @@ class NepNep(ProxySource):
     @api_cache(prefix="nn_series_page_dt", time=600)
     def series_page_handler(self, meta_id):
         data = self.nn_scrape_common(meta_id)
-        original_url = decode(meta_id)
+        original_url = 'https://mangasee123.com/manga/' + meta_id
         if not original_url.startswith("http"):
             original_url = "https://" + original_url
         if data:
