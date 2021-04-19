@@ -18,12 +18,13 @@ class NepNep(ProxySource):
     def shortcut_instantiator(self):
         def handler(request, raw_url):
             if "/read-online/" in raw_url:
-                self.generate_cmap(self.normalize_slug(raw_url))
+                slug_name = self.get_slug_name(self.normalize_slug(raw_url))
+                data = self.nn_scrape_common(slug_name)
                 canonical_chapter = self.parse_chapter(raw_url)
-                canonical_chapter = self.cmap[canonical_chapter]
+                canonical_chapter = data["cmap"][canonical_chapter]
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-chapter-page",
-                    self.get_slug_name(self.normalize_slug(raw_url)),
+                    slug_name,
                     canonical_chapter,
                     "1",
                 )
@@ -85,22 +86,15 @@ class NepNep(ProxySource):
         _ = series_chapter_number
         return series_url.replace('/manga/', '/read-online/') + '-chapter-' + cls.parse_chapter_number(_) + ('-index-' + _[0] if _[0] != '1' else '')
     
-    def generate_cmap(self, series_url, chapter_data = None):
-        if chapter_data is None:
-            resp = get_wrapper(series_url)
-            if resp.status_code == 200:
-                data = resp.text
-                m = re.search(r'vm\.Chapters\s?=\s?.+\]', data)
-                chapter_data = re.split(r'vm\.Chapters\s?=\s', m.group(0))[1]
-                chapter_data = json.loads(chapter_data)
-            else:
-                chapter_data = []
-        self.cmap = {}
+    def generate_cmap(self, series_url, chapter_data):
+        cmap = {}
         ch = len(chapter_data)
         for chapter in chapter_data:
-            self.cmap[self.parse_chapter(self.generate_chapter_url(series_url, chapter['Chapter']))] = str(ch)
+            cmap[self.parse_chapter(self.generate_chapter_url(series_url, chapter['Chapter']))] = str(ch)
             ch -= 1
+        return cmap
 
+    @api_cache(prefix="nn_common_scrape_dt", time=600)
     def nn_scrape_common(self, meta_id):
         series_url = 'https://mangasee123.com/manga/' + meta_id
         resp = get_wrapper(series_url)
@@ -128,6 +122,7 @@ class NepNep(ProxySource):
             groups_dict = {"1": "MangaSee/MangaLife"}
 
             chapter_list = []
+            series_page_chapter_list = []
             chapter_dict = {}
 
             m = re.search(r'vm\.Chapters\s?=\s?.+\]', data)
@@ -139,9 +134,7 @@ class NepNep(ProxySource):
                 return None
 
             chapter_data = json.loads(chapter_data)
-            self.generate_cmap(series_url, chapter_data)
-            if(len(self.cmap) == 0):
-                return None
+            cmap = self.generate_cmap(series_url, chapter_data)
 
             chapters = list(
                 map(
@@ -156,18 +149,31 @@ class NepNep(ProxySource):
 
             for chapter in chapters:
                 canonical_chapter = self.parse_chapter(chapter[1])
-                canonical_chapter = self.cmap[canonical_chapter]
+                canonical_chapter = cmap[canonical_chapter]
                 chapter_list.append(
                     [
                         "",
                         canonical_chapter,
                         chapter[0],
                         canonical_chapter.replace(".", "-"),
-                        "MangaSee/MangaLife",
+                        "MangaSee",
                         chapter[2],
                         "",
                     ]
                 )
+
+                series_page_chapter_list.append(
+                    [
+                        "",
+                        canonical_chapter,
+                        canonical_chapter + " : " + chapter[0],
+                        canonical_chapter.replace(".", "-"),
+                        "MangaSee",
+                        chapter[2],
+                        "",
+                    ]
+                )
+
                 chapter_dict[canonical_chapter] = {
                     "volume": "1",
                     "title": chapter[0],
@@ -188,12 +194,12 @@ class NepNep(ProxySource):
                 "cover": cover,
                 "chapter_dict": chapter_dict,
                 "chapter_list": chapter_list,
-                "chapters_raw": chapters
+                "series_page_chapter_list": series_page_chapter_list,
+                "cmap": cmap
             }
         else:
             return None
 
-    @api_cache(prefix="nn_series_dt", time=600)
     def series_api_handler(self, meta_id):
         data = self.nn_scrape_common(meta_id)
         if data:
@@ -238,33 +244,22 @@ class NepNep(ProxySource):
 
             pages = []
             for i in range(1, total_pages + 1):
-                pages.append('https://' + chapter_host + '/manga/' + slug_name + "/" + season + ('/' if season else '') + ('0000' + current_chapter)[len('0000'+current_chapter) - 4:] + '-' + ('000' + str(i))[len('000'+str(i)) - 3:] + '.png') 
+                padded_chapter = '0000' + current_chapter
+                stuffed_chapter = padded_chapter[(len(padded_chapter) - 4) if '.' not in current_chapter else len(padded_chapter) - 6:]
+                padded_page = '000' + str(i)
+                stuffed_page = padded_page[len(padded_page) - 3:]
+                pages.append('https://' + chapter_host + '/manga/' + slug_name + "/" + season + ('/' if season else '') + stuffed_chapter + '-' + stuffed_page + '.png') 
             return ChapterAPI(pages=pages, series=meta_id, chapter="")
         else:
             return None
 
-    @api_cache(prefix="nn_series_page_dt", time=600)
     def series_page_handler(self, meta_id):
         data = self.nn_scrape_common(meta_id)
         original_url = 'https://mangasee123.com/manga/' + meta_id
         if not original_url.startswith("http"):
             original_url = "https://" + original_url
+
         if data:
-            chapter_list = []
-            for chapter in data["chapters_raw"]:
-                canonical_chapter = self.parse_chapter(chapter[1])
-                canonical_chapter = self.cmap[canonical_chapter]
-                chapter_list.append(
-                    [
-                        "",
-                        canonical_chapter,
-                        canonical_chapter + " : " + chapter[0],
-                        canonical_chapter.replace(".", "-"),
-                        "MangaSee/MangaLife",
-                        chapter[2],
-                        "",
-                    ]
-                )
             return SeriesPage(
                 series=data["title"],
                 alt_titles=[],
@@ -274,7 +269,7 @@ class NepNep(ProxySource):
                 metadata=[],
                 synopsis=data["description"],
                 author=data["artist"],
-                chapter_list=chapter_list,
+                chapter_list=data["series_page_chapter_list"],
                 original_url=original_url,
             )
         else:
