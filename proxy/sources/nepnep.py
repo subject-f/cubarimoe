@@ -85,31 +85,25 @@ class NepNep(ProxySource):
         _ = series_chapter_number
         return series_url.replace('/manga/', '/read-online/') + '-chapter-' + cls.parse_chapter_number(_) + ('-index-' + _[0] if _[0] != '1' else '')
     
-    @classmethod
-    def generate_cmap(cls, series_url, chapter_data = None):
+    def generate_cmap(self, series_url, chapter_data = None):
         if chapter_data is None:
             resp = get_wrapper(series_url)
             if resp.status_code == 200:
-                cls.common_scrape_content = resp
                 data = resp.text
                 m = re.search(r'vm\.Chapters\s?=\s?.+\]', data)
                 chapter_data = re.split(r'vm\.Chapters\s?=\s', m.group(0))[1]
                 chapter_data = json.loads(chapter_data)
             else:
                 chapter_data = []
-        cls.cmap = {}
+        self.cmap = {}
         ch = len(chapter_data)
         for chapter in chapter_data:
-            cls.cmap[cls.parse_chapter(cls.generate_chapter_url(series_url, chapter['Chapter']))] = str(ch)
+            self.cmap[self.parse_chapter(self.generate_chapter_url(series_url, chapter['Chapter']))] = str(ch)
             ch -= 1
 
     def nn_scrape_common(self, meta_id):
         series_url = 'https://mangasee123.com/manga/' + meta_id
-        if(hasattr(self, 'common_scrape_content')):
-            resp = self.common_scrape_content
-        else:
-            resp = get_wrapper(series_url)
-
+        resp = get_wrapper(series_url)
         if resp.status_code == 200:
             data = resp.text
             soup = BeautifulSoup(data, "html.parser")
