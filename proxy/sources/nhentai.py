@@ -24,7 +24,10 @@ class NHentai(ProxySource):
                 )
             else:
                 return redirect(
-                    f"reader-{self.get_reader_prefix()}-series-page", series_id
+                    f"reader-{self.get_reader_prefix()}-chapter-page",
+                    series_id,
+                    "1",
+                    "1"
                 )
 
         def series(request, series_id):
