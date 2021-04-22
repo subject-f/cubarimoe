@@ -59,7 +59,10 @@ class Gist(ProxySource):
     @staticmethod
     def date_parser(timestamp):
         timestamp = int(timestamp)
-        date = datetime.utcfromtimestamp(timestamp)
+        try:
+            date = datetime.utcfromtimestamp(timestamp)
+        except ValueError:
+            date = datetime.utcfromtimestamp(timestamp // 1000)
         return [
             date.year,
             date.month - 1,
