@@ -3652,7 +3652,7 @@ function DownloadManager() {
 							Reader._.downloading_chapter.textContent = `Ch.${Reader.SCP.chapter} : ${Math.round(progress / chapURLArray.length * 98)}%`;
 							return {
 								contents,
-								"fileIndex": i + subIndex + 1,
+								"fileIndex": String(i + subIndex + 1).padStart(String(chapURLArray.length).length, "0"),
 							};
 						})();
 					})
