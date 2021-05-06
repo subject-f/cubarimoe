@@ -1,3 +1,4 @@
+from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
 
@@ -7,9 +8,10 @@ from django.urls import re_path
 
 from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
-from ..source.helpers import api_cache, get_wrapper
+from ..source.helpers import api_cache, get_wrapper, post_wrapper
 
-SUPPORTED_LANGS = ["gb"]
+SUPPORTED_LANG = "en"
+GROUP_KEY = "scanlation_group"
 
 
 class MangaDex(ProxySource):
@@ -49,7 +51,7 @@ class MangaDex(ProxySource):
             re_path(r"^chapter/(?P<chapter_id>[\d]{1,9})/$", chapter),
             re_path(
                 r"^chapter/(?P<chapter_id>[\d]{1,9})/(?P<page>[\d]{1,9})/$", chapter
-            )
+            ),
         ]
 
     def process_description(self, desc):
@@ -96,142 +98,232 @@ class MangaDex(ProxySource):
         except ValueError:
             return "Oneshot", f"0.0{str(resp['timestamp'])}"
 
-    @api_cache(prefix="md_series_dt", time=180)
-    def series_api_handler(self, meta_id):
-        resp = get_wrapper(
-            f"https://api.mangadex.org/v2/manga/{meta_id}?include=chapters",
-            headers={"Referer": "https://mangadex.org"},
-        )
-        if resp.status_code == 200:
-            api_data = resp.json()["data"]
-            groups_dict = {
-                str(group["id"]): group["name"] for group in api_data["groups"]
-            }
-            chapters_dict = {}
-            for chapter in api_data["chapters"]:
-                if chapter["language"] in SUPPORTED_LANGS:
-                    if chapter["chapter"] in chapters_dict:
-                        current_chapter = chapters_dict[chapter["chapter"]]
-                        if (
-                            not current_chapter["volume"]
-                            or current_chapter["volume"] == "Uncategorized"
-                        ):
-                            current_chapter["volume"] = (
-                                chapter["volume"] or "Uncategorized"
-                            )
-                        if not current_chapter["title"]:
-                            current_chapter["title"] = chapter["title"]
-                        current_chapter["groups"][
-                            chapter["groups"][0]
-                        ] = self.wrap_chapter_meta(chapter["id"])
-                    else:
-                        chapters_dict[self.handle_oneshot_chapters(chapter)[1]] = {
-                            "volume": chapter["volume"] or "Uncategorized",
-                            "title": chapter["title"],
-                            "groups": {
-                                chapter["groups"][0]: self.wrap_chapter_meta(
-                                    chapter["id"]
-                                )
-                            },
-                        }
+    @staticmethod
+    def date_parser(timestamp):
+        timestamp = int(timestamp)
+        try:
+            date = datetime.utcfromtimestamp(timestamp)
+        except ValueError:
+            date = datetime.utcfromtimestamp(timestamp // 1000)
+        return [
+            date.year,
+            date.month - 1,
+            date.day,
+            date.hour,
+            date.minute,
+            date.second,
+        ]
 
-            return SeriesAPI(
-                slug=meta_id,
-                title=api_data["manga"]["title"],
-                description=api_data["manga"]["description"],
-                author=api_data["manga"]["author"],
-                artist=api_data["manga"]["artist"],
-                groups=groups_dict,
-                cover=api_data["manga"]["mainCover"],
-                chapters=chapters_dict,
+    @api_cache(prefix="md_common_dt", time=600)
+    def md_api_common(self, meta_id):
+        try:
+            legacy_id = int(meta_id)
+            resp = post_wrapper(
+                f"https://api.mangadex.org/legacy/mapping",
+                json={"type": "manga", "ids": [legacy_id]},
             )
-        else:
-            return None
+            if resp.status_code != 200:
+                return
+            new_id = resp.json()[0]["data"]["attributes"]["newId"]
+            return self.md_api_common(new_id)
+        except ValueError:
+            # Must be a UUID, so we continue
+            pass
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            result = executor.map(
+                lambda req: {
+                    "type": req["type"],
+                    "res": get_wrapper(
+                        req["url"],
+                        headers={"Referer": "https://mangadex.org"},
+                    ),
+                },
+                [
+                    {
+                        "type": "main",
+                        "url": f"https://api.mangadex.org/manga/{meta_id}",
+                    },
+                    {
+                        "type": "chapter",
+                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?locales[]={SUPPORTED_LANG}&limit=500",  # TODO might not return all
+                    },
+                ],
+            )
 
-    @api_cache(prefix="md_chapter_dt", time=180)
+        main_data = None
+        chapter_data = None
+
+        for res in result:
+            if res["res"].status_code != 200:
+                return
+            if res["type"] == "main":
+                main_data = res["res"].json()
+            elif res["type"] == "chapter":
+                chapter_data = res["res"].json()
+
+        groups_set = {
+            relationship["id"]
+            for chapter in chapter_data["results"]
+            for relationship in chapter["relationships"]
+            if relationship["type"] == GROUP_KEY
+        }
+
+        # We need to make yet another call to get the scanlator group names
+        resolved_groups_map = {}
+        groups_api_url = f"https://api.mangadex.org/group?limit=100"
+        for group in groups_set:
+            groups_api_url += f"&ids[]={group}"
+        groups_resp = get_wrapper(groups_api_url)
+        if groups_resp.status_code != 200:
+            return
+        for result in groups_resp.json()["results"]:
+            resolved_groups_map[result["data"]["id"]] = result["data"]["attributes"][
+                "name"
+            ]
+
+        groups_dict = {}
+        groups_map = {}
+
+        for key, value in enumerate(groups_set):
+            groups_dict[str(key)] = resolved_groups_map[value]
+            groups_map[value] = str(key)
+
+        chapter_map = {
+            chapter["data"]["id"]: chapter for chapter in chapter_data["results"]
+        }
+
+        chapter_dict = {}
+
+        for chapter in chapter_data["results"]:
+            chapter_id = chapter["data"]["id"]
+            chapter_number = chapter["data"]["attributes"]["chapter"]
+            chapter_title = chapter["data"]["attributes"]["title"]
+            chapter_volume = chapter["data"]["attributes"]["volume"]
+            chapter_timestamp = datetime.strptime(
+                chapter["data"]["attributes"]["createdAt"], "%Y-%m-%dT%H:%M:%S%z"
+            ).timestamp()
+            chapter_group = None
+
+            for relationship in chapter["relationships"]:
+                if relationship["type"] == GROUP_KEY:
+                    chapter_group = relationship["id"]
+                    break
+
+            if chapter_number in chapter_dict:
+                chapter_obj = chapter_dict[chapter_number]
+                if not chapter_obj["title"]:
+                    chapter_obj["title"] = chapter_title
+                if not chapter_obj["volume"]:
+                    chapter_obj["volume"] = chapter_volume
+                if chapter_timestamp > chapter_obj["last_updated"]:
+                    chapter_obj["last_updated"] = chapter_timestamp
+                chapter_dict[chapter_number]["groups"][
+                    groups_map[chapter_group]
+                ] = self.wrap_chapter_meta(chapter_id)
+                chapter_dict[chapter_number]["release_date"][
+                    groups_map[chapter_group]
+                ] = chapter_timestamp
+            else:
+                chapter_dict[chapter_number] = {
+                    "volume": chapter_volume,
+                    "title": chapter_title,
+                    "groups": {
+                        groups_map[chapter_group]: self.wrap_chapter_meta(
+                            chapter_id
+                        )
+                    },
+                    "release_date": {groups_map[chapter_group]: chapter_timestamp},
+                    "last_updated": chapter_timestamp,
+                }
+
+        chapter_list = [
+            [
+                ch[0],
+                ch[0],
+                ch[1]["title"],
+                ch[0].replace(".", "-"),
+                "Multiple Groups"
+                if len(ch[1]["groups"]) > 1
+                else groups_dict[list(ch[1]["groups"].keys())[0]],
+                "No date."
+                if not ch[1]["last_updated"]
+                else self.date_parser(ch[1]["last_updated"]),
+                ch[1]["volume"] or "Unknown",
+            ]
+            for ch in sorted(
+                chapter_dict.items(), key=lambda m: float(m[0]), reverse=True
+            )
+        ]
+
+        return {
+            "slug": meta_id,
+            "title": main_data["data"]["attributes"]["title"][SUPPORTED_LANG],
+            "description": main_data["data"]["attributes"]["description"][
+                SUPPORTED_LANG
+            ],
+            "author": "",  # TODO
+            "artist": "",  # TODO
+            "groups": groups_dict,
+            "chapter_dict": chapter_dict,
+            "chapter_list": chapter_list,
+            "cover": "https://pbs.twimg.com/profile_images/1323198105634902018/Ramm0Zfc_400x400.jpg",  # TODO placeholder
+        }
+
+    @api_cache(prefix="md_series_dt", time=600)
+    def series_api_handler(self, meta_id):
+        data = self.md_api_common(meta_id)
+        if data:
+            return SeriesAPI(
+                slug=data["slug"],
+                title=data["title"],
+                description=data["description"],
+                author=data["author"],
+                artist=data["artist"],
+                groups=data["groups"],
+                cover=data["cover"],
+                chapters=data["chapter_dict"],
+            )
+
+    @api_cache(prefix="md_chapter_dt", time=600)
     def chapter_api_handler(self, meta_id):
         resp = get_wrapper(
-            f"https://api.mangadex.org/v2/chapter/{meta_id}",
+            f"https://api.mangadex.org/chapter/{meta_id}",
             headers={"Referer": "https://mangadex.org"},
         )
         if resp.status_code == 200:
-            api_data = resp.json()["data"]
-            chapter_pages = [
-                f"{api_data['server']}{api_data['hash']}/{page}"
-                for page in api_data["pages"]
-            ]
-            return ChapterAPI(
-                pages=chapter_pages,
-                series=api_data["mangaId"],
-                chapter=self.handle_oneshot_chapters(api_data)[1],
+            api_data = resp.json()
+            resp = get_wrapper(
+                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}",
+                headers={"Referer": "https://mangadex.org"},
             )
-        else:
-            return None
+            if resp.status_code == 200:
+                server_base = resp.json()["baseUrl"]
+                pages = [
+                    f"{server_base}/data/{api_data['data']['attributes']['hash']}/{page}"
+                    for page in api_data["data"]["attributes"]["data"]
+                ]
+                series = None
+                chapter = api_data["data"]["attributes"]["chapter"]
+                for relationship in api_data["relationships"]:
+                    if relationship["type"] == "manga":
+                        series = relationship["id"]
+                        break
 
-    @api_cache(prefix="md_series_page_dt", time=180)
+                return ChapterAPI(pages=pages, series=series, chapter=chapter)
+
+    @api_cache(prefix="md_series_page_dt", time=600)
     def series_page_handler(self, meta_id):
-        resp = get_wrapper(
-            f"https://api.mangadex.org/v2/manga/{meta_id}?include=chapters",
-            headers={"Referer": "https://mangadex.org"},
-        )
-        if resp.status_code == 200:
-            api_data = resp.json()["data"]
-            groups = {group["id"]: group["name"] for group in api_data["groups"]}
-            latest_chapter = 0
-            latest_timestamp = 0
-            chapters_dict = {}
-            for chapter in api_data["chapters"]:
-                if chapter["language"] in SUPPORTED_LANGS:
-                    chapter_list_id, chapter_id = self.handle_oneshot_chapters(chapter)
-                    date = datetime.utcfromtimestamp(chapter["timestamp"])
-                    if chapter["timestamp"] > latest_timestamp:
-                        latest_chapter = chapter["chapter"]
-                        latest_timestamp = chapter["timestamp"]
-                    if chapter["chapter"] in chapters_dict:
-                        chapters_dict[chapter_id][4] = "Multiple Groups"
-                        if not chapters_dict[chapter_id][6]:
-                            chapters_dict[chapter_id][6] = chapter["volume"]
-                    else:
-                        chapters_dict[chapter_id] = [
-                            chapter_list_id,
-                            chapter_id,
-                            chapter["title"],
-                            chapter_id.replace(".", "-"),
-                            groups[chapter["groups"][0]],
-                            [
-                                date.year,
-                                date.month - 1,
-                                date.day,
-                                date.hour,
-                                date.minute,
-                                date.second,
-                            ],
-                            chapter["volume"],
-                        ]
-            chapter_list = [
-                x[1]
-                for x in sorted(
-                    chapters_dict.items(), key=lambda m: float(m[0]), reverse=True
-                )
-            ]
-            latest_timestamp = datetime.utcfromtimestamp(latest_timestamp).strftime(
-                "%Y-%m-%d"
-            )
+        data = self.md_api_common(meta_id)
+        if data:
             return SeriesPage(
-                series=api_data["manga"]["title"],
+                series=data["title"],
                 alt_titles=[],
                 alt_titles_str=None,
-                slug=meta_id,
-                cover_vol_url=api_data["manga"]["mainCover"],
-                metadata=[
-                    ["Author", api_data["manga"]["author"][0]],
-                    ["Artist", api_data["manga"]["artist"][0]],
-                    ["Last Updated", f"Ch. {latest_chapter} - {latest_timestamp}"],
-                ],
-                synopsis=api_data["manga"]["description"],
-                author=api_data["manga"]["author"][0],
-                chapter_list=chapter_list,
-                original_url=f"https://mangadex.org/title/{meta_id}",
+                slug=data["slug"],
+                cover_vol_url=data["cover"],
+                metadata=[],
+                synopsis=data["description"],
+                author=data["artist"],
+                chapter_list=data["chapter_list"],
+                original_url=f"https://mangadex.org/{data['slug']}",
             )
-        else:
-            return None
