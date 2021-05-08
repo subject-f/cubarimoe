@@ -255,7 +255,7 @@ class MangaDex(ProxySource):
                 chapters=data["chapter_dict"],
             )
 
-    @api_cache(prefix="md_chapter_dt", time=600)
+    @api_cache(prefix="md_chapter_dt", time=300)
     def chapter_api_handler(self, meta_id):
         resp = get_wrapper(
             f"https://api.mangadex.org/chapter/{meta_id}",
@@ -264,7 +264,7 @@ class MangaDex(ProxySource):
         if resp.status_code == 200:
             api_data = resp.json()
             resp = get_wrapper(
-                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}",
+                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}?ssl=true",
                 headers={"Referer": "https://mangadex.org"},
             )
             if resp.status_code == 200:
