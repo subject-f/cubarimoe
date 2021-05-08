@@ -19,10 +19,25 @@ class MangaDex(ProxySource):
         return "mangadex"
 
     def shortcut_instantiator(self):
+        def legacy_mapper(series_id):
+            try:
+                series_id = int(series_id)
+                resp = post_wrapper(
+                    f"https://api.mangadex.org/legacy/mapping",
+                    json={"type": "manga", "ids": [series_id]},
+                )
+                if resp.status_code != 200:
+                    raise Exception("Failed to translate ID.")
+                return resp.json()[0]["data"]["attributes"]["newId"]
+            except ValueError:
+                return series_id
+
         def series(request, series_id):
+            series_id = legacy_mapper(series_id)
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", series_id)
 
         def series_chapter(request, series_id, chapter, page="1"):
+            series_id = legacy_mapper(series_id)
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
                 series_id,
@@ -44,6 +59,24 @@ class MangaDex(ProxySource):
                 return HttpResponse(status=500)
 
         return [
+            re_path(r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/$", series),
+            re_path(
+                r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(
+                r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/(?P<page>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(r"^read/mangadex/(?P<series_id>[\d]{1,9})/$", series),
+            re_path(
+                r"^read/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(
+                r"^read/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/(?P<page>[\d]{1,4})/$",
+                series_chapter,
+            ),
             re_path(r"^title/(?P<series_id>[\d]{1,9})/$", series),
             re_path(r"^title/(?P<series_id>[\d]{1,9})/([\w-]+)/$", series),
             re_path(r"^manga/(?P<series_id>[\d]{1,9})/$", series),
@@ -87,19 +120,6 @@ class MangaDex(ProxySource):
 
     @api_cache(prefix="md_common_dt", time=600)
     def md_api_common(self, meta_id):
-        try:
-            legacy_id = int(meta_id)
-            resp = post_wrapper(
-                f"https://api.mangadex.org/legacy/mapping",
-                json={"type": "manga", "ids": [legacy_id]},
-            )
-            if resp.status_code != 200:
-                return
-            new_id = resp.json()[0]["data"]["attributes"]["newId"]
-            return self.md_api_common(new_id)
-        except ValueError:
-            # Must be a UUID, so we continue
-            pass
         with ThreadPoolExecutor(max_workers=2) as executor:
             result = executor.map(
                 lambda req: {
@@ -199,9 +219,7 @@ class MangaDex(ProxySource):
                     "volume": chapter_volume,
                     "title": chapter_title,
                     "groups": {
-                        groups_map[chapter_group]: self.wrap_chapter_meta(
-                            chapter_id
-                        )
+                        groups_map[chapter_group]: self.wrap_chapter_meta(chapter_id)
                     },
                     "release_date": {groups_map[chapter_group]: chapter_timestamp},
                     "last_updated": chapter_timestamp,
