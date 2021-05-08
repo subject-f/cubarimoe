@@ -179,11 +179,9 @@ class MangaDex(ProxySource):
             groups_dict[str(key)] = resolved_groups_map[value]
             groups_map[value] = str(key)
 
-        chapter_map = {
-            chapter["data"]["id"]: chapter for chapter in chapter_data["results"]
-        }
-
         chapter_dict = {}
+
+        oneshots = 0
 
         for chapter in chapter_data["results"]:
             chapter_id = chapter["data"]["id"]
@@ -194,6 +192,10 @@ class MangaDex(ProxySource):
                 chapter["data"]["attributes"]["createdAt"], "%Y-%m-%dT%H:%M:%S%z"
             ).timestamp()
             chapter_group = None
+
+            if not chapter_number:
+                chapter_number = f"0.{oneshots}"
+                oneshots += 1
 
             for relationship in chapter["relationships"]:
                 if relationship["type"] == GROUP_KEY:
