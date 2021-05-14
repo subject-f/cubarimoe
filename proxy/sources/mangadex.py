@@ -23,8 +23,9 @@ class MangaDex(ProxySource):
             try:
                 series_id = int(series_id)
                 resp = post_wrapper(
-                    f"https://api.mangadex.org/legacy/mapping",
+                    f"https://cors.bridged.cc/https://api.mangadex.org/legacy/mapping",
                     json={"type": "manga", "ids": [series_id]},
+                    headers={"x-requested-with": "cubari"},
                 )
                 if resp.status_code != 200:
                     raise Exception("Failed to translate ID.")
@@ -125,8 +126,11 @@ class MangaDex(ProxySource):
                 lambda req: {
                     "type": req["type"],
                     "res": get_wrapper(
-                        req["url"],
-                        headers={"Referer": "https://mangadex.org"},
+                        "https://cors.bridged.cc/" + req["url"],
+                        headers={
+                            "Referer": "https://mangadex.org",
+                            "x-requested-with": "cubari",
+                        },
                     ),
                 },
                 [
@@ -161,10 +165,14 @@ class MangaDex(ProxySource):
 
         # We need to make yet another call to get the scanlator group names
         resolved_groups_map = {}
-        groups_api_url = f"https://api.mangadex.org/group?limit=100"
+        groups_api_url = (
+            f"https://cors.bridged.cc/https://api.mangadex.org/group?limit=100"
+        )
         for group in groups_set:
             groups_api_url += f"&ids[]={group}"
-        groups_resp = get_wrapper(groups_api_url)
+        groups_resp = get_wrapper(
+            groups_api_url, headers={"x-requested-with": "cubari"}
+        )
         if groups_resp.status_code != 200:
             return
         for result in groups_resp.json()["results"]:
@@ -278,14 +286,17 @@ class MangaDex(ProxySource):
     @api_cache(prefix="md_chapter_dt", time=300)
     def chapter_api_handler(self, meta_id):
         resp = get_wrapper(
-            f"https://api.mangadex.org/chapter/{meta_id}",
-            headers={"Referer": "https://mangadex.org"},
+            f"https://cors.bridged.cc/https://api.mangadex.org/chapter/{meta_id}",
+            headers={"Referer": "https://mangadex.org", "x-requested-with": "cubari"},
         )
         if resp.status_code == 200:
             api_data = resp.json()
             resp = get_wrapper(
-                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}?ssl=true",
-                headers={"Referer": "https://mangadex.org"},
+                f"https://cors.bridged.cc/https://api.mangadex.org/at-home/server/{api_data['data']['id']}?forcePort443=true",
+                headers={
+                    "Referer": "https://mangadex.org",
+                    "x-requested-with": "cubari",
+                },
             )
             if resp.status_code == 200:
                 server_base = resp.json()["baseUrl"]
