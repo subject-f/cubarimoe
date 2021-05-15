@@ -1,6 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
+from django.core.cache import cache
 
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -163,22 +164,32 @@ class MangaDex(ProxySource):
             if relationship["type"] == GROUP_KEY
         }
 
-        # We need to make yet another call to get the scanlator group names
         resolved_groups_map = {}
-        groups_api_url = (
-            f"https://cors.bridged.cc/https://api.mangadex.org/group?limit=100"
-        )
+
         for group in groups_set:
-            groups_api_url += f"&ids[]={group}"
-        groups_resp = get_wrapper(
-            groups_api_url, headers={"x-requested-with": "cubari"}
-        )
-        if groups_resp.status_code != 200:
-            return
-        for result in groups_resp.json()["results"]:
-            resolved_groups_map[result["data"]["id"]] = result["data"]["attributes"][
-                "name"
-            ]
+            val = cache.get(group)
+            if val:
+                resolved_groups_map[group] = val
+
+        # We need to make yet another call to get the scanlator
+        # group names; we'll cache these names with a long TTL
+        # since the CORS proxy doesn't handle the PHP array
+        # syntax properly.
+        remaining_groups = groups_set - set(resolved_groups_map)
+        if len(remaining_groups):
+            groups_api_url = f"https://api.mangadex.org/group?limit=100"
+            for group in remaining_groups:
+                groups_api_url += f"&ids[]={group}"
+            groups_resp = get_wrapper(
+                groups_api_url, headers={"x-requested-with": "cubari"}
+            )
+            if groups_resp.status_code != 200:
+                return
+            for result in groups_resp.json()["results"]:
+                group_id = result["data"]["id"]
+                group_name = result["data"]["attributes"]["name"]
+                resolved_groups_map[group_id] = group_name
+                cache.set(group_id, group_name, 60 * 60 * 24) # 24 hour cache
 
         groups_dict = {}
         groups_map = {}
