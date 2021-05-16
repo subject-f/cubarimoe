@@ -1,6 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
+from django.core.cache import cache
 
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -19,10 +20,26 @@ class MangaDex(ProxySource):
         return "mangadex"
 
     def shortcut_instantiator(self):
+        def legacy_mapper(series_id):
+            try:
+                series_id = int(series_id)
+                resp = post_wrapper(
+                    f"https://cors.bridged.cc/https://api.mangadex.org/legacy/mapping",
+                    json={"type": "manga", "ids": [series_id]},
+                    headers={"x-requested-with": "cubari"},
+                )
+                if resp.status_code != 200:
+                    raise Exception("Failed to translate ID.")
+                return resp.json()[0]["data"]["attributes"]["newId"]
+            except ValueError:
+                return series_id
+
         def series(request, series_id):
+            series_id = legacy_mapper(series_id)
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", series_id)
 
         def series_chapter(request, series_id, chapter, page="1"):
+            series_id = legacy_mapper(series_id)
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
                 series_id,
@@ -44,6 +61,24 @@ class MangaDex(ProxySource):
                 return HttpResponse(status=500)
 
         return [
+            re_path(r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/$", series),
+            re_path(
+                r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(
+                r"^proxy/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/(?P<page>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(r"^read/mangadex/(?P<series_id>[\d]{1,9})/$", series),
+            re_path(
+                r"^read/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/$",
+                series_chapter,
+            ),
+            re_path(
+                r"^read/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/(?P<page>[\d]{1,4})/$",
+                series_chapter,
+            ),
             re_path(r"^title/(?P<series_id>[\d]{1,9})/$", series),
             re_path(r"^title/(?P<series_id>[\d]{1,9})/([\w-]+)/$", series),
             re_path(r"^manga/(?P<series_id>[\d]{1,9})/$", series),
@@ -55,36 +90,7 @@ class MangaDex(ProxySource):
         ]
 
     def process_description(self, desc):
-        # While I'm pretty sure MD escapes the descriptions for us, we'll unescape it
-        # so we can re-process any special characters, then escape again using Django's own filter.
-        # .... just in case.
-        resescaped = super().process_description(html.unescape(desc))
-
-        # MD supported BBCode: https://mangadex.org/thread/3
-        # Of the ones supported, we'll only parse the text transforms and strip the rest
-        allowed_tags = {
-            "b",
-            "i",
-            "u",
-            "s",
-            "h",
-            "sub",
-            "sup",
-            "code",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-        }
-
-        for tag in allowed_tags:
-            resescaped = resescaped.replace(f"[{tag}]", f"<{tag}>").replace(
-                f"[/{tag}]", f"</{tag}>"
-            )
-
-        # We'll ignore stripping the rest since context might be lost if we strip unsupported tags
-
-        return resescaped
+        return html.unescape(desc)
 
     def handle_oneshot_chapters(self, resp):
         """This expects a chapter API response object."""
@@ -116,26 +122,16 @@ class MangaDex(ProxySource):
 
     @api_cache(prefix="md_common_dt", time=600)
     def md_api_common(self, meta_id):
-        try:
-            legacy_id = int(meta_id)
-            resp = post_wrapper(
-                f"https://api.mangadex.org/legacy/mapping",
-                json={"type": "manga", "ids": [legacy_id]},
-            )
-            if resp.status_code != 200:
-                return
-            new_id = resp.json()[0]["data"]["attributes"]["newId"]
-            return self.md_api_common(new_id)
-        except ValueError:
-            # Must be a UUID, so we continue
-            pass
         with ThreadPoolExecutor(max_workers=2) as executor:
             result = executor.map(
                 lambda req: {
                     "type": req["type"],
                     "res": get_wrapper(
-                        req["url"],
-                        headers={"Referer": "https://mangadex.org"},
+                        "https://cors.bridged.cc/" + req["url"],
+                        headers={
+                            "Referer": "https://mangadex.org",
+                            "x-requested-with": "cubari",
+                        },
                     ),
                 },
                 [
@@ -168,18 +164,32 @@ class MangaDex(ProxySource):
             if relationship["type"] == GROUP_KEY
         }
 
-        # We need to make yet another call to get the scanlator group names
         resolved_groups_map = {}
-        groups_api_url = f"https://api.mangadex.org/group?limit=100"
+
         for group in groups_set:
-            groups_api_url += f"&ids[]={group}"
-        groups_resp = get_wrapper(groups_api_url)
-        if groups_resp.status_code != 200:
-            return
-        for result in groups_resp.json()["results"]:
-            resolved_groups_map[result["data"]["id"]] = result["data"]["attributes"][
-                "name"
-            ]
+            val = cache.get(group)
+            if val:
+                resolved_groups_map[group] = val
+
+        # We need to make yet another call to get the scanlator
+        # group names; we'll cache these names with a long TTL
+        # since the CORS proxy doesn't handle the PHP array
+        # syntax properly.
+        remaining_groups = groups_set - set(resolved_groups_map)
+        if len(remaining_groups):
+            groups_api_url = f"https://api.mangadex.org/group?limit=100"
+            for group in remaining_groups:
+                groups_api_url += f"&ids[]={group}"
+            groups_resp = get_wrapper(
+                groups_api_url, headers={"x-requested-with": "cubari"}
+            )
+            if groups_resp.status_code != 200:
+                return
+            for result in groups_resp.json()["results"]:
+                group_id = result["data"]["id"]
+                group_name = result["data"]["attributes"]["name"]
+                resolved_groups_map[group_id] = group_name
+                cache.set(group_id, group_name, 60 * 60 * 24) # 24 hour cache
 
         groups_dict = {}
         groups_map = {}
@@ -188,11 +198,9 @@ class MangaDex(ProxySource):
             groups_dict[str(key)] = resolved_groups_map[value]
             groups_map[value] = str(key)
 
-        chapter_map = {
-            chapter["data"]["id"]: chapter for chapter in chapter_data["results"]
-        }
-
         chapter_dict = {}
+
+        oneshots = 0
 
         for chapter in chapter_data["results"]:
             chapter_id = chapter["data"]["id"]
@@ -203,6 +211,10 @@ class MangaDex(ProxySource):
                 chapter["data"]["attributes"]["createdAt"], "%Y-%m-%dT%H:%M:%S%z"
             ).timestamp()
             chapter_group = None
+
+            if not chapter_number:
+                chapter_number = f"0.{oneshots}"
+                oneshots += 1
 
             for relationship in chapter["relationships"]:
                 if relationship["type"] == GROUP_KEY:
@@ -228,9 +240,7 @@ class MangaDex(ProxySource):
                     "volume": chapter_volume,
                     "title": chapter_title,
                     "groups": {
-                        groups_map[chapter_group]: self.wrap_chapter_meta(
-                            chapter_id
-                        )
+                        groups_map[chapter_group]: self.wrap_chapter_meta(chapter_id)
                     },
                     "release_date": {groups_map[chapter_group]: chapter_timestamp},
                     "last_updated": chapter_timestamp,
@@ -284,17 +294,20 @@ class MangaDex(ProxySource):
                 chapters=data["chapter_dict"],
             )
 
-    @api_cache(prefix="md_chapter_dt", time=600)
+    @api_cache(prefix="md_chapter_dt", time=300)
     def chapter_api_handler(self, meta_id):
         resp = get_wrapper(
-            f"https://api.mangadex.org/chapter/{meta_id}",
-            headers={"Referer": "https://mangadex.org"},
+            f"https://cors.bridged.cc/https://api.mangadex.org/chapter/{meta_id}",
+            headers={"Referer": "https://mangadex.org", "x-requested-with": "cubari"},
         )
         if resp.status_code == 200:
             api_data = resp.json()
             resp = get_wrapper(
-                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}",
-                headers={"Referer": "https://mangadex.org"},
+                f"https://cors.bridged.cc/https://api.mangadex.org/at-home/server/{api_data['data']['id']}?forcePort443=true",
+                headers={
+                    "Referer": "https://mangadex.org",
+                    "x-requested-with": "cubari",
+                },
             )
             if resp.status_code == 200:
                 server_base = resp.json()["baseUrl"]
