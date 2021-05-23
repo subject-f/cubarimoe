@@ -141,7 +141,7 @@ class MangaDex(ProxySource):
                     },
                     {
                         "type": "chapter",
-                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?locales[]={SUPPORTED_LANG}&limit=500",  # TODO might not return all
+                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&limit=500",  # TODO might not return all
                     },
                 ],
             )
