@@ -13,7 +13,12 @@ from ..source.helpers import api_cache, get_wrapper, post_wrapper
 
 SUPPORTED_LANG = "en"
 GROUP_KEY = "scanlation_group"
+# Default endpoint and uses an extra call
+# COVER_URL_FILENAME_ENDPOINT = https://api.mangadex.org/cover/<cover_uuid>/
+# COVER_URL_ENDPOINT = 'https://uploads.mangadex.org/covers/<series_uuid>/<filename>'
 
+#This endpoint is used by Tachiyomi
+COVER_URL_ENDPOINT = 'https://coverapi.orell.dev/api/v1/mdaltimage/manga/<series_uuid>/cover'
 
 class MangaDex(ProxySource):
     def get_reader_prefix(self):
@@ -265,6 +270,8 @@ class MangaDex(ProxySource):
             )
         ]
 
+        cover = COVER_URL_ENDPOINT.replace("<series_uuid>", meta_id)
+
         return {
             "slug": meta_id,
             "title": main_data["data"]["attributes"]["title"][SUPPORTED_LANG],
@@ -276,7 +283,7 @@ class MangaDex(ProxySource):
             "groups": groups_dict,
             "chapter_dict": chapter_dict,
             "chapter_list": chapter_list,
-            "cover": "https://pbs.twimg.com/profile_images/1323198105634902018/Ramm0Zfc_400x400.jpg",  # TODO placeholder
+            "cover": cover,
         }
 
     @api_cache(prefix="md_series_dt", time=600)
