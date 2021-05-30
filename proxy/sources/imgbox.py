@@ -39,7 +39,6 @@ class Imgbox(ProxySource):
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "html.parser")
             gallery = soup.find("div", id="gallery-view-content")
-            print(gallery)
             pages_list = [
                 self.image_url_handler(image["src"])
                 for image in gallery.find_all("img")
