@@ -8,6 +8,8 @@ from .sources.hitomi import Hitomi
 from .sources.gist import Gist
 from .sources.mangakatana import MangaKatana
 from .sources.nepnep import NepNep
+from .sources.imgbox import Imgbox
+
 sources = [
     MangaDex(),
     NHentai(),
@@ -18,5 +20,6 @@ sources = [
     Hitomi(),
     Gist(),
     MangaKatana(),
-    NepNep()
+    NepNep(),
+    Imgbox(),
 ]
