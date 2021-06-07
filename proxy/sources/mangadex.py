@@ -17,8 +17,14 @@ GROUP_KEY = "scanlation_group"
 # COVER_URL_FILENAME_ENDPOINT = https://api.mangadex.org/cover/<cover_uuid>/
 # COVER_URL_ENDPOINT = 'https://uploads.mangadex.org/covers/<series_uuid>/<filename>'
 
-#This endpoint is used by Tachiyomi
+# This endpoint is used by Tachiyomi
 COVER_URL_ENDPOINT = 'https://coverapi.orell.dev/api/v1/mdaltimage/manga/<series_uuid>/cover'
+CORS_PROXY = "https://cors.bridged.cc/"
+HEADERS_COMMON = {
+    "Referer": "https://mangadex.org",
+    "x-requested-with": "cubari",
+}
+
 
 class MangaDex(ProxySource):
     def get_reader_prefix(self):
@@ -127,16 +133,14 @@ class MangaDex(ProxySource):
 
     @api_cache(prefix="md_common_dt", time=600)
     def md_api_common(self, meta_id):
+        current_offset = 0
         with ThreadPoolExecutor(max_workers=2) as executor:
             result = executor.map(
                 lambda req: {
                     "type": req["type"],
                     "res": get_wrapper(
-                        "https://cors.bridged.cc/" + req["url"],
-                        headers={
-                            "Referer": "https://mangadex.org",
-                            "x-requested-with": "cubari",
-                        },
+                        CORS_PROXY + req["url"],
+                        headers=HEADERS_COMMON,
                     ),
                 },
                 [
@@ -146,7 +150,8 @@ class MangaDex(ProxySource):
                     },
                     {
                         "type": "chapter",
-                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&limit=500",  # TODO might not return all
+                        # TODO might not return all
+                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&limit=500",
                     },
                 ],
             )
@@ -161,6 +166,27 @@ class MangaDex(ProxySource):
                 main_data = res["res"].json()
             elif res["type"] == "chapter":
                 chapter_data = res["res"].json()
+
+        current_offset = 500
+        if ("total" in chapter_data and current_offset < chapter_data["total"]):
+            unfetched_urls = []
+            while(current_offset < chapter_data["total"]):
+                unfetched_urls.append(
+                    f'https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&offset={current_offset}&limit=500')
+                current_offset = current_offset + 500
+
+            # workers = 3 because aren't getting 2000+ chapter series soon (hopefully)
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                results = executor.map(
+                    lambda url: get_wrapper(
+                        url=CORS_PROXY + url,
+                        headers=HEADERS_COMMON
+                    ),
+                    unfetched_urls
+                )
+            for result in results:
+                result_json = result.json()
+                chapter_data["results"].extend(result_json["results"])
 
         groups_set = {
             relationship["id"]
@@ -194,7 +220,7 @@ class MangaDex(ProxySource):
                 group_id = result["data"]["id"]
                 group_name = result["data"]["attributes"]["name"]
                 resolved_groups_map[group_id] = group_name
-                cache.set(group_id, group_name, 60 * 60 * 24) # 24 hour cache
+                cache.set(group_id, group_name, 60 * 60 * 24)  # 24 hour cache
 
         groups_dict = {}
         groups_map = {}
@@ -245,7 +271,8 @@ class MangaDex(ProxySource):
                     "volume": chapter_volume,
                     "title": chapter_title,
                     "groups": {
-                        groups_map[chapter_group]: self.wrap_chapter_meta(chapter_id)
+                        groups_map[chapter_group]: self.wrap_chapter_meta(
+                            chapter_id)
                     },
                     "release_date": {groups_map[chapter_group]: chapter_timestamp},
                     "last_updated": chapter_timestamp,
@@ -305,7 +332,8 @@ class MangaDex(ProxySource):
     def chapter_api_handler(self, meta_id):
         resp = get_wrapper(
             f"https://cors.bridged.cc/https://api.mangadex.org/chapter/{meta_id}",
-            headers={"Referer": "https://mangadex.org", "x-requested-with": "cubari"},
+            headers={"Referer": "https://mangadex.org",
+                     "x-requested-with": "cubari"},
         )
         if resp.status_code == 200:
             api_data = resp.json()
