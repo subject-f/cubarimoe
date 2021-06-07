@@ -84,13 +84,13 @@ class MangaDex(ProxySource):
                 r"^read/mangadex/(?P<series_id>[\d]{1,9})/(?P<chapter>[\d]{1,4})/(?P<page>[\d]{1,4})/$",
                 series_chapter,
             ),
-            re_path(r"^title/(?P<series_id>[\d]{1,9})/$", series),
-            re_path(r"^title/(?P<series_id>[\d]{1,9})/([\w-]+)/$", series),
-            re_path(r"^manga/(?P<series_id>[\d]{1,9})/$", series),
-            re_path(r"^manga/(?P<series_id>[\d]{1,9})/([\w-]+)/$", series),
-            re_path(r"^chapter/(?P<chapter_id>[\d]{1,9})/$", chapter),
+            re_path(r"^title/(?P<series_id>[\d\w\-]+)/$", series),
+            re_path(r"^title/(?P<series_id>[\d\w\-]+)/([\w-]+)/$", series),
+            re_path(r"^manga/(?P<series_id>[\d\w\-]+)/$", series),
+            re_path(r"^manga/(?P<series_id>[\d\w\-]+)/([\w-]+)/$", series),
+            re_path(r"^chapter/(?P<chapter_id>[\d\w\-]+)/$", chapter),
             re_path(
-                r"^chapter/(?P<chapter_id>[\d]{1,9})/(?P<page>[\d]{1,9})/$", chapter
+                r"^chapter/(?P<chapter_id>[\d\w\-]+)/(?P<page>[\d]{1,9})/$", chapter
             ),
         ]
 
@@ -345,5 +345,5 @@ class MangaDex(ProxySource):
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
-                original_url=f"https://mangadex.org/{data['slug']}",
+                original_url=f"https://mangadex.org/title/{data['slug']}",
             )
