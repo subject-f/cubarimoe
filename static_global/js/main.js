@@ -18,9 +18,24 @@ let error = '';
 			break;
 		case (/^[0-9]{5}[0-9]?$/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
 			result = /(\/?)(\b[0-9]+\b)/.exec(text);
+			console.log(result)
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/nhentai/' + result[2];
 			break;
+		case (/mangadex\.org\/title/.test(text)):
+			result = /(\/?)([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/.exec(text)
+			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
+			result = '/read/mangadex/' + result[2]
+			break;
+		case (/mangasee123\.com/).test(text) || (/manga4life\.com/).test(text):
+			text = text.replace(/\/$/, "")
+			if(text.includes("/manga/")) {
+				slug_name = text.split("/manga/").pop()
+			} else {
+				return message('Reader could not understand the given link.', 1)
+			}
+			result = '/read/mangasee/' + slug_name
+			break 
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
