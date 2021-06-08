@@ -38,6 +38,9 @@ class NepNep(ProxySource):
             re_path(r"^ms/(?P<raw_url>[\w\d\/:.-]+)", handler),
             re_path(r"^ml/(?P<raw_url>[\w\d\/:.-]+)", handler)
         ]
+    @staticmethod
+    def wrap_image_url(url):
+        return f"{settings.IMAGE_PROXY_URL}/{url}"
 
     @staticmethod
     def normalize_slug(denormal):
@@ -249,6 +252,7 @@ class NepNep(ProxySource):
                 padded_page = '000' + str(i)
                 stuffed_page = padded_page[len(padded_page) - 3:]
                 pages.append('https://' + chapter_host + '/manga/' + slug_name + "/" + season + ('/' if season else '') + stuffed_chapter + '-' + stuffed_page + '.png') 
+            pages = [self.wrap_image_url(page) for page in pages]
             return ChapterAPI(pages=pages, series=meta_id, chapter="")
         else:
             return None
