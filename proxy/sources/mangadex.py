@@ -13,12 +13,7 @@ from ..source.helpers import api_cache, get_wrapper, post_wrapper
 
 SUPPORTED_LANG = "en"
 GROUP_KEY = "scanlation_group"
-# Default endpoint and uses an extra call
-# COVER_URL_FILENAME_ENDPOINT = https://api.mangadex.org/cover/<cover_uuid>/
-# COVER_URL_ENDPOINT = 'https://uploads.mangadex.org/covers/<series_uuid>/<filename>'
 
-# This endpoint is used by Tachiyomi
-COVER_URL_ENDPOINT = 'https://coverapi.orell.dev/api/v1/mdaltimage/manga/<series_uuid>/cover'
 CORS_PROXY = "https://cors.bridged.cc/"
 HEADERS_COMMON = {
     "Referer": "https://mangadex.org",
@@ -146,7 +141,7 @@ class MangaDex(ProxySource):
                 [
                     {
                         "type": "main",
-                        "url": f"https://api.mangadex.org/manga/{meta_id}",
+                        "url": f"https://api.mangadex.org/manga/{meta_id}?includes[]=cover_art",
                     },
                     {
                         "type": "chapter",
@@ -297,7 +292,10 @@ class MangaDex(ProxySource):
             )
         ]
 
-        cover = COVER_URL_ENDPOINT.replace("<series_uuid>", meta_id)
+        cover_filename = None
+        for data in main_data["relationships"]:
+            if data["type"] == "cover_art":
+                cover_filename = data["attributes"]["fileName"]
 
         return {
             "slug": meta_id,
@@ -305,12 +303,12 @@ class MangaDex(ProxySource):
             "description": main_data["data"]["attributes"]["description"][
                 SUPPORTED_LANG
             ],
-            "author": "",  # TODO
-            "artist": "",  # TODO
+            "author": "", 
+            "artist": "",  
             "groups": groups_dict,
             "chapter_dict": chapter_dict,
             "chapter_list": chapter_list,
-            "cover": cover,
+            "cover": f"https://uploads.mangadex.org/covers/{meta_id}/{cover_filename}",
         }
 
     @api_cache(prefix="md_series_dt", time=600)
