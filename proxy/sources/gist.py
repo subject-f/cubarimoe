@@ -117,12 +117,15 @@ class Gist(ProxySource):
                         else metadata
                         for group, metadata in data["groups"].items()
                     },
+                    "release_date": {
+                        groups_map[group]: data.get("last_updated", None)
+                        for group in data["groups"].keys()
+                        if "last_updated" in data
+                    },
                     "last_updated": data.get("last_updated", None),
                 }
                 for ch, data in api_data["chapters"].items()
             }
-
-            # for ch in chapter_dict.items():
 
             chapter_list = [
                 [
@@ -143,8 +146,12 @@ class Gist(ProxySource):
                 )
             ]
 
+            # We'll do a last pass over the data to purge the release_date keys if
+            # they doesn't exist. It's ugly but it's for the external consumers of our API
             for md in chapter_dict.values():
                 del md["last_updated"]
+                if not md["release_date"]:
+                    del md["release_date"]
 
             return {
                 "slug": meta_id,
