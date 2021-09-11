@@ -752,8 +752,8 @@ function isJSON(str) {
 }
 
 var Path = {
-	join(base, item) {
-		return base + '/' + item;
+	join() {
+		return Array.prototype.slice.call(arguments).reduce((base, element) => base.concat((element || '').split('/')/*.filter(f=>f)*/), []).join('/');
 	},
 	extname(str) {
 		if(!is(str)) return '';

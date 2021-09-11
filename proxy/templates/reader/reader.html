@@ -2,165 +2,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="theme-color" content="#2b2f33" />
-  <title>{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}</title>
-  <meta name="twitter:title" content="{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}">
-  <meta property="og:title" content="{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}">
-  <meta name="description" content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
-  <meta name="twitter:card" content="summary">
-  {% if first_party %}
-  <meta property="og:description"
-    content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
-  <meta name="twitter:description"
-    content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
-  <meta property="og:image" content="{{ brand.image_url }}">
-  <meta name="twitter:image" content="{{ brand.image_url }}">
-  <meta name="author" content="{{ author_name }}">
-  {% else %}
-  <meta property="og:description" content="Read the {{ series_name }} manga series.">
-  <meta name="twitter:description" content="Read the {{ series_name }} manga series.">
-  <meta property="og:image" content="{{ cover }}">
-  <meta name="twitter:image" content="{{ cover }}">
-  {% endif %}
-  <meta property="og:url" content="{{ absolute_url }}">
-  <meta name="viewport" content="width=device-width">
-  <link rel="stylesheet" href="{% static 'css/pickr.css' %}{{ version_query }}"/>
-  <link rel="canonical" href="{{ absolute_url }}" />
-  <link rel="stylesheet" type="text/css" href="{% static 'css/reader.css' %}{{ version_query }}">
-  {% include "meta.html" %}
-  {% include "history.html" %}
+	<meta charset="UTF-8">
+	<meta name="theme-color" content="#2b2f33" />
+	<title>{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}</title>
+	<meta name="twitter:title" content="{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}">
+	<meta property="og:title" content="{{ series_name }} | Chapter {{ chapter_number }} | {{ brand.name }}">
+	<meta name="description" content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
+	<meta name="twitter:card" content="summary">
+	{% if first_party %}
+	<meta property="og:description"
+	content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
+	<meta name="twitter:description"
+	content="Read chapter {{ chapter_number }} of {{ series_name }} | {{ brand.name }}">
+	<meta property="og:image" content="{{ brand.image_url }}">
+	<meta name="twitter:image" content="{{ brand.image_url }}">
+	<meta name="author" content="{{ author_name }}">
+	{% else %}
+	<meta property="og:description" content="Read the {{ series_name }} manga series.">
+	<meta name="twitter:description" content="Read the {{ series_name }} manga series.">
+	<meta property="og:image" content="{{ cover }}">
+	<meta name="twitter:image" content="{{ cover }}">
+	{% endif %}
+	<meta property="og:url" content="{{ absolute_url }}">
+	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" href="{% static 'css/pickr.css' %}{{ version_query }}"/>
+	<link rel="canonical" href="{{ absolute_url }}" />
+	<link rel="stylesheet" type="text/css" href="{% static 'css/reader.css' %}{{ version_query }}">
+	{% include "meta.html" %}
+	{% include "history.html" %}
 </head>
 <script>
-  // Seed the values from the template for the reader API calls
-  const BASE_API_PATH = "{{ api_path }}";
-  const IS_FIRST_PARTY = {{ first_party|yesno:"true,false,false" }};
-  const IS_INDEXED = {{ indexed|yesno:"true,false,false" }};
-  const IMAGE_PROXY_URL = "{{ image_proxy_url }}";
+	// Seed the values from the template for the reader API calls
+	const BASE_API_PATH = "{{ api_path }}";
+	const IS_FIRST_PARTY = {{ first_party|yesno:"true,false,false" }};
+	const IS_INDEXED = {{ indexed|yesno:"true,false,false" }};
+	const IMAGE_PROXY_URL = "{{ image_proxy_url }}";
 </script>
-
 <body>
-  {% include "tracking.html" %}
-  <main id="rdr-main" class="" tabindex="-1">
-    <aside class="unload">
-      <div class="hide-side" data-bind="sidebar_button">
-        <div class="hide-side-actual ico-btn"></div>
-      </div>
-      <header>
-        <a href="/" class="ico-btn guya"></a>
-        <h1 data-bind='title'><a href="/read/manga/{{ slug }}/">{{ series_name }}</a></h1>
-        <button class="ico-btn"></button>
-      </header>
-      <div class="rdr-aside-buffer" data-bind="rdr_aside_buffer"></div>
-      <div class="rdr-aside-content" data-bind="rdr_aside_content">
-        <section class="rdr-selector" data-bind="rdr_selector">
-          <div class="rdr-selector-top">
-            <button data-bind='vol_next' class="rdr-selector-vol ico-btn prev"
-              data-tip="Previous volume"></button>
-            <div class="flex-spacer" data-bind='message'></div>
-            <button data-bind="download_chapter" class="ico-btn download"></button>
-            <div class="download-anchor">
-              <div class="download-wrapper hidden" data-bind="download_wrapper">
-                <button data-bind="downloading_chapter" class="ico-btn downloading" disabled></button>
-                <button data-bind="download_cancel" class="ico-btn download-cancel"></button>
-              </div>
-            </div>
-            <a data-bind='share_button' data-tip="Short link to current page"
-              class="rdr-share ico-btn "></a>
-            <!-- <a data-bind='comment_button' data-tip="Comments" class="rdr-comment ico-btn"></a> -->
-            <button data-bind='jump' class="ico-btn jump"></button>
-            <button data-bind='search' class="ico-btn search"></button>
-          </div>
-          <div class="rdr-selector-mid">
-            <button data-bind='chap_prev' class="rdr-selector-chap ico-btn prev"></button>
-            <div class="rdr-vol-wrap" data-bind='selector_vol'>
-              <label></label>
-              <select id="rdr-vol"></select>
-            </div>
-            <div class="rdr-chap-wrap" data-bind='selector_chap'>
-              <label></label>
-              <select id="rdr-chap"></select>
-            </div>
-            <button data-bind='chap_next' class="rdr-selector-chap ico-btn next"></button>
-          </div>
-          <div class="rdr-selector-bot">
-            <button data-bind='vol_prev' class="rdr-selector-vol ico-btn next"
-              data-tip="Next volume"></button>
-            <div class="flex-spacer"></div>
-            <button data-bind='preload_button' class="ico-btn hidden"></button>
-            <button data-bind='fit_button' class="ico-btn"></button>
-            <button data-bind='layout_button' class="ico-btn"></button>
-            <button data-bind='spread_button' class="ico-btn"></button>
-            <button data-bind='sel_pin_button' class="ico-btn"></button>
-            <button data-bind='settings_button' class="ico-btn"></button>
-          </div>
-        </section>
-        <section class="rdr-groups" data-bind='groups'>
-        </section>
-        <section class="rdr-previews">
-          <div class="header" data-bind="previews_button">
-            <span>Previews</span>
-            <div class="ico-btn expander"></div>
-          </div>
-          <div data-bind='previews' class="rdr-previews-gallery">
-          </div>
-        </section>
-        <section class="rdr-description">
-          <div data-bind="image_description">
-          </div>
-        </section>
-      </div>
-    </aside>
-    <div class="rdr-page-selector vis" data-bind="page_selector">
-      <div class="rdr-page-selector-counter" data-bind="page_keys_count">
-
-      </div>
-      <div class="rdr-page-selector-keys" data-bind="page_keys">
-      </div>
-    </div>
-    <content data-bind='image_viewer' class="rdr-area">
-      <div class="preload-entity" data-bind="preload_entity">
-        <img /><img /><img /><img />
-      </div>
-      <div class="rdr-image-wrap" data-bind='image_container' tabindex="-1">
-      </div>
-      <div class="zoom-level refresh-chapter is-hidden" data-bind="random_chapter">
-        <div class="refresh-chapter-note">This is the Blu-ray extras "random chapter".<br>Click this button to
-          reshuffle the chapter.</div>
-        <div class="ico-btn" data-bind="random_chapter_button">↻</div>
-      </div>
-      <div class="hover-prev" data-bind="hover_prev">
-        <div class="hover-wrap">
-          <div class="hover-arrow"></div>
-          <div class="hover-sub"></div>
-        </div>
-      </div>
-      <div class="hover-next" data-bind="hover_next">
-        <div class="hover-wrap">
-          <div class="hover-arrow"></div>
-          <div class="hover-sub"></div>
-        </div>
-      </div>
-    </content>
-    <div class="zoom-level vis" data-bind="zoom_level">
-      <div class="ico-btn" data-bind="zoom_level_plus"></div>
-      <div class="ico-btn" data-bind="zoom_level_minus"></div>
-    </div>
-  </main>
-  <div class="Tooltippy"></div>
-  <div class="Tooltippy Error"></div>
-  <div class="LodaManager hidden" tabindex="-1">
-
-  </div>
+	{% include "tracking.html" %}
+	<main id="rdr-main" tabindex="-1"></main>
+	<div class="Tooltippy"></div>
+	<div class="Tooltippy Error"></div>
+	<div class="LodaManager hidden" tabindex="-1"></div>
 </body>
 <script src="{% static 'js/pickr.min.js' %}{{ version_query }}"></script>
 <script src="{% static 'js/jszip.min.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/ResizeSensor.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/UI2.js' %}{{ version_query }}"></script>
-<script type="text/javascript" src="{% static 'js/init.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/ReaderAPI.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/Settings.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/ThemeHandler.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_Loda.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_ReaderSelector.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_ReaderImage.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_ReaderImageWrapper.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_ReaderImageViewer.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/UI_Reader.js' %}{{ version_query }}"></script>
+<script type="text/javascript" src="{% static 'js/Cubari.js' %}{{ version_query }}"></script>
+<!-- <script type="text/javascript" src="{% static 'js/init2.js' %}{{ version_query }}"></script> -->
 <script type="text/javascript">
-  // History tagging
-  tag();
+	// History tagging
+	tag();
 </script>
 </html>

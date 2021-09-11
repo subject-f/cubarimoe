@@ -263,29 +263,36 @@ function UI(o) {
 
 	this.init = function init(o) {
 		o=be(o);
-		this.me = {
-			kind: ['UI'].concat(o.kind || []),
-			node: o.node,
-			html: o.html
-		}
+		if(!this.me) this.me = {}
+		this.me.kind = [Object.getPrototypeOf(this).constructor.name.replace('UI_','')].concat((o.o && o.o.kind)?o.o.kind:[]),
+		this.me.html = (o.o && o.o.html)?o.o.html:o.html,
+		this.me.node = (o.o && o.o.node)?o.o.node:undefined
 		if(DEBUG) console.debug('Instancing UI_', this.me.kind, ': ', this);
 
-		this.$ = this.me.node?this.me.node:this.conjure();
+		// this.$ = this.me.node?this.me.node:this.conjure();
+		this.$ = this.conjure();
 		this.$._struct = this;
 		this.$.classList.add.apply(this.$.classList, this.me.kind);
+		this.d = {}
 		this.consume();
 		return o;
 	}
 	// Creates an element out of html template.
 	this.conjure = function conjure() {
-		if(!this.me.html) {
+		if(!this.me.html && !this.me.node) {
 			throw 'CANNOT CONJURE: node and HTML is missing.'
 			return false;
 		}
 		if(DEBUG) console.debug('Node was not found. Creating an instance using embedded HTML tempate.')
-	var holder = crelm();
-		holder.innerHTML = this.me.html;
-		return holder.firstElementChild;
+		if(this.me.node){
+			holder = this.me.node;
+			holder.innerHTML = this.me.html;
+			return holder;
+		}else{
+		var holder = document.createElement('div');
+			holder.innerHTML = this.me.html;
+			return holder.firstElementChild;
+		}
 	}
 
 	this.destroy = () => {
@@ -297,11 +304,11 @@ function UI(o) {
 		if(this.S) this.S.destroy();
 	}
 
-
 	this.init(o);
-
-	//what?
-	this.markers = {};
+}
+UI.inherit = (from, to, o) => {
+	o.kind = from.name.replace('UI_','');
+	from.call(to, o)
 }
 
 function dpraw(fn){
