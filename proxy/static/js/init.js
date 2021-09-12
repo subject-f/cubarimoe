@@ -1982,6 +1982,10 @@ function UI_ReaderImageView(o) {
 			}
 			this.imageContainer.add(butt);
 		}
+
+		if(this.corpses) {
+			this.corpses = [];
+		}
 	}
 
 	this.selectPage = function(index, dry) {
@@ -2388,14 +2392,33 @@ const SCROLL_X = 3;
 
 	this.resizeSensor = new ResizeSensor(this.$, this.updateWides);
 
+	this.corpses = []
+
+	this.resurrect = () => {
+		if(this.corpses.length > 0) {
+			this.corpses[0].load();
+			this.corpses.shift();
+		}
+	}
+
 	this.S.mapIn({
-	 	'imageDimensions': (a,b) => {
+	 	imageDimensions: (a,b) => {
 	 		if(a.h/a.w > 3 && !this.webtoonPrompt) {
 	 			this.webtoonPrompt = true;
 	 			if(Settings.get('lyt.direction') == 'ttb') return;
 	 			Loda.display('webtoon');
 	 		}
-	 	}
+	 	},
+	 	dead: (image) => {
+	 		if(Reader.SCP.page == image.index) {
+	 			this.corpses.unshift(image)
+	 		}else{
+	 			this.corpses.push(image);
+	 		}
+	 		if(!this.necromancer) {
+	 			this.necromancer = setInterval(this.resurrect, 2000)
+	 		}
+	 	},
 	 })
 }
 
@@ -2460,6 +2483,7 @@ function UI_ReaderImageWrapper(o) {
 		'imageWidth': this.checkTooWide
 	})
 	this.S.proxyOut('loaded');
+	this.S.proxyOut('dead');
 	this.S.proxyOut('imageDimensions');
 }
 
@@ -2534,6 +2558,7 @@ var notice = new UI_Dummy({
 		if(this.S) this.S.destroy();
 	}
 	this.S.proxyOut('loaded');
+	this.S.proxyOut('dead');
 }
 
 function UI_ReaderImage(o) {
@@ -2559,6 +2584,22 @@ function UI_ReaderImage(o) {
 		//if(this.fore) this._.image.style.background = 'url('+this.fore+') no-repeat scroll 0% 0% / 0%';
 	}
 
+	this.errorHandler = (e) => {
+		this.loaded = false;
+		this.$.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJcAAACXCAYAAAAYn8l5AAAACXBIWXMAAC4jAAAuIwF4pT92AAAGWWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0NDYwLCAyMDIwLzA1LzEyLTE2OjA0OjE3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDIxLTA5LTEyVDAyOjI5OjI3KzAzOjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozZjZjZGUxNy02YWRiLTU5NDAtYTEyNC05NTgyOTIyODczZDkiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDo0MjhkYWUwMi1lYThhLTdhNDQtODA5OS1iNjE2MTRmNGE5YTIiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDoyNWM1MzcwOC1hOGRmLTY4NDAtYTI2NS0xZDdlNzNiOWFhMzciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjI1YzUzNzA4LWE4ZGYtNjg0MC1hMjY1LTFkN2U3M2I5YWEzNyIgc3RFdnQ6d2hlbj0iMjAyMS0wOS0xMlQwMjoyOToyNyswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjIgKFdpbmRvd3MpIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjb252ZXJ0ZWQiIHN0RXZ0OnBhcmFtZXRlcnM9ImZyb20gYXBwbGljYXRpb24vdm5kLmFkb2JlLnBob3Rvc2hvcCB0byBpbWFnZS9wbmciLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjNmNmNkZTE3LTZhZGItNTk0MC1hMTI0LTk1ODI5MjI4NzNkOSIgc3RFdnQ6d2hlbj0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PnYis8YAAASvSURBVHja7d3BkdpAEEZhQiAEhbAhbAgO4Q+FDBzChMJJZ0IhBBtcUpmigBWoZ9Q9/Q7PN9ur1lcItGJmN47jzqDh0jd11bDWxbt/YX9Jl8ql06U/lKLTdM41GTDFNUz/+JlBp+88WRgscB1ARU+QHT7FdX35OzJE+qHjs0vlK1i8p6J33pPtl+ACFpkAe4SLSyGtuUQ+xXVgQLSywyNcA58KyehT5HCPqzAYMqrc4trzqkXGr177GZcYCBknLolU7dI44+K+Fpnf95pxMQwyD1xUFdfAIKgWrm8GQeAicBGBi8BF4CICF4GLwEUELgIXgYsIXAQuAhcRuAhcBC4icBG4CFxE4CJwEbiIwEXgInARgYvAReDKhOvMSQdXjcrI7iBzGhusg5sF1xUW28/8h9VkoeUMuG5hZQemB7MQuOxgZQWmF7MQuOxgZQOmBbMQuOxgZQGmN2YhcNnB6h2YPpiFwGUHq1dgWjELWeHqZXuWNbB6AyaDWcgKV3RgFrB6ASbDWcgKV1RglrCiA1OFWcgKVzRgNWBFBaaKs5AVrijAasKKBkwNZiErXN6BtYAVBZgazkJWuLwCawnLOzBtMAtZ4fIGbAtYXoFpw1nICpcXYFvC8gZMDmYhK1xbA/MAywswOZqFrHBtBcwTrK2ByeEsZIWrNTCPsLYCJsezkBWuVsA8w2oNTAFmIStctYFFgNUKmALNQla4agGLBKs2MAWchaxwWQMrlQ/6NEGIAKwmrNJg1n8sf1jvsOb/JwKw2rCazLzWD+0VVgRgrWBVn32LH94bLM/AWsOqeg5aH4QXWB6BbQWr2rno6mA+fDTEA7CtYVU5J7ueXoZXPDW5JTAvsMzPTe17HiUArC2BeYNleo6uf3xd+tXDR1+DWwAtgXmFZXaubr8UG/6mnVEtgHmHZQLs/hvXoX/dEATYLgis1cAefZ1fyWFFBebuQYJna0UoOaxowFw+AvVqIRIlhxUFmNuHN39a5UbJYXkH5vqx8yVLKCk5LK/A3H9hZun6XEoOyxuwEF/1e2fxNyWH5QVYmC8pv7uyoJLD2hpYqOUVPlm2UslhbQUs3MIwn66JquSwWgMLuaTVmgV3lRxWK2BhF+Nbu5qzksOqDSz0MqIWS4UrOaxawMIvgGy1Dr2Sw7IG1sXS7ZabHCg5LCtgpZdZWO+goeSw1gIrPc2hxvYsSg7rU2CltxnU2vtHyWG9C6z0ePw1N5ZSclhLgZVej732rmVKDusnYKXn426xJZ6Sw3oGrPR+zK32W1RyWPfASobj7X0DdY+dsxwruAhcBC4icBG4CFxE4CJwEbiIwEXgInARgYvAReAiAheBi8BFBC4CF4GLCFwELgIXEbgIXAQuhkHgInAR/cP1xSCoFq4dgyBwUUhcJ4ZBxp3SrM9JzSsshEu10ozrugjsmYGQUVdL+zRrolPbS+I4bYk3N/DqRUavWsM9rmsHhkMrO4w3O8Xed2RA9GHH8W6P6/v23PeiT+5rjXf7Gz3bSQtgtArWK1wzMC6RtORS+HDLvyU7mB74FElPPhUeXtlZukXuMN27ABldDfyebzdY4Lq9VGqCxnuyXO+pynTuF+/b/RcicxyLess/6AAAAABJRU5ErkJggg=='
+		this.$.style.background = 'transparent';
+		this.$.style.minHeight = '64px';
+		this.$.style.minWidth = '64px';
+		this.$.style.padding = '2em';
+		this.S.out('dead', this)
+		if(!Reader.gdrivePrompt) {
+			if(this.url.indexOf('drive.google') > -1) {
+				Reader.gdrivePrompt = true;
+				Loda.display('gdrive');	
+			}
+		}
+	}
+
 	this.watchImageDimensions = () => {
 		this.RAF = requestAnimationFrame(this.watchImageDimensions);
 		if(this.$.naturalWidth > 0) {
@@ -2574,8 +2615,9 @@ function UI_ReaderImage(o) {
 		if(this.loaded) return;
 		this.RAF = requestAnimationFrame(this.watchImageDimensions);
 		this.$.loading = 'eager';
-		this.$.src = this.url;
 		this.$.onload = e => this.onloadHandler(e);
+		this.$.onerror = e => this.errorHandler(e);
+		this.$.src = this.url;
 		this.loaded = true;
 	}
 
@@ -2876,6 +2918,7 @@ function UI_LodaManager(o) {
 		settings: new UI_Loda_Settings().S.link(this),
 		jump: new UI_Loda_Jump().S.link(this),
 		notice: new UI_Loda_Notice().S.link(this),
+		gdrive: new UI_Loda_Gdrive().S.link(this),
 		webtoon: new UI_Loda_Webtoon().S.link(this),
 	}
 
@@ -2956,6 +2999,26 @@ function UI_Loda_Notice(o) {
 			</content><button data-bind="button"></button></div>`
 	});
 	this.name = 'Notice';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.button.onclick = this.close.bind(this);
+
+}	
+
+function UI_Loda_Gdrive(o) {
+	o=be(o);
+	if(navigator.userAgent.indexOf('Firefox') > -1 && navigator.userAgent.indexOf('Seamonkey') < 0) var ff = true;
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Notice'].concat(o.kind || []),
+		name: 'Google Drive failure',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header">Google Drive failure</header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				Images failed to load. This gallery uses Google Drive links. This might help:<br><br>
+				<div style="text-align: left; padding-bottom: 1em">a) Log in to a Google account in this browser for the images to display.
+				${(ff?'<br>b) Disable Tracking Protection in the browser':'')}</div>
+			</content><button data-bind="button"></button></div>`
+	});
+	this.name = 'Google Drive failure';
 	this.focusElement = this.$;
 	this.noPropagation = true;
 	this._.button.onclick = this.close.bind(this);
