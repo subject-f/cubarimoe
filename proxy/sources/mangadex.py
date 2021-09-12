@@ -36,7 +36,7 @@ class MangaDex(ProxySource):
                 )
                 if resp.status_code != 200:
                     raise Exception("Failed to translate ID.")
-                return resp.json()[0]["data"]["attributes"]["newId"]
+                return resp.json()["data"][0]["attributes"]["newId"]
             except ValueError:
                 return series_id
 
@@ -145,7 +145,6 @@ class MangaDex(ProxySource):
                     },
                     {
                         "type": "chapter",
-                        # TODO might not return all
                         "url": f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&limit=500",
                     },
                 ],
@@ -181,11 +180,11 @@ class MangaDex(ProxySource):
                 )
             for result in results:
                 result_json = result.json()
-                chapter_data["results"].extend(result_json["results"])
+                chapter_data["data"].extend(result_json["data"])
 
         groups_set = {
             relationship["id"]
-            for chapter in chapter_data["results"]
+            for chapter in chapter_data["data"]
             for relationship in chapter["relationships"]
             if relationship["type"] == GROUP_KEY
         }
@@ -211,9 +210,9 @@ class MangaDex(ProxySource):
             )
             if groups_resp.status_code != 200:
                 return
-            for result in groups_resp.json()["results"]:
-                group_id = result["data"]["id"]
-                group_name = result["data"]["attributes"]["name"]
+            for result in groups_resp.json()["data"]:
+                group_id = result["id"]
+                group_name = result["attributes"]["name"]
                 resolved_groups_map[group_id] = group_name
                 cache.set(group_id, group_name, 60 * 60 * 24)  # 24 hour cache
 
@@ -228,13 +227,13 @@ class MangaDex(ProxySource):
 
         oneshots = 0
 
-        for chapter in chapter_data["results"]:
-            chapter_id = chapter["data"]["id"]
-            chapter_number = chapter["data"]["attributes"]["chapter"]
-            chapter_title = chapter["data"]["attributes"]["title"]
-            chapter_volume = chapter["data"]["attributes"]["volume"]
+        for chapter in chapter_data["data"]:
+            chapter_id = chapter["id"]
+            chapter_number = chapter["attributes"]["chapter"]
+            chapter_title = chapter["attributes"]["title"]
+            chapter_volume = chapter["attributes"]["volume"]
             chapter_timestamp = datetime.strptime(
-                chapter["data"]["attributes"]["createdAt"], "%Y-%m-%dT%H:%M:%S%z"
+                chapter["attributes"]["createdAt"], "%Y-%m-%dT%H:%M:%S%z"
             ).timestamp()
             chapter_group = None
 
@@ -293,7 +292,7 @@ class MangaDex(ProxySource):
         ]
 
         cover_filename = None
-        for data in main_data["relationships"]:
+        for data in main_data["data"]["relationships"]:
             if data["type"] == "cover_art":
                 cover_filename = data["attributes"]["fileName"]
 
