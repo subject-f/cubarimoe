@@ -3014,8 +3014,8 @@ function UI_Loda_Gdrive(o) {
 		name: 'Google Drive failure',
 		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header">Google Drive failure</header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
 				Images failed to load. This gallery uses Google Drive links. This might help:<br><br>
-				<div style="text-align: left; padding-bottom: 1em">a) Log in to a Google account in this browser for the images to display.
-				${(ff?'<br>b) Disable Tracking Protection in the browser':'')}</div>
+				<div style="text-align: left; padding-bottom: 1em;">a) Log in to a Google account in this browser for the images to display.
+				${(ff?'<br>b) <a href="https://support.mozilla.org/en-US/kb/enhanced-tracking-protection-firefox-desktop#w_what-to-do-if-a-site-seems-broken" style="color: var(--accentCol)">Disable Tracking Protection</a> in the browser':'')}</div>
 			</content><button data-bind="button"></button></div>`
 	});
 	this.name = 'Google Drive failure';
