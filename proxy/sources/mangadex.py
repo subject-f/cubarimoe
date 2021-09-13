@@ -349,7 +349,7 @@ class MangaDex(ProxySource):
                 ]
                 series = None
                 chapter = api_data["data"]["attributes"]["chapter"]
-                for relationship in api_data["relationships"]:
+                for relationship in api_data["data"]["relationships"]:
                     if relationship["type"] == "manga":
                         series = relationship["id"]
                         break
