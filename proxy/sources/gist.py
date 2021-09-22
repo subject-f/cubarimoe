@@ -153,13 +153,24 @@ class Gist(ProxySource):
                 if not md["release_date"]:
                     del md["release_date"]
 
+            metadata = [
+                [
+                    "Author",
+                    author or "Unknown",
+                ],
+                [
+                    "Artist",
+                    artist or "Unknown",
+                ],
+            ]
+
             return {
                 "slug": meta_id,
                 "title": title,
                 "description": description,
                 "series": title,
                 "cover_vol_url": cover,
-                "metadata": [],
+                "metadata": metadata,
                 "author": author,
                 "artist": artist,
                 "groups": groups_dict,
@@ -200,7 +211,7 @@ class Gist(ProxySource):
                 alt_titles_str=None,
                 slug=data["slug"],
                 cover_vol_url=data["cover"],
-                metadata=[],
+                metadata=data["metadata"],
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
