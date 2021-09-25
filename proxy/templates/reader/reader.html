@@ -18,19 +18,17 @@
   <meta name="twitter:image" content="{{ brand.image_url }}">
   <meta name="author" content="{{ author_name }}">
   {% else %}
-  <meta property="og:description"
-    content="Read the {{ series_name }} manga series.">
-  <meta name="twitter:description"
-    content="Read the {{ series_name }} manga series.">
+  <meta property="og:description" content="Read the {{ series_name }} manga series.">
+  <meta name="twitter:description" content="Read the {{ series_name }} manga series.">
   <meta property="og:image" content="{{ cover }}">
   <meta name="twitter:image" content="{{ cover }}">
   {% endif %}
   <meta property="og:url" content="{{ absolute_url }}">
   <meta name="viewport" content="width=device-width">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+  <link rel="stylesheet" href="{% static 'css/pickr.css' %}{{ version_query }}"/>
   <link rel="canonical" href="{{ absolute_url }}" />
-  <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}{{ version_query }}">
-  <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'css/reader.css' %}{{ version_query }}">
+  {% include "meta.html" %}
   {% include "history.html" %}
 </head>
 <script>
@@ -155,8 +153,8 @@
 
   </div>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.1.5/dist/jszip.min.js"></script>
+<script src="{% static 'js/pickr.min.js' %}{{ version_query }}"></script>
+<script src="{% static 'js/jszip.min.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/ResizeSensor.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/alg_lib.js' %}{{ version_query }}"></script>
 <script type="text/javascript" src="{% static 'js/UI2.js' %}{{ version_query }}"></script>

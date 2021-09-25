@@ -1,8 +1,8 @@
 /* Variables, dependent on theme */
 :root {
---readerBg: #272b30;
---sidebarCol: #3a3f44;
---accentCol: #b2dffb;
+--readerBg: #000000;
+--sidebarCol: #28292B;
+--accentCol: #B73636;
 --icoCol: #eee;
 --textCol: #ddd;
 --sidebarColDark: #2b2f33;
@@ -820,6 +820,8 @@ aside header > .guya {
 	will-change: transform;
 }
 
+.direction-ttb .hover-prev,
+.direction-ttb .hover-next,
 .hoverinos-false .hover-prev,
 .hoverinos-false .hover-next {
 	display: none;
@@ -2452,7 +2454,11 @@ _:-webkit-full-screen:not(:root:root), .fit-height_limit .rdr-image-wrap .Reader
 	}
 
 	.rdr-groups {
-		margin-top: 0.5rem;
+		margin-top: 0rem;
+	}
+
+	.rdr-selector {
+		padding-bottom: 0.5rem;
 	}
 
 	.selPinned-true.direction-ttb .stick header {
@@ -2460,7 +2466,7 @@ _:-webkit-full-screen:not(:root:root), .fit-height_limit .rdr-image-wrap .Reader
 		position: fixed;
 		will-change: transform;
 		z-index: 100;
-		background: #3a3f44;
+		background: var(--sidebarCol);;
 		top: 0;
 	}
 
@@ -2469,7 +2475,7 @@ _:-webkit-full-screen:not(:root:root), .fit-height_limit .rdr-image-wrap .Reader
 		position: fixed;
 		will-change: transform;
 		z-index: 100;
-		background: #3a3f44;
+		background: var(--sidebarCol);;
 		top: 3rem;
 	}
 
@@ -2481,6 +2487,7 @@ _:-webkit-full-screen:not(:root:root), .fit-height_limit .rdr-image-wrap .Reader
 
 	.direction-ttb .rdr-image-wrap {
 		max-height: unset;
+		overflow-y: hidden;
 	}
 
 	.direction-ttb.fit-all_limit .ReaderImageWrapper img {
@@ -2682,7 +2689,7 @@ _:-webkit-full-screen:not(:root:root), .fit-height_limit .rdr-image-wrap .Reader
 	}
 	
 	.nomobile {
-		display: none;
+		display: none !important;
 	}
 		
 	.Loda_Settings {
@@ -3247,3 +3254,53 @@ body, button, button:before {
 }
 
 /*Dropdown style end*/
+
+
+.Loda_Notice,
+.Loda_Webtoon {
+	max-width: 15em;
+}
+
+.Loda_Notice content,
+.Loda_Webtoon content {
+	font-size: 0.8em;
+	padding: 1em;
+	text-align: center;
+	line-height: 1.5;
+}
+
+.Loda_Notice content ~ button,
+.Loda_Webtoon .buttons button {
+	display: inline-block;
+	margin: auto;
+	border: 1px solid var(--textCol);
+	color: var(--textCol);
+	padding: 0.5em 2em;
+	margin-bottom: 1em;
+	border-radius: 4px;
+}
+
+.Loda_Notice content ~ button:before,
+.Loda_Webtoon button.yes:before {
+	content: "";
+	display: inline-block;
+	font-family: Guya;
+	font-size: 1.7em;
+}
+
+.Loda_Webtoon .buttons {
+	text-align: center;
+	padding-bottom: 1rem;
+}
+
+.Loda_Webtoon .buttons button {
+	margin: 0 1em;
+}
+
+.Loda_Webtoon .buttons button.no:before {
+	content: "";
+	display: inline-block;
+	font-family: Guya;
+	font-size: 1.7em;
+}
+

@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.utils.decorators import decorator_from_middleware
 from django.views.decorators.cache import cache_control
+from django.http.response import HttpResponsePermanentRedirect
 
 from homepage.middleware import ForwardParametersMiddleware
 from reader.middleware import OnlineNowMiddleware
@@ -49,81 +50,9 @@ def home(request):
     )
 
 
-@cache_control(public=True, max_age=3600, s_maxage=300)
-@decorator_from_middleware(OnlineNowMiddleware)
-def about(request):
-    return render(
-        request,
-        "homepage/about.html",
-        {
-            "relative_url": "about/",
-            "template": "about",
-            "page_title": "About",
-            "version_query": settings.STATIC_VERSION,
-        },
-    )
-
-
-@decorator_from_middleware(ForwardParametersMiddleware)
-def main_series_chapter(request, chapter):
-    return redirect(
-        "reader-manga-chapter", "Kaguya-Wants-To-Be-Confessed-To", chapter, "1"
-    )
-
-
-@decorator_from_middleware(ForwardParametersMiddleware)
-def main_series_page(request, chapter, page):
-    return redirect(
-        "reader-manga-chapter", "Kaguya-Wants-To-Be-Confessed-To", chapter, page
-    )
-
-
-@decorator_from_middleware(ForwardParametersMiddleware)
-def latest(request):
-    latest_chap = cache.get("latest_chap")
-    if not latest_chap:
-        latest_chap = (
-            Chapter.objects.order_by("-chapter_number")
-            .filter(series__slug="Kaguya-Wants-To-Be-Confessed-To")[0]
-            .slug_chapter_number()
-        )
-        cache.set("latest_chap", latest_chap, 3600 * 96)
-    return redirect(
-        "reader-manga-chapter", "Kaguya-Wants-To-Be-Confessed-To", latest_chap, "1"
-    )
-
-
-@decorator_from_middleware(ForwardParametersMiddleware)
-def random(request):
-    random_opts = cache.get("random_opts")
-    if not random_opts:
-        random_opts = [
-            ch.slug_chapter_number()
-            for ch in (
-                Chapter.objects.order_by("-chapter_number").filter(
-                    series__slug="Kaguya-Wants-To-Be-Confessed-To"
-                )
-            )
-        ]
-        cache.set("random_opts", random_opts, 3600 * 96)
-    return redirect(
-        "reader-manga-chapter",
-        "Kaguya-Wants-To-Be-Confessed-To",
-        r.choice(random_opts),
-        "1",
-    )
-
-
-# def latest_releases(request):
-#     latest_releases = cache.get("latest_releases")
-#     if not latest_releases:
-#         latest_releases = Chapter.objects.order_by('-uploaded_on')
-#         latest_list = []
-#         #for _ in range(0, 10):
-
-#         cache.set("latest_chap", latest_chap, 3600 * 96)
-#     return redirect('reader-manga-chapter', "Kaguya-Wants-To-Be-Confessed-To", latest_chap, "1")
-
-
 def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
+
+
+def proxy_redirect(request, path):
+    return HttpResponsePermanentRedirect(f"/read/{path}")

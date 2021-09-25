@@ -1,0 +1,435 @@
+{% extends "layout.html" %} {% load static %}
+{% block meta %}
+<title>Read {{ series }} | {{ brand.name }}</title>
+<meta name="twitter:description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<meta property="og:description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<meta name="description" content="Read {{ series }}{% if author %} by {{ author }} {% endif %} on Cubari, the manga image proxy." />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Read {{ series }} | {{ brand.name }}" />
+<meta name="twitter:image" content="{{ brand.image_url }}" />
+<meta property="og:image" content="{{ brand.image_url }}" />
+<meta name="author" content="{{ author }}" />
+{% endblock %}
+
+{% block head %}
+<script defer>
+var reading_button = null;
+var reading_button2 = null;
+
+	function zpad(n) {
+		if (n < 10) return '0' + n;
+		return n;
+	}
+
+	function listMode(mode) {
+		let availableFeatures = {{ available_features | safe }};
+		let availableModes = ["detailed", "compact", "volumeCovers"].filter(e => availableFeatures.includes(e));
+		if (availableModes.length <= 1) {
+			// Hide the buttons if there's only one view
+			availableModes.forEach(m => {
+				document.getElementById(`${m}Mode`).classList.add("d-none");
+				document.getElementById(`${m}View`).classList.remove("d-none");
+			});
+		} else {
+			availableModes.forEach(m => {
+				if (m == mode) {
+					document.getElementById(`${m}Mode`).classList.add("s");
+					document.getElementById(`${m}View`).classList.remove("d-none");
+				} else {
+					document.getElementById(`${m}Mode`).classList.remove("s");
+					document.getElementById(`${m}View`).classList.add("d-none");
+				}
+			});
+		}
+		if (mode == "volumeCovers") {
+			let formData = new FormData();
+			let volumeCovers = document.getElementById("volumeCoversView");
+			if (volumeCovers.childNodes.length === 0) {
+				fetch("/api/get_volume_covers/{{ slug }}/", {
+					method: "POST",
+					body: formData
+				}).then(data => data.json()).then(data => data["covers"].forEach((cover) => {
+					volumeCovers.insertAdjacentHTML("beforeend", `<a data-toggle="modal" img-source="${cover[1]}" onclick="setImage(this)" data-target="#imagemodal"><img class="mb-1" src="${cover[2]}" onerror='if (this.src != &quot;${cover[1]}&quot;) this.src=&quot;${cover[1]}&quot;'></a>`);
+				}));
+			}
+		}
+	}
+
+	function setImage(element) {
+		document.getElementById("imagepreview").removeAttribute("src");
+		document.getElementById("imagepreview").src = element.getAttribute("img-source");
+		document.getElementById("openOriginal").onclick = () => window.open(`${element.getAttribute("img-source")}`, '_blank');
+
+		let prevButton = document.getElementById("volumePrev");
+		let nextButton = document.getElementById("volumeNext");
+		if (element.previousSibling) {
+			prevButton.removeAttribute("disabled");
+			prevButton.onclick = () => setImage(element.previousSibling);
+		} else {
+			prevButton.setAttribute("disabled", true);
+		}
+		if (element.nextSibling) {
+			nextButton.removeAttribute("disabled");
+			nextButton.onclick = () => setImage(element.nextSibling);
+		} else {
+			nextButton.setAttribute("disabled", true);
+		}
+	}
+
+	async function markAll(e) {
+		let chapters = document.querySelectorAll("tr[data-chapter]").map(e => e.getAttribute("data-chapter"));
+		let slug = "{{ slug }}";
+		let source = "{{ reader_modifier }}".split("/")[1];
+		if (e.classList.contains("all-read")) {
+			await globalHistoryHandler.removeAllChapters(slug, source);
+			e.classList.remove("all-read");
+		} else {
+			await globalHistoryHandler.addChapters(slug, source, chapters);
+			e.classList.add("all-read");
+		}
+		updateAllRead();
+	}
+
+	// This function assumes we've applied read already, so we skip a remote trip
+	async function updateRead(chapter, standalone = true, markRead) {
+		let slug = "{{ slug }}";
+		let source = "{{ reader_modifier }}".split("/")[1];
+		if (standalone) {
+			let read = document.querySelectorAll("tr.is-read[data-chapter]").map(e => e.getAttribute("data-chapter"));
+			if (read.includes(chapter)) {
+				document.querySelector(`[data-chapter="${chapter}"]`).classList.remove("is-read");
+				await globalHistoryHandler.removeChapter(slug, source, chapter);
+			} else {
+				document.querySelector(`[data-chapter="${chapter}"]`).classList.add("is-read");
+				await globalHistoryHandler.addChapter(slug, source, chapter);
+			}
+			updateAllRead();
+		} else {
+			if (markRead) {
+				return globalHistoryHandler.addChapter(slug, source, chapter);
+			} else {
+				return globalHistoryHandler.removeChapter(slug, source, chapter);
+			}
+		}
+	}
+
+	async function updateAllRead() {
+		let slug = "{{ slug }}";
+		let source = "{{ reader_modifier }}".split("/")[1];
+		let read = await globalHistoryHandler.getReadChapters(slug, source);
+
+		if (document.querySelectorAll("tr[data-chapter]").length === read.length) {
+			document.querySelector('th.read-icon').classList.add("all-read");
+		} else {
+			document.querySelector('th.read-icon').classList.remove("all-read");
+		}
+
+		document.querySelectorAll("[data-chapter]").forEach(item => {
+			let chapter = item.getAttribute("data-chapter");
+			if (read.includes(chapter)) {
+				item.classList.add("is-read");
+			} else {
+				item.classList.remove("is-read");
+			}
+		});
+		if(reading_button) {
+			if(reading_button2)
+				reading_button2._struct.draw();
+			return reading_button._struct.draw();
+		}
+		reading_button = document.querySelector('.series-content article aside').appendChild(new readingButton());
+		reading_button2 = document.querySelector('.series-content article content').appendChild(new readingButton());
+	}
+
+	function readingButton() {
+		this.html = `<a class="manga-link chapter">
+			<span class="manga-link-chap"></span><span class="manga-link-text"></span>
+		</a>`;
+
+		this.draw = () => {
+			let slug = "{{ slug }}";
+			let source = "{{ reader_modifier }}".split("/")[1];
+			this.chL = chapterList.map(ch => ch[1]).sort((a,b) => b - a);
+			globalHistoryHandler.getReadChapters(slug, source)
+				.then(this.handleReads)
+				.catch(err => {
+					throw err;
+				});
+		}
+
+		this.handleReads = (read) => {
+			if(!read || read.length < 1) {
+				return this.setButton('start', this.chL[this.chL.length - 1]);
+			}
+			read = read.sort((a,b) => b - a);
+			if(read[0] == this.chL[0] || (this.chL[1] && read[0] == this.chL[1])) {
+				return this.setButton('last', this.chL[0]);
+			}
+			try{
+				if(+read[0] > +this.chL[0]) {
+				let slug = "{{ slug }}";
+				let source = "{{ reader_modifier }}".split("/")[1];
+					globalHistoryHandler.removeChapter(slug, source, read[0]);
+					return this.setButton('last', this.chL[0]);
+				}
+			}catch(e) {}
+		var streak = 0;
+		var index = 0;
+			for(var i=0; i < read.length; i++) {
+			var oldIndex = index;
+				index = this.chL.indexOf(read[i]);
+				if(Math.abs(oldIndex - index) > 1 || index < 0) {
+					streak = 0;
+				}else{
+					streak++;
+					if(streak >= 3) {
+						return this.setButton('continue', this.chL[index-streak-1]);
+					}
+				}
+			}
+			if(read[0] == this.chL[0] || (this.chL[1] && read[0] == this.chL[1])) {
+				return this.setButton('last', this.chL[0]);
+			}
+			return this.setButton('continue', this.chL[Math.max(0,this.chL.indexOf(read[0]) - 1)]);
+		}
+
+		this.setButton = (mode, chapter) => {
+			if(chapter === undefined) {
+				chapter = chapterList.map(ch => ch[0]).sort((a,b) => b - a)[0];
+				mode = 'last';
+			}
+			switch(mode) {
+				case 'start':
+					this.$.classList.add('no-chapter');
+					this.$.querySelector('.manga-link-text').innerHTML = 'Start reading ›';
+					break;
+				case 'continue':
+					this.$.classList.remove('no-chapter');
+					this.$.querySelector('.manga-link-chap').innerHTML = chapter;
+					this.$.querySelector('.manga-link-text').innerHTML = 'Continue ›';
+					break;
+				case 'last':
+					this.$.classList.add('no-chapter');
+					this.$.querySelector('.manga-link-text').innerHTML = 'Read latest chapter ›';
+					break;
+			}
+			this.$.href = `./${chapter.replace('.','-')}/1/`
+		}
+
+		this.$ = document.createElement('div');
+		this.$.innerHTML = this.html;
+		this.$ = this.$.children[0];
+		this.$._struct = this;
+		this.draw();
+		return this.$;
+	}
+
+	function prettifyLastUpdatedTable() {
+		chapterList = {{ chapter_list | safe }};
+		let now = new Date();
+		let updaters = [
+			document.querySelectorAll(".detailed-chapter-upload-date"),
+			{% if "compact" in available_features %}
+			document.querySelectorAll(".compact-chapter-upload-date")
+			{% endif %}
+		];
+		chapterList.forEach((chapter, idx) => {
+			if (!Array.isArray(chapter[5])) {
+				return;
+			}
+			let chapterDate = new Date(Date.UTC(chapter[5][0], chapter[5][1], chapter[5][2], chapter[5][3], chapter[5][4], chapter[5][5], 0));
+			if (isNaN(chapterDate.getUTCSeconds())) {
+				return;
+			}
+			let delta = Math.abs(now - chapterDate) / 1000;
+			let days = Math.floor(delta / 86400);
+			delta -= days * 86400;
+
+			let hours = Math.floor(delta / 3600) % 24;
+			delta -= hours * 3600;
+
+			let minutes = Math.floor(delta / 60) % 60;
+			delta -= minutes * 60;
+			let seconds = parseInt(delta % 60);
+
+			if (days >= 7) {
+				updaters.forEach(e => {
+					e[idx].textContent = `${chapterDate.getFullYear()}-${zpad(chapterDate.getMonth() + 1)}-${zpad(chapterDate.getDate())}`;
+					e[idx].classList.add('text-muted');
+				});
+			}
+			else if (days < 7 && days > 0) {
+				updaters.forEach(e => {
+					e[idx].textContent = `${days} day${days === 1 ? "" : "s"} ago`;
+					e[idx].classList.add('text-muted');
+				});
+			}
+			else if (hours > 0) {
+				updaters.forEach(e => {
+					e[idx].textContent = `${hours} hour${hours === 1 ? "" : "s"} ago`;
+					e[idx].style.color = "green";
+				});
+			}
+			else if (minutes > 0) {
+				updaters.forEach(e => {
+					e[idx].textContent = `${minutes} min${minutes === 1 ? "" : "s"} ago`;
+					e[idx].style.color = "green";
+				});
+			}
+			else if (seconds > 0) {
+				updaters.forEach(e => {
+					e[idx].textContent = `${seconds} second${seconds === 1 ? "" : "s"} ago`;
+					e[idx].style.color = "green";
+				});
+			}
+		});
+	}
+
+	function initSearchHandler() {
+		let chapterTable = document.getElementById("chapterTable");
+		document.getElementById("chapterTitleSearch").addEventListener("keyup", (e) => {
+			let val = e.target.value.toLowerCase();
+			chapterTable.childNodes.forEach(e => {
+				e.style = (val && !e.textContent.toLowerCase().includes(val)) ? "display:none" : undefined;
+			});
+		});
+	}
+
+	let semaphore = ((callback) => {
+		let historyReady = false;
+		let windowLoaded = false;
+
+		let execute = () => {
+			if (historyReady && windowLoaded) {
+				callback();
+			}
+		};
+
+		let history = () => {
+			historyReady = true;
+			execute();
+		};
+
+		let loaded = () => {
+			windowLoaded = true;
+			execute();
+		}
+
+		return {
+			history,
+			loaded
+		}
+	})(updateAllRead);
+
+	window.addEventListener("DOMContentLoaded", () => {
+		// listMode("detailed");
+		prettifyLastUpdatedTable();
+		initSearchHandler();
+		semaphore.loaded();
+	});
+
+	window.addEventListener("history-ready", () => {
+		semaphore.history();
+	});
+
+</script>
+{% endblock %} {% block body %}
+<div class="series-content">
+	<article>
+		<aside>
+			<picture>
+				<source type="image/webp" srcset="{{ cover_vol_url_webp }}" class="img-fluid"
+					alt="{{ series }} manga" />
+				<img src="{{ cover_vol_url }}" class="img-fluid" alt="{{ series }} manga" />
+			</picture>
+			<table class="table table-borderless table-sm small">
+				<tbody>
+					{% for type, value in metadata %}
+					<tr>
+						<th>{{ type }}</th>
+						<td class="text-sm">{{ value }}</td>
+
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</aside>
+		<content>
+			<h1>{{ series }}</h1>
+			{% if alt_titles %}
+			{% for alt in alt_titles %}
+			<h2>
+				{{ alt }}
+			</h2>
+			{% endfor %}
+			{% endif %}
+			{% if original_url %}
+			<a href="{{ original_url }}" class="manga-link external">{{ reader_modifier | cut:"read/" }} source</a>
+			{% endif %}
+			{{ synopsis|safe|linebreaks }}
+		</content>
+	</article>
+	<!-- <div class="btn-group" role="group">
+		{% if "detailed" in available_features %}
+		<button type="button" id="detailedMode" class="tag-display-mode-toggle btn"
+			onclick="listMode('detailed');">
+			Detailed
+		</button>
+		{% endif %}
+	</div> -->
+	{% if "detailed" in available_features %}
+	<div id="detailedView" class="d-none table-responsive">
+		<table id="chapters" class="table table-hover">
+			<thead>
+				<tr>
+					<th scope="col" class="read-icon" onclick="markAll(this)"></th>
+					<th scope="col">
+						Title&nbsp;&nbsp;&nbsp;&nbsp;<input class="form-control-sm" id="chapterTitleSearch"
+							type="text" placeholder="⌕  Search" />
+					</th>
+					<th scope="col">Group</th>
+					<th scope="col">Last Updated</th>
+					{% if "download" in available_features %}
+					<th scope="col" style="padding-left: 12px;">
+						<i class="fa fa-download"></i>
+					</th>
+					{% endif %}
+				</tr>
+			</thead>
+			<tbody id="chapterTable">
+				{% for chapter_list_value, chapter, title, ch_slug, group, upload_date, volume in chapter_list %}
+				<tr class="table-default" data-chapter="{{ chapter }}">
+					<td scope="row" class="read-icon" onclick="updateRead('{{ chapter }}')"></td>
+					<td scope="row" class="chapter-title">
+						<a href="/{{ reader_modifier }}/{{ slug }}/{{ ch_slug }}/1/">
+							{% if chapter_list_value %}
+							{{ chapter_list_value }}
+							{% endif %}
+							{% if chapter_list_value and title %}
+							 -
+							{% endif %}
+							{{ title }}
+						</a>
+					</td>
+					<td scope="row">{{ group }}</td>
+					<td scope="row" class="detailed-chapter-upload-date">{{ upload_date }}</td>
+					{% if "download" in available_features %}
+					<td scope="row" class="detailed-chapter-download-chapter">
+						<a class="text-muted" data-toggle="tooltip" data-placement="top"
+							title="Download this chapter"
+							href="/api/download_chapter/{{ slug }}/{{ ch_slug }}/"><i class="fa fa-download"></i>
+						</a>
+					</td>
+					{% endif %}
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% endif %}
+</div>
+<script>
+	// History tagging
+	tag();
+</script>
+{% endblock %}

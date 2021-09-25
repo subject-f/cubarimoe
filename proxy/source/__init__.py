@@ -7,14 +7,14 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, re_path
 from django.views.decorators.cache import cache_control
-from django.utils.html import escape
+from django.utils.html import conditional_escape
 
 from .data import *
 from .helpers import *
 
 
 class ProxySource(metaclass=abc.ABCMeta):
-    # /proxy/:reader_prefix/slug
+    # /{PROXY_BASE_PATH}/:reader_prefix/slug
     @abc.abstractmethod
     def get_reader_prefix(self) -> str:
         raise NotImplementedError
@@ -36,10 +36,10 @@ class ProxySource(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def wrap_chapter_meta(self, meta_id):
-        return f"/proxy/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
+        return f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
 
     def process_description(self, desc):
-        return escape(desc)
+        return conditional_escape(desc)
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def reader_view(self, request, meta_id, chapter, page=None):
@@ -49,13 +49,13 @@ class ProxySource(metaclass=abc.ABCMeta):
                 data = data.objectify()
                 if chapter.replace("-", ".") in data["chapters"]:
                     data["version_query"] = settings.STATIC_VERSION
-                    data["relative_url"] = f"proxy/{self.get_reader_prefix()}/{meta_id}"
-                    data["api_path"] = f"/proxy/api/{self.get_reader_prefix()}/series/"
+                    data["relative_url"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}/{meta_id}"
+                    data["api_path"] = f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/series/"
                     data["image_proxy_url"] = settings.IMAGE_PROXY_URL
-                    data["reader_modifier"] = f"proxy/{self.get_reader_prefix()}"
+                    data["reader_modifier"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
                     data["chapter_number"] = chapter.replace("-", ".")
                     return render(request, "reader/reader.html", data)
-            return HttpResponse(status=500)
+            return render(request, "homepage/thonk_500.html", status=500)
         else:
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page", meta_id, chapter, "1"
@@ -68,21 +68,20 @@ class ProxySource(metaclass=abc.ABCMeta):
             data = data.objectify()
             data["synopsis"] = self.process_description(data["synopsis"])
             data["version_query"] = settings.STATIC_VERSION
-            data["relative_url"] = f"proxy/{self.get_reader_prefix()}/{meta_id}"
-            data["reader_modifier"] = f"proxy/{self.get_reader_prefix()}"
+            data["relative_url"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}/{meta_id}"
+            data["reader_modifier"] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
             return render(request, "reader/series.html", data)
         else:
-            return HttpResponse(status=500)
+            return render(request, "homepage/thonk_500.html", status=500)
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def series_api_view(self, request, meta_id):
         data = self.series_api_handler(meta_id)
         if data:
             data = data.objectify()
-            data["description"] = self.process_description(data["description"])
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:
-            return HttpResponse(status=500)
+            return render(request, "homepage/thonk_500.html", status=500)
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def chapter_api_view(self, request, meta_id):
@@ -93,10 +92,10 @@ class ProxySource(metaclass=abc.ABCMeta):
                 json.dumps(data["pages"]), content_type="application/json"
             )
         else:
-            return HttpResponse(status=500)
+            return render(request, "homepage/thonk_500.html", status=500)
 
     def register_api_routes(self):
-        """Routes will be under /proxy/api/<route>"""
+        """Routes will be under /{settings.PROXY_BASE_PATH}/api/<route>"""
         return [
             path(
                 f"{self.get_reader_prefix()}/series/<str:meta_id>/",

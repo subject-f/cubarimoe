@@ -17,6 +17,7 @@ function KeyListener(target, mode) {
 	this.held = false;
 	this.exclusiveness = false;
 	this.stopper = false;
+	this.passing = false;
 	if(!this.target._keyListener) {
 		this.target._keyListener = {};
 		this.target._keyListener.list = [];
@@ -72,10 +73,16 @@ function KeyListener(target, mode) {
 				}else{
 					if(!e.ctrlKey) continue;
 				}
+				if(listener.keys[keyIndex].indexOf('Alt') < 0) {
+					if(e.altKey) continue;
+				}else{
+					if(!e.altKey) continue;
+				}
 				for(var i=0; i<listener.conditions.length;i++) {
 					if(listener.conditions[i](e) === false) return;
 				}
-				e.preventDefault();
+				if(!this.passing)
+					e.preventDefault();
 				if(this.mode == 'hold') {
 					if(e.type == 'keydown') {
 						if(!listener.rafer) {
@@ -222,6 +229,11 @@ KeyListener.prototype = {
 			delete this.listeners[id];
 		}
 		return this;
+	},
+	pass(state) {
+		if(state === undefined) state = true;
+		this.passing = state;
+		return this;
 	}
 };
 
@@ -277,6 +289,7 @@ function UI(o) {
 	}
 
 	this.destroy = () => {
+		alg.createBin();
 		alg.discardElement(this.$);
 		for(var key in this._) {
 			if(this._[key]._struct) this._[key]._struct.destroy();

@@ -59,7 +59,10 @@ class Gist(ProxySource):
     @staticmethod
     def date_parser(timestamp):
         timestamp = int(timestamp)
-        date = datetime.utcfromtimestamp(timestamp)
+        try:
+            date = datetime.utcfromtimestamp(timestamp)
+        except ValueError:
+            date = datetime.utcfromtimestamp(timestamp // 1000)
         return [
             date.year,
             date.month - 1,
@@ -101,8 +104,23 @@ class Gist(ProxySource):
                     "volume": data.get("volume", "Uncategorized"),
                     "title": data.get("title", ""),
                     "groups": {
-                        groups_map[group]: metadata
+                        groups_map[group]: [
+                            {
+                                "src": sub["src"],
+                                "description": sub["description"],
+                            }
+                            if type(sub) is dict
+                            else sub
+                            for sub in metadata
+                        ]
+                        if type(metadata) is list
+                        else metadata
                         for group, metadata in data["groups"].items()
+                    },
+                    "release_date": {
+                        groups_map[group]: data.get("last_updated", None)
+                        for group in data["groups"].keys()
+                        if "last_updated" in data
                     },
                     "last_updated": data.get("last_updated", None),
                 }
@@ -128,8 +146,23 @@ class Gist(ProxySource):
                 )
             ]
 
+            # We'll do a last pass over the data to purge the release_date keys if
+            # they doesn't exist. It's ugly but it's for the external consumers of our API
             for md in chapter_dict.values():
                 del md["last_updated"]
+                if not md["release_date"]:
+                    del md["release_date"]
+
+            metadata = [
+                [
+                    "Author",
+                    author or "Unknown",
+                ],
+                [
+                    "Artist",
+                    artist or "Unknown",
+                ],
+            ]
 
             return {
                 "slug": meta_id,
@@ -137,7 +170,7 @@ class Gist(ProxySource):
                 "description": description,
                 "series": title,
                 "cover_vol_url": cover,
-                "metadata": [],
+                "metadata": metadata,
                 "author": author,
                 "artist": artist,
                 "groups": groups_dict,
@@ -178,7 +211,7 @@ class Gist(ProxySource):
                 alt_titles_str=None,
                 slug=data["slug"],
                 cover_vol_url=data["cover"],
-                metadata=[],
+                metadata=data["metadata"],
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
