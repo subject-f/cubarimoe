@@ -15,26 +15,14 @@ class StaticViewSitemap(Sitemap):
     def location(self, item):
         return reverse(item)
 
-
-class SeriesViewSitemap(Sitemap):
-    changefreq = "daily"
-    priority = 0.5
-    protocol = "https"
-
-
-class ChapterViewSitemap(Sitemap):
-    changefreq = "monthly"
-    priority = 0.4
-    protocol = "https"
-
-
 class PagesListViewSitemap(Sitemap):
     changefreq = "daily"
     priority = 0.5
     protocol = "https"
 
     def items(self):
-        return [Page.objects.all()[0]]
+        items = Page.objects.all()
+        return [items[0]] if len(items) else []
 
     def location(self, item):
         return "/pages"

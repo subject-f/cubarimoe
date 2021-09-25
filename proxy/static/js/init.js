@@ -163,7 +163,8 @@ function themeHandler() {
 		let reset = Settings.get('thm.reset');
 		let theme = Settings.get('thm.theme');
 		if(theme === 'Custom')	this.setTheme(Settings.get('thm.primaryCol'), Settings.get('thm.readerBg'), Settings.get('thm.accentCol'), Settings.get('thm.textCol'));
-		else if (theme === 'Dark')	this.setTheme('#3a3f44', '#272b30', '#b2dffb','#eeeeee');
+		else if (theme === 'Cubari') this.setTheme('#28292B', '#000000', '#B73636','#EEEEEE');
+		else if (theme === 'Classic') this.setTheme('#3a3f44', '#272b30', '#b2dffb','#eeeeee');
 		else if (theme === 'Reaper') this.setTheme('#272836', '#121223', '#487DE4', '#EEEEEE');
 		else if (theme === 'Zaibatsu') this.setTheme('#1D1D1D', '#000000', '#BA1F1F', '#EEEEEE');
 		else if (theme === 'Light') this.setTheme('#F1F4FF', '#FFFFFF', '#5889F0','#2B2B2B');
@@ -232,9 +233,9 @@ function themeHandler() {
 	this.resetCustom = () => {
 		Settings.set('thm.reset', false);
 		if(Settings.get('thm.theme') === 'Custom') {
-			Settings.set('thm.primaryCol', '#3A3F44');
-			Settings.set('thm.readerBg', '#272B30');
-			Settings.set('thm.accentCol', '#B2DFFB');
+			Settings.set('thm.primaryCol', '#28292B');
+			Settings.set('thm.readerBg', '#000000');
+			Settings.set('thm.accentCol', '#B73636');
 			Settings.set('thm.textCol', '#EEEEEE');
 		}
 	}
@@ -722,10 +723,11 @@ function SettingsHandler(){
 	.newSetting({
 		addr: 'thm.theme',
 		prettyName: 'Reader Theme',
-		options: ['Dark', 'Reaper', 'Zaibatsu', 'Light', 'Custom'],
-		default: 'Dark',
+		options: ['Cubari', 'Classic', 'Reaper', 'Zaibatsu', 'Light', 'Custom'],
+		default: 'Cubari',
 		strings: {
-			Dark: 'Dark',
+			Cubari: 'Cubari',
+			Classic: 'Classic',
 			Reaper: 'Reaper',
 			Light: 'Light',
 			Zaibatsu: 'Zaibatsu',
@@ -1158,6 +1160,18 @@ function UI_Reader(o) {
 		.attach('prev', ['ArrowRight'], e => this.prevPage())
 		.attach('next', ['ArrowLeft'], e => this.nextPage());
 
+	let refocus = (e) => {
+		if(this.imageView.getScrollElement()) this.imageView.getScrollElement().focus();
+	}
+
+	new KeyListener(document.body)
+		.pass()
+		.attach('pgdn', ['PageDown'], refocus)
+		.attach('pgup', ['PageUp'], refocus)
+		.attach('home', ['Home'], refocus)
+		.attach('end', ['End'], refocus)
+		.attach('space', ['Space'], refocus)
+
 
 	this.selector_chap = new UI_FauxDrop({
 		node: this._.selector_chap
@@ -1235,7 +1249,11 @@ function UI_Reader(o) {
 		this.SCP.lastChapter = this.current.chaptersIndex[this.current.chaptersIndex.length - 1];
 		this.SCP.firstChapter = this.current.chaptersIndex[0];
 		let path = window.location.pathname.split("/").map(e => decodeURIComponent(e));
-		this._.title.innerHTML = `<a href="${path.splice(0, path.indexOf(decodeURIComponent(this.current.slug))).join("/")}/${this.current.slug}/">${this.current.title}</a>`;
+		this._.title.innerHTML = "";
+		let seriesPageLink = document.createElement("a");
+		seriesPageLink.textContent = this.current.title || "No title";
+		seriesPageLink.href = `${path.splice(0, path.indexOf(decodeURIComponent(this.current.slug))).join("/")}/${this.current.slug}/`;
+		this._.title.appendChild(seriesPageLink);
 		this.$.querySelector('aside').classList.remove('unload');
 	var chapterElements = [];
 	var volElements = {};
@@ -1439,7 +1457,6 @@ function UI_Reader(o) {
 		} catch (e) {
 			this.SCP.page = this.SCP.page;
 		}
-
 		this.imageView.selectPage(this.SCP.page, dry);
 		this.SCP.visiblePages = this.imageView.visiblePages;
 
@@ -1566,6 +1583,7 @@ function UI_Reader(o) {
 			this.recalculateBuffer();
 			this.stickHeader();
 		})
+		document.documentElement.style.overflow = "auto";
 
 		if(!silent) {
 			this.imageView.drawImages(this.current.chapters[this.SCP.chapter].images[this.SCP.group], this.current.chapters[this.SCP.chapter].wides[this.SCP.group]);
@@ -1581,6 +1599,7 @@ function UI_Reader(o) {
 
 	this.recalculateBuffer = () => {
 		if (IS_MOBILE) {
+			this.headerScroll = this.imageView.getScrollElement().scrollTop;
 			if (Settings.get('lyt.direction') === 'ttb' && Settings.get('apr.selPinned')) {
 			var tOH = this._.title.offsetHeight;
 			var sOH = this._.rdr_selector.offsetHeight;
@@ -1601,13 +1620,21 @@ function UI_Reader(o) {
 			}else{
 				this.$.classList.remove('stick');
 			}
+			if(this.headerScroll && this.imageView.getScrollElement().scrollTop != this.headerScroll) {
+				this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+				requestAnimationFrame(() => {
+					this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+					requestAnimationFrame(() => {
+						this.imageView.getScrollElement().scrollTo({top: this.headerScroll});
+					})
+				})
+			}
 		}
 	}
 
 	this.setZoom = function(zoom) {
-		this.imageView.updateScrollPosition();
-		Settings.setClass('lyt.zoom'); //broke
-		setTimeout(this.imageView.updateWides, 1);
+		Settings.setClass('lyt.zoom');
+		this.imageView.updateWides();
 	}
 
 	this.toggleSidebar = function(state) {
@@ -1713,8 +1740,14 @@ function UI_Reader(o) {
 	// this._.fit_button.onmousedown = e => {
 	// 	this.asideViews.S.call('number', 0);
 	// }
-	this._.zoom_level_plus.onmousedown = e => Settings.next('lyt.zoom', undefined, true);
-	this._.zoom_level_minus.onmousedown = e => Settings.prev('lyt.zoom', undefined, true);
+	this._.zoom_level_plus.onmousedown = e => {
+		this.imageView.updateScrollPosition();
+		Settings.next('lyt.zoom', undefined, true);
+	}
+	this._.zoom_level_minus.onmousedown = e => {
+		this.imageView.updateScrollPosition();
+		Settings.prev('lyt.zoom', undefined, true);
+	}
 	this._.share_button.onmousedown = e => this.copyShortLink(e);
 	this._.search.onclick = e => Loda.display('search');
 	this._.jump.onclick = e => Loda.display('jump');
@@ -1823,7 +1856,7 @@ function UI_ReaderImageView(o) {
 		if(!this.imageList) return true;
 		if(Settings.get('lyt.direction') != 'ttb') return true;
 
-		Reader.stickHeader();
+		// Reader.stickHeader();
 	var scrollTop = (e.target.scrollingElement)?
 				e.target.scrollingElement.scrollTop:
 				undefined
@@ -1845,7 +1878,7 @@ function UI_ReaderImageView(o) {
 		for(var i=0; i<index; i++) {
 			this.imageList[i].load();
 		}
-		Reader.displayPage(index, true);
+		setTimeout(() => Reader.displayPage(index, true), 1);
 		return true;
 	}
 
@@ -1922,7 +1955,7 @@ function UI_ReaderImageView(o) {
 					url: images[index],
 					index: index,
 				}))
-			})
+			}).S.link(this)
 		);
 
 		this.imageList = [];
@@ -1948,6 +1981,10 @@ function UI_ReaderImageView(o) {
 				Reader.nextChapter(0);
 			}
 			this.imageContainer.add(butt);
+		}
+
+		if(this.corpses) {
+			this.corpses = [];
 		}
 	}
 
@@ -2031,7 +2068,7 @@ function UI_ReaderImageView(o) {
 			if(this.wrappers.right) this.touch.affectedWrappers.push(this.wrappers.right);
 		}
 		if(snap) {
-			this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style.transition = `transform ${this.touch.transitionTime}s cubic-bezier(${this.touch.transitionTime},.55,.4,1)`);
+			this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style.transition = `opacity 0.3s ease, transform ${this.touch.transitionTime}s cubic-bezier(${this.touch.transitionTime},.55,.4,1)`);
 			this.touch.transitionTimer = promiseTimeout(Math.round(this.touch.transitionTime*1000), true);
 			this.touch.transitionTimer.then(() => {
 					this.touch.affectedWrappers.forEach(wrapper => wrapper.$.style = '');
@@ -2182,11 +2219,11 @@ const SCROLL_X = 3;
 		this.touch.measures = [];
 		this.touch.transitionTime = Math.max(0, 0.30 - Math.abs(velocity)/2.5);
 		if(isNaN(this.touch.transitionTime)) this.touch.transitionTime = 0;
-		if(isNaN(this.touch.transitionTime)) debugger;
 		if((velocity < this.touch.escapeVelocity * -1
 		|| this.touch.delta < this.touch.escapeDelta * -1)
 		&& !(Reader.SCP.chapter == Reader.SCP.lastChapter
-		&& Reader.SCP.page == Reader.SCP.lastPage)) {
+			&& Reader.SCP.page == Reader.SCP.lastPage
+			&& Settings.get('lyt.direction') == 'rtl')) {
 			this.moveWrappers(-1, true);
 			switch(Settings.get('lyt.direction')){
 				case 'ltr':
@@ -2206,7 +2243,8 @@ const SCROLL_X = 3;
 		if((velocity > this.touch.escapeVelocity
 		|| this.touch.delta > this.touch.escapeDelta)
 		&& !(Reader.SCP.chapter == Reader.SCP.firstChapter
-		&& Reader.SCP.page == 0)) {
+			&& Reader.SCP.page == 0
+			&& Settings.get('lyt.direction') == 'ltr')) {
 			this.moveWrappers(1, true);
 			switch(Settings.get('lyt.direction')){
 				case 'ltr':
@@ -2279,6 +2317,7 @@ const SCROLL_X = 3;
 		if(e.type == 'click') {
 			switch (areas.indexOf(e.pageX)) {
 				case 1:
+					if(Settings.get('lyt.direction') == 'ttb') break;
 					(Settings.get('lyt.direction') == 'rtl')?
 						this.next(e):
 						this.prev(e);
@@ -2289,6 +2328,7 @@ const SCROLL_X = 3;
 						Settings.cycle('apr.selPinned', undefined, undefined, true); //RMD: notip
 					break;
 				case 4:
+					if(Settings.get('lyt.direction') == 'ttb') break;
 					(Settings.get('lyt.direction') == 'rtl')?
 						this.prev(e):
 						this.next(e);
@@ -2352,9 +2392,34 @@ const SCROLL_X = 3;
 
 	this.resizeSensor = new ResizeSensor(this.$, this.updateWides);
 
-	// this.S.mapIn({
-	// 	'imageWidth': this.
-	// })
+	this.corpses = []
+
+	this.resurrect = () => {
+		if(this.corpses.length > 0) {
+			this.corpses[0].load();
+			this.corpses.shift();
+		}
+	}
+
+	this.S.mapIn({
+	 	imageDimensions: (a,b) => {
+	 		if(a.h/a.w > 3 && !this.webtoonPrompt) {
+	 			this.webtoonPrompt = true;
+	 			if(Settings.get('lyt.direction') == 'ttb') return;
+	 			Loda.display('webtoon');
+	 		}
+	 	},
+	 	dead: (image) => {
+	 		if(Reader.SCP.page == image.index) {
+	 			this.corpses.unshift(image)
+	 		}else{
+	 			this.corpses.push(image);
+	 		}
+	 		if(!this.necromancer) {
+	 			this.necromancer = setInterval(this.resurrect, 2000)
+	 		}
+	 	},
+	 })
 }
 
 
@@ -2418,7 +2483,8 @@ function UI_ReaderImageWrapper(o) {
 		'imageWidth': this.checkTooWide
 	})
 	this.S.proxyOut('loaded');
-	this.S.proxyOut('imageHeight');
+	this.S.proxyOut('dead');
+	this.S.proxyOut('imageDimensions');
 }
 
 
@@ -2492,6 +2558,7 @@ var notice = new UI_Dummy({
 		if(this.S) this.S.destroy();
 	}
 	this.S.proxyOut('loaded');
+	this.S.proxyOut('dead');
 }
 
 function UI_ReaderImage(o) {
@@ -2517,11 +2584,27 @@ function UI_ReaderImage(o) {
 		//if(this.fore) this._.image.style.background = 'url('+this.fore+') no-repeat scroll 0% 0% / 0%';
 	}
 
+	this.errorHandler = (e) => {
+		this.loaded = false;
+		this.$.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJcAAACXCAYAAAAYn8l5AAAACXBIWXMAAC4jAAAuIwF4pT92AAAGWWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0NDYwLCAyMDIwLzA1LzEyLTE2OjA0OjE3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDIxLTA5LTEyVDAyOjI5OjI3KzAzOjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozZjZjZGUxNy02YWRiLTU5NDAtYTEyNC05NTgyOTIyODczZDkiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDo0MjhkYWUwMi1lYThhLTdhNDQtODA5OS1iNjE2MTRmNGE5YTIiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDoyNWM1MzcwOC1hOGRmLTY4NDAtYTI2NS0xZDdlNzNiOWFhMzciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjI1YzUzNzA4LWE4ZGYtNjg0MC1hMjY1LTFkN2U3M2I5YWEzNyIgc3RFdnQ6d2hlbj0iMjAyMS0wOS0xMlQwMjoyOToyNyswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjIgKFdpbmRvd3MpIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjb252ZXJ0ZWQiIHN0RXZ0OnBhcmFtZXRlcnM9ImZyb20gYXBwbGljYXRpb24vdm5kLmFkb2JlLnBob3Rvc2hvcCB0byBpbWFnZS9wbmciLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjNmNmNkZTE3LTZhZGItNTk0MC1hMTI0LTk1ODI5MjI4NzNkOSIgc3RFdnQ6d2hlbj0iMjAyMS0wOS0xMlQwMjozMDo1MSswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PnYis8YAAASvSURBVHja7d3BkdpAEEZhQiAEhbAhbAgO4Q+FDBzChMJJZ0IhBBtcUpmigBWoZ9Q9/Q7PN9ur1lcItGJmN47jzqDh0jd11bDWxbt/YX9Jl8ql06U/lKLTdM41GTDFNUz/+JlBp+88WRgscB1ARU+QHT7FdX35OzJE+qHjs0vlK1i8p6J33pPtl+ACFpkAe4SLSyGtuUQ+xXVgQLSywyNcA58KyehT5HCPqzAYMqrc4trzqkXGr177GZcYCBknLolU7dI44+K+Fpnf95pxMQwyD1xUFdfAIKgWrm8GQeAicBGBi8BF4CICF4GLwEUELgIXgYsIXAQuAhcRuAhcBC4icBG4CFxE4CJwEbiIwEXgInARgYvAReDKhOvMSQdXjcrI7iBzGhusg5sF1xUW28/8h9VkoeUMuG5hZQemB7MQuOxgZQWmF7MQuOxgZQOmBbMQuOxgZQGmN2YhcNnB6h2YPpiFwGUHq1dgWjELWeHqZXuWNbB6AyaDWcgKV3RgFrB6ASbDWcgKV1RglrCiA1OFWcgKVzRgNWBFBaaKs5AVrijAasKKBkwNZiErXN6BtYAVBZgazkJWuLwCawnLOzBtMAtZ4fIGbAtYXoFpw1nICpcXYFvC8gZMDmYhK1xbA/MAywswOZqFrHBtBcwTrK2ByeEsZIWrNTCPsLYCJsezkBWuVsA8w2oNTAFmIStctYFFgNUKmALNQla4agGLBKs2MAWchaxwWQMrlQ/6NEGIAKwmrNJg1n8sf1jvsOb/JwKw2rCazLzWD+0VVgRgrWBVn32LH94bLM/AWsOqeg5aH4QXWB6BbQWr2rno6mA+fDTEA7CtYVU5J7ueXoZXPDW5JTAvsMzPTe17HiUArC2BeYNleo6uf3xd+tXDR1+DWwAtgXmFZXaubr8UG/6mnVEtgHmHZQLs/hvXoX/dEATYLgis1cAefZ1fyWFFBebuQYJna0UoOaxowFw+AvVqIRIlhxUFmNuHN39a5UbJYXkH5vqx8yVLKCk5LK/A3H9hZun6XEoOyxuwEF/1e2fxNyWH5QVYmC8pv7uyoJLD2hpYqOUVPlm2UslhbQUs3MIwn66JquSwWgMLuaTVmgV3lRxWK2BhF+Nbu5qzksOqDSz0MqIWS4UrOaxawMIvgGy1Dr2Sw7IG1sXS7ZabHCg5LCtgpZdZWO+goeSw1gIrPc2hxvYsSg7rU2CltxnU2vtHyWG9C6z0ePw1N5ZSclhLgZVej732rmVKDusnYKXn426xJZ6Sw3oGrPR+zK32W1RyWPfASobj7X0DdY+dsxwruAhcBC4icBG4CFxE4CJwEbiIwEXgInARgYvAReAiAheBi8BFBC4CF4GLCFwELgIXEbgIXAQuhkHgInAR/cP1xSCoFq4dgyBwUUhcJ4ZBxp3SrM9JzSsshEu10ozrugjsmYGQUVdL+zRrolPbS+I4bYk3N/DqRUavWsM9rmsHhkMrO4w3O8Xed2RA9GHH8W6P6/v23PeiT+5rjXf7Gz3bSQtgtArWK1wzMC6RtORS+HDLvyU7mB74FElPPhUeXtlZukXuMN27ABldDfyebzdY4Lq9VGqCxnuyXO+pynTuF+/b/RcicxyLess/6AAAAABJRU5ErkJggg=='
+		this.$.style.background = 'transparent';
+		this.$.style.minHeight = '64px';
+		this.$.style.minWidth = '64px';
+		this.$.style.padding = '2em';
+		this.S.out('dead', this)
+		if(!Reader.gdrivePrompt) {
+			if(this.url.indexOf('drive.google') > -1) {
+				Reader.gdrivePrompt = true;
+				Loda.display('gdrive');	
+			}
+		}
+	}
+
 	this.watchImageDimensions = () => {
 		this.RAF = requestAnimationFrame(this.watchImageDimensions);
 		if(this.$.naturalWidth > 0) {
 			this.S.out('imageWidth', this.$.offsetWidth);
-			this.S.out('imageHeight', this.$.offsetHeight);
+			this.S.out('imageDimensions', {h: this.$.offsetHeight, w: this.$.offsetWidth});
 			cancelAnimationFrame(this.RAF);
 			this.RAF = null;
 			return;
@@ -2532,8 +2615,9 @@ function UI_ReaderImage(o) {
 		if(this.loaded) return;
 		this.RAF = requestAnimationFrame(this.watchImageDimensions);
 		this.$.loading = 'eager';
-		this.$.src = this.url;
 		this.$.onload = e => this.onloadHandler(e);
+		this.$.onerror = e => this.errorHandler(e);
+		this.$.src = this.url;
 		this.loaded = true;
 	}
 
@@ -2615,7 +2699,7 @@ function URLChanger(o) {
 	this.hostname = location.hostname[0].toUpperCase() + location.hostname.slice(1);
 	this.recentState = {};
 
-	this.updateURL = function(SCP) {
+	this.updateURL = function (SCP) {
 		if(Reader.SCP.chapterObject.notice)
 			return;
 		if(this.recentState.chapter == SCP.chapter && this.recentState.page == SCP.page)
@@ -2634,8 +2718,8 @@ function URLChanger(o) {
 				break;
 			case 'replace':
 				title = `${SCP.chapter} - ${SCP.chapterName}, Page ${SCP.page + 1} - ${Reader.current.title} | ${this.hostname}`
-				window.history.replaceState(null, title, pathName);
-				document.title = title;
+				setTimeout(() => window.history.replaceState(null, title, pathName), 300);
+				// document.title = title;
 				break;
 			case 'chap':
 				title = `${SCP.chapter} - ${SCP.chapterName}, Page ${SCP.page + 1} - ${Reader.current.title} | ${this.hostname}`
@@ -2677,8 +2761,26 @@ function URLChanger(o) {
 	}
 	window.addEventListener('popstate', this.onHistory);
 
+	this.scrollDefer = (fn) => {
+		this.deferFn = fn;
+		if(this.deferScrolling) clearTimeout(this.deferScrolling);
+		var scroller = () => {
+			if(fallbackDefer) clearTimeout(fallbackDefer);
+			fallbackDefer = undefined;
+			clearTimeout(this.deferScrolling);
+			this.deferScrolling = setTimeout(() => {
+				window.removeEventListener('scroll', scroller);
+				this.deferFn();
+			}, 100);
+		}
+		window.addEventListener('scroll', scroller, false);
+		let fallbackDefer = setTimeout(() => {
+			this.deferFn();
+		}, 20);
+	};
+
 	this.S.mapIn({
-		SCP: this.updateURL
+		SCP: (SCP) => {this.scrollDefer(() => this.updateURL(SCP))}
 	})
 }
 
@@ -2736,7 +2838,7 @@ function UI_FauxDrop(o) {
 	})
 
 	this.handler = e => {
-		this._.label.innerHTML = this._.drop.options[this._.drop.selectedIndex].text;
+		this._.label.textContent = this._.drop.options[this._.drop.selectedIndex].text;
 	}
 
 	this.add = this.drop.add.bind(this.drop);
@@ -2797,7 +2899,7 @@ function UI_SimpleListItem(o) {
 	this.value = o.value;
 	this.$.value = o.value;
 	if(this.$.innerHTML.length < 1)
-		this.$.innerHTML = o.text || o.value || 'List Element';
+		this.$.textContent = (o.text || o.value || '1');
 }
 
 
@@ -2814,7 +2916,10 @@ function UI_LodaManager(o) {
 		test: new UI_Loda().S.link(this),
 		search: new UI_Loda_Search().S.link(this),
 		settings: new UI_Loda_Settings().S.link(this),
-		jump: new UI_Loda_Jump().S.link(this)
+		jump: new UI_Loda_Jump().S.link(this),
+		notice: new UI_Loda_Notice().S.link(this),
+		gdrive: new UI_Loda_Gdrive().S.link(this),
+		webtoon: new UI_Loda_Webtoon().S.link(this),
 	}
 
 	this.scrollTop = 0;
@@ -2882,6 +2987,68 @@ function UI_Loda(o) {
 
 	this._.close.onclick = this.close.bind(this)
 }
+
+function UI_Loda_Notice(o) {
+	o=be(o);
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Notice'].concat(o.kind || []),
+		name: 'Notice',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header">Notice</header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				You have been redirected to cubari.moe. This is where the image proxy lives now. Happy reading!
+			</content><button data-bind="button"></button></div>`
+	});
+	this.name = 'Notice';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.button.onclick = this.close.bind(this);
+
+}	
+
+function UI_Loda_Gdrive(o) {
+	o=be(o);
+	if(navigator.userAgent.indexOf('Firefox') > -1 && navigator.userAgent.indexOf('Seamonkey') < 0) var ff = true;
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Notice'].concat(o.kind || []),
+		name: 'Google Drive failure',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header">Google Drive failure</header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				Images failed to load. This gallery uses Google Drive links. This might help:<br><br>
+				<div style="text-align: left; padding-bottom: 1em;">a) Log in to a Google account in this browser for the images to display.
+				${(ff?'<br>b) <a href="https://support.mozilla.org/en-US/kb/enhanced-tracking-protection-firefox-desktop#w_what-to-do-if-a-site-seems-broken" style="color: var(--accentCol)">Disable Tracking Protection</a> in the browser':'')}</div>
+			</content><button data-bind="button"></button></div>`
+	});
+	this.name = 'Google Drive failure';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.button.onclick = this.close.bind(this);
+
+}	
+
+function UI_Loda_Webtoon(o) {
+	o=be(o);
+	UI_Loda.call(this, {
+		node: o.node,
+		kind: ['Loda_Webtoon'].concat(o.kind || []),
+		name: 'Long images detected',
+		html: o.html || `<div class="Loda-window" tabindex="-1"><header data-bind="header"></header><button class="ico-btn close" data-bind="close"></button><content data-bind="content">
+				Switch to webtoon mode? You can use the options menu to switch reading direction later.
+			</content>
+			<div class="buttons">
+			<button data-bind="yes" class="yes"></button><button data-bind="no" class="no"></button>
+			</div></div>`
+	});
+	this.name = 'Webtoon';
+	this.focusElement = this.$;
+	this.noPropagation = true;
+	this._.no.onclick = this.close.bind(this);
+	this._.yes.onclick = () => {
+		Settings.set('lyt.direction', 'ttb');
+		Settings.set('lyt.gap', true);
+		this.close();
+	}
+
+}	
 
 function UI_Loda_Search(o) {
 	o=be(o);
@@ -3229,6 +3396,7 @@ function UI_ChapterUnit(o) {
 		node: this._.pages,
 		held: true
 	})
+	// TODO should this innerHTML exist?
 	this._.title.innerHTML = (o.chapter.id + ' - ' + o.chapter.title).replace(new RegExp('('+o.substring+')', 'gi'), '<i>$1</i>');
 	for(var group in o.chapter.images) {
 		this._.figure.style.backgroundImage = 'url('+(this.pages?o.chapter.previews[group][+this.pages[0]-1]:o.chapter.previews[group][0])+')';
@@ -3492,7 +3660,7 @@ function thirdPartySeriesHandler(url, chapter, group) {
 							wides.push(i);
 						}
 					} else {
-						descriptions[group].push(p.description);
+						descriptions.push(p.description);
 						images.push(p.src);
 						if (p.src.includes(WIDE_FLAG)) {
 							wides.push(i);
@@ -3511,13 +3679,16 @@ function thirdPartySeriesHandler(url, chapter, group) {
 
 function DownloadManager() {
 	this.chapterDownloadURL = "";
-	continueDownload = false;
+	let latestRef;
 	this.downloadChapter = async function() {
+		// Shenanigans to allow download cancellation
+		let localRef = latestRef = Reader.SCP.chapter;
 		if(this.chapterDownloadURL) {
 			URL.revokeObjectURL(this.chapterDownloadURL)
 		}
+		let chapter = localRef;
 		Reader._.download_chapter.classList.add("hidden");
-		Reader._.downloading_chapter.textContent = `Ch.${Reader.SCP.chapter} : 0%`;
+		Reader._.downloading_chapter.textContent = `Ch.${chapter} : 0%`;
 		Reader._.download_wrapper.classList.remove("hidden");
 		let mimeMap = {
 			'image/gif': '.gif',
@@ -3525,46 +3696,50 @@ function DownloadManager() {
 			'image/png': '.png',
 			'image/webp': '.webp',
 		}
-		await Reader.fetchChapter(Reader.SCP.chapter)
-		let chapURLArray = Reader.SCP.chapterObject.images[Reader.getGroup(Reader.SCP.chapter)];
+		await Reader.fetchChapter(chapter)
+		let chapURLArray = Reader.SCP.chapterObject.images[Reader.getGroup(chapter)];
 		if (await shouldUseProxy(chapURLArray[0])) {
 			chapURLArray = chapURLArray.map((url) => `${IMAGE_PROXY_URL}/${url}`);
 		}
-		continueDownload = true;
+
 		try {
 			let parallelDownloads = Settings.get("adv.parallelDownloads");
 			let zip = new JSZip();
 			let progress = 0;
 			for (let i = 0; i < chapURLArray.length; i += parallelDownloads) {
-				if (!continueDownload) return;
 				let imageBlobs = await Promise.all(
 					chapURLArray
 					.slice(i, i + parallelDownloads)
 					.map((url, subIndex) => {
 						return (async () => {
 							let contents = await downloadHandler(url);
+							if (latestRef !== localRef) throw { name: "changedRef" };
 							progress++;
-							Reader._.downloading_chapter.textContent = `Ch.${Reader.SCP.chapter} : ${Math.round(progress / chapURLArray.length * 98)}%`;
+							Reader._.downloading_chapter.textContent = `Ch.${chapter} : ${Math.round(progress / chapURLArray.length * 98)}%`;
 							return {
 								contents,
-								"fileIndex": i + subIndex + 1,
+								"fileIndex": String(i + subIndex + 1).padStart(String(chapURLArray.length).length, "0"),
 							};
 						})();
 					})
 				);
+
 				imageBlobs.forEach((data) => {
 					zip.file(data.fileIndex + mimeMap[data.contents.type], data.contents, { binary: true });
 				});
 			}
 
 			let zipBlob = await zip.generateAsync({type:"blob"});
-			if(!continueDownload) return;
+
 			this.chapterDownloadURL = URL.createObjectURL(zipBlob);
-			initiateDownload(this.chapterDownloadURL);
+			if (latestRef === localRef) initiateDownload(this.chapterDownloadURL, filename = chapter + ".zip");
+
 		} catch (err) {
-			TooltippyError.set("An error occured while downloading: " + err.message);
+			if (err.name !== "changedRef") {
+				TooltippyError.set("An error occured while downloading: " + err.message);
+			}
 		} finally {
-			wrapUp()
+			wrapUp(ref = localRef)
 		}
 	}
 
@@ -3591,20 +3766,22 @@ function DownloadManager() {
 		throw new Error(`Failed to download after exhausting all ${TRIES} tries.`);
 	}
 
-	function wrapUp() {
+	function wrapUp(ref) {
+		if (ref === latestRef) {
 		Reader._.download_wrapper.classList.add("hidden");
 		Reader._.download_chapter.classList.remove("hidden");
-		continueDownload = false;
+		latestRef = null;
+		}
 	}
 
 	this.cancelDownload = function() {
-		wrapUp();
+		wrapUp(ref = latestRef);
 	}
 
-	function initiateDownload(url) {
+	function initiateDownload(url, filename) {
 		let elem = window.document.createElement('a');
 		elem.href = url;
-		elem.download = Reader.SCP.chapter + ".zip";        
+		elem.download = filename;        
 		document.body.appendChild(elem);
 		elem.click();        
 		document.body.removeChild(elem);
@@ -3616,18 +3793,18 @@ function UI_About(o) {
 	UI.call(this, Object.assign(o, {
 		kind: ['About'].concat(o.kind || []),
 		html: `<div>
-			<img src="/static/img/Guya-moe.png">
-			<p class="muted">Version: v2.20.20200820</p>
+			<p class="muted"> </p>
+			<p class="muted"> </p>
+			<p class="muted">Powered by</p>
+			<div class="cubari" data-bind="cubari"><div></div></div>
 			<hr>
 			<p>Design, UX: Algoinde</p>
 			<p>Reader code: Algoinde, funkyhippo, Einlion</p>
 			<p>Backend: appu</p>
 			<hr>
-			<a href="https://github.com/appu1232/guyamoe" target="_blank">Github</a>
-			<a href="https://discord.gg/4WPqwSY" target="_blank">Discord</a>
+			<a href="https://ko-fi.com/cubari" target="_blank">Send coffee :P</a>
 			<hr>
-			<p class="muted">Powered by</p>
-			<div class="cubari" data-bind="cubari"><div></div></div>
+			<p style="max-width: 15em; text-align: center; line-height: 1.5">Cubari does not host any of the content you are viewing. Just like your computer does not store or own all the images you see on the internet, Cubari is doing the same thing. We are simply a service that lets you view other data on the internet using our custom UI.</p>
 		</div>`
 	}));
 
@@ -3693,8 +3870,19 @@ ThemeManager.S.link(Settings);
 //Settings.sendInit();
 ThemeManager.themeUpdated();
 
-if(window.location.hash == '#s') Loda.display('search');
+function _redirects (){
+	if(window.location.hash == '#s') Loda.display('search');
+	if(window.location.hash == '#redirect') {
+		if(localStorage) {
+			if(localStorage.getItem('redirected')) return window.location.hash = '';
+			localStorage.setItem('redirected', 1);
+		}
+		window.location.hash = '';
+		Loda.display('notice');
+	}
+}
 
+_redirects();
 
 function debug() {
 	var el = document.createElement('div');
