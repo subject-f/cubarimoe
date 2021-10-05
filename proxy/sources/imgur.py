@@ -140,9 +140,15 @@ class Imgur(ProxySource):
         if "+" in meta_id:
             return self.imgur_chapter_collection(meta_id)
         else:
-            resp = get_wrapper(
+            request_url = (
                 f"https://imgur.com/a/{meta_id}/embed?cache_buster={random.random()}"
             )
+            resp = get_wrapper(request_url)
+            if resp.status_code != 200:
+                resp = get_wrapper(
+                    f"https://cors.bridged.cc/{request_url}",
+                    headers={"x-requested-with": "cubari"},
+                )
             if resp.status_code == 200:
                 data = re.search(
                     r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)", resp.text
