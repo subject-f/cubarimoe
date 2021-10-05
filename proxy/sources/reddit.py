@@ -1,0 +1,157 @@
+import json
+import re
+import random
+from datetime import datetime
+
+from django.conf import settings
+from django.shortcuts import redirect
+from django.urls import re_path
+
+from ..source import ProxySource
+from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.helpers import api_cache, get_wrapper
+
+class Reddit(ProxySource):
+    def get_reader_prefix(self):
+        return "reddit"
+
+    def shortcut_instantiator(self):
+        def handler(request, gallery_id):
+            return redirect(
+                f"reader-{self.get_reader_prefix()}-chapter-page",
+                gallery_id,
+                "1",
+                "1",
+            )
+
+        return [
+            re_path(r"^reddit/(?P<gallery_id>[\d\w]+)/$", handler),
+        ]
+
+    @staticmethod
+    def image_url_handler(url):
+        #transform thumbnail link from https://preview.redd.it/media_id.ext?junk
+        #                           to https://i.redd.it/media_id.ext
+        return re.sub(r"\?.*", "", url.replace("preview.redd.it", "i.redd.it"))
+
+
+    def reddit_api(self, meta_id):
+        resp = get_wrapper(f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1")
+        if resp.status_code != 200:
+            return None
+
+        api_data = json.loads(resp.text)
+        try: 
+            api_data = api_data["data"]["children"][0]["data"]
+
+            if not api_data["is_gallery"] or api_data["removed_by_category"] != None:
+                return None
+
+            try:
+                date = datetime.utcfromtimestamp(api_data["created"])
+            except ValueError:
+                date = datetime.now()
+
+            images = []
+            for image in api_data["gallery_data"]["items"]:
+                metadata = api_data["media_metadata"][image["media_id"]]
+                if metadata["status"] != "valid" or metadata["e"] != "Image":
+                    continue
+                url = self.image_url_handler(metadata["s"]["u"])
+                images.append(url)
+            if len(images) == 0:
+                return None
+
+        except KeyError:
+            return None
+
+        return {
+            "slug": meta_id,
+            "title": api_data["title"],
+            "description": "No description",
+            "author": "Unknown",
+            "artist": "Unknown",
+            "cover": images[0],
+            "groups": {"1": "Reddit"},
+            "chapter_dict": {
+                "1": {
+                    "volume": "1",
+                    "title": api_data["title"],
+                    "groups": { "1": images },
+                }
+            },
+            "chapter_list": [
+                [
+                    "1",
+                    "1",
+                    api_data["title"],
+                    "1",
+                    "No group",
+                    [
+                        date.year,
+                        date.month - 1,
+                        date.day,
+                        date.hour,
+                        date.minute,
+                        date.second,
+                    ],
+                    "1",
+                ],
+            ],
+            "pages_list": images,
+            "original_url": f"https://www.reddit.com{api_data['permalink']}",
+        }
+
+    @api_cache(prefix="reddit_api_dt", time=300)
+    def reddit_common(self, meta_id):
+        #return self.reddit_scrape(meta_id)
+        return self.reddit_api(meta_id)
+
+    @api_cache(prefix="reddit_series_dt", time=300)
+    def series_api_handler(self, meta_id):
+        data = self.reddit_common(meta_id)
+        return (
+            SeriesAPI(
+                slug=data["slug"],
+                title=data["title"],
+                description=data["description"],
+                author=data["author"],
+                artist=data["artist"],
+                groups=data["groups"],
+                cover=data["cover"],
+                chapters=data["chapter_dict"],
+            )
+            if data
+            else None
+        )
+
+    @api_cache(prefix="reddit_pages_dt", time=300)
+    def chapter_api_handler(self, meta_id):
+        data = self.imgur_common(meta_id)
+        return (
+            ChapterAPI(
+                pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
+            )
+            if data
+            else None
+        )
+
+    @api_cache(prefix="reddit_series_page_dt", time=300)
+    def series_page_handler(self, meta_id):
+        data = self.reddit_common(meta_id)
+        return (
+            SeriesPage(
+                series=data["title"],
+                alt_titles=[],
+                alt_titles_str=None,
+                slug=data["slug"],
+                cover_vol_url=data["cover"],
+                metadata=[],
+                synopsis=data["description"],
+                author=data["author"],
+                chapter_list=data["chapter_list"],
+                original_url=data["original_url"],
+            )
+            if data
+            else None
+        )
