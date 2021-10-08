@@ -9,6 +9,7 @@ from .sources.gist import Gist
 from .sources.mangakatana import MangaKatana
 from .sources.nepnep import NepNep
 from .sources.imgbox import Imgbox
+from .sources.reddit import Reddit
 
 sources = [
     MangaDex(),
@@ -22,4 +23,5 @@ sources = [
     MangaKatana(),
     NepNep(),
     Imgbox(),
+    Reddit(),
 ]
