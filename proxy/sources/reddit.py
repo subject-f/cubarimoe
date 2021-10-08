@@ -16,16 +16,16 @@ class Reddit(ProxySource):
         return "reddit"
 
     def shortcut_instantiator(self):
-        def handler(request, gallery_id):
+        def handler(request, meta_id):
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
-                gallery_id,
+                meta_id,
                 "1",
                 "1",
             )
 
         return [
-            re_path(r"^reddit/(?P<gallery_id>[\d\w]+)/$", handler),
+                re_path(r"^(?:reddit|r/[a-z0-9_]+/comments)/(?P<meta_id>[\d\w]+)", handler),
         ]
 
     @staticmethod
@@ -40,29 +40,25 @@ class Reddit(ProxySource):
         if resp.status_code != 200:
             return None
 
-        api_data = json.loads(resp.text)
-        try: 
-            api_data = api_data["data"]["children"][0]["data"]
+        api_data = resp.json()
+        api_data = api_data["data"]["children"][0]["data"]
 
-            if not api_data["is_gallery"] or api_data["removed_by_category"] != None:
-                return None
+        if ("is_galleyr" in api_data and not api_data["is_gallery"]) or api_data["removed_by_category"] != None:
+            return None
 
-            try:
-                date = datetime.utcfromtimestamp(api_data["created"])
-            except ValueError:
-                date = datetime.now()
+        try:
+            date = datetime.utcfromtimestamp(api_data["created"])
+        except ValueError:
+            date = datetime.now()
 
-            images = []
-            for image in api_data["gallery_data"]["items"]:
-                metadata = api_data["media_metadata"][image["media_id"]]
-                if metadata["status"] != "valid" or metadata["e"] != "Image":
-                    continue
-                url = self.image_url_handler(metadata["s"]["u"])
-                images.append(url)
-            if len(images) == 0:
-                return None
-
-        except KeyError:
+        images = []
+        for image in api_data["gallery_data"]["items"]:
+            metadata = api_data["media_metadata"][image["media_id"]]
+            if metadata["status"] != "valid" or metadata["e"] != "Image":
+                continue
+            url = self.image_url_handler(metadata["s"]["u"])
+            images.append(url)
+        if not images:
             return None
 
         return {
@@ -102,14 +98,9 @@ class Reddit(ProxySource):
             "original_url": f"https://www.reddit.com{api_data['permalink']}",
         }
 
-    @api_cache(prefix="reddit_api_dt", time=300)
-    def reddit_common(self, meta_id):
-        #return self.reddit_scrape(meta_id)
-        return self.reddit_api(meta_id)
-
     @api_cache(prefix="reddit_series_dt", time=300)
     def series_api_handler(self, meta_id):
-        data = self.reddit_common(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -127,7 +118,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_pages_dt", time=300)
     def chapter_api_handler(self, meta_id):
-        data = self.imgur_common(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -138,7 +129,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_page_dt", time=300)
     def series_page_handler(self, meta_id):
-        data = self.reddit_common(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             SeriesPage(
                 series=data["title"],
