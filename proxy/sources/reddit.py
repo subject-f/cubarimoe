@@ -43,7 +43,7 @@ class Reddit(ProxySource):
         api_data = resp.json()
         api_data = api_data["data"]["children"][0]["data"]
 
-        if ("is_galleyr" in api_data and not api_data["is_gallery"]) or api_data["removed_by_category"] != None:
+        if "is_gallery" not in api_data or not api_data["is_gallery"] or api_data["removed_by_category"] != None:
             return None
 
         try:
