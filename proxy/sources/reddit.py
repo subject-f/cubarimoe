@@ -1,15 +1,13 @@
-import json
 import re
-import random
 from datetime import datetime
 
-from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
+
 
 class Reddit(ProxySource):
     def get_reader_prefix(self):
@@ -25,26 +23,31 @@ class Reddit(ProxySource):
             )
 
         return [
-                re_path(r"^(?:reddit|r/[a-z0-9_]+/comments)/(?P<meta_id>[\d\w]+)", handler),
+            re_path(r"^(?:reddit|r/[a-z0-9_]+/comments)/(?P<meta_id>[\d\w]+)", handler),
         ]
 
     @staticmethod
     def image_url_handler(url):
-        #transform thumbnail link from https://preview.redd.it/media_id.ext?junk
+        # transform thumbnail link from https://preview.redd.it/media_id.ext?junk
         #                           to https://i.redd.it/media_id.ext
         return re.sub(r"\?.*", "", url.replace("preview.redd.it", "i.redd.it"))
 
-
     def reddit_api(self, meta_id):
-        resp = get_wrapper(f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1")
+        resp = get_wrapper(
+            f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1"
+        )
         if resp.status_code != 200:
             return None
 
         api_data = resp.json()
         api_data = api_data["data"]["children"][0]["data"]
 
-        if "is_gallery" not in api_data or not api_data["is_gallery"] or api_data["removed_by_category"] != None:
-            return None
+        # if (
+        #     "is_gallery" not in api_data
+        #     or not api_data["is_gallery"]
+        #     or api_data["removed_by_category"] != None
+        # ):
+        #     return None
 
         try:
             date = datetime.utcfromtimestamp(api_data["created"])
@@ -73,7 +76,7 @@ class Reddit(ProxySource):
                 "1": {
                     "volume": "1",
                     "title": api_data["title"],
-                    "groups": { "1": images },
+                    "groups": {"1": images},
                 }
             },
             "chapter_list": [
