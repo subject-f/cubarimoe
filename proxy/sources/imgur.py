@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, DetailedException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
 
@@ -100,7 +100,7 @@ class Imgur(ProxySource):
                     "original_url": api_data["link"],
                 }
             else:
-                return None
+                raise DetailedException("Imgur failed to load.")
 
     def imgur_chapter_collection(self, meta_id):
         chapters = {
@@ -212,7 +212,7 @@ class Imgur(ProxySource):
                     "original_url": f"https://imgur.com/a/{api_data['id']}",
                 }
             else:
-                return None
+                raise DetailedException("Imgur failed to load.")
 
     @api_cache(prefix="imgur_api_dt", time=300)
     def imgur_common(self, meta_id):

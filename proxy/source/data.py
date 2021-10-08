@@ -46,3 +46,8 @@ class ChapterAPI:
             "pages": self.args["pages"],
             "chapter": self.args["chapter"],
         }
+
+
+class DetailedException(Exception):
+    def __init__(self, message):
+        self.message = message
