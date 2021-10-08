@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, DetailedException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
 
@@ -37,17 +37,17 @@ class Reddit(ProxySource):
             f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1"
         )
         if resp.status_code != 200:
-            return None
+            raise DetailedException("The reddit API didn't return properly.")
 
         api_data = resp.json()
         api_data = api_data["data"]["children"][0]["data"]
 
-        # if (
-        #     "is_gallery" not in api_data
-        #     or not api_data["is_gallery"]
-        #     or api_data["removed_by_category"] != None
-        # ):
-        #     return None
+        if (
+            "is_gallery" not in api_data
+            or not api_data["is_gallery"]
+            or api_data["removed_by_category"] != None
+        ):
+            raise DetailedException("This reddit link doesn't resolve to a gallery.")
 
         try:
             date = datetime.utcfromtimestamp(api_data["created"])
@@ -62,7 +62,7 @@ class Reddit(ProxySource):
             url = self.image_url_handler(metadata["s"]["u"])
             images.append(url)
         if not images:
-            return None
+            raise DetailedException("Couldn't find any images.")
 
         return {
             "slug": meta_id,

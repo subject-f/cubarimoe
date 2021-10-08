@@ -2,6 +2,7 @@ import abc
 import json
 from typing import List
 
+import uwuify
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -50,10 +51,18 @@ class ProxySource(metaclass=abc.ABCMeta):
         )
 
     def _processing_error(self, request, exception):
+        if isinstance(exception, DetailedException):
+            error_msg = exception.message
+        else:
+            error_msg = "Processing error. This could be a Cubari problem."
+
+        # Blame it on alg
+        error_msg = uwuify.uwu(error_msg)
+
         return render(
             request,
             "homepage/thonk_500.html",
-            {"error": "Processing error. This could be a Cubari problem."},
+            {"error": error_msg},
             status=500,
         )
 
