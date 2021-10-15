@@ -268,8 +268,11 @@ header .cubari-logo:hover {
 
 #status {
 	text-align: center;
-	padding-top: 1rem;
+	padding-top: 1.5rem;
 	font-style: italic;
+	line-height: 1.5;
+	font-size: 0.9em;
+    opacity: 0.8;
 }
 #status.red {
 	color: #ff9393;
