@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, DetailedException, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper, post_wrapper
 
 SUPPORTED_LANG = "en"
@@ -155,7 +155,7 @@ class MangaDex(ProxySource):
 
         for res in result:
             if res["res"].status_code != 200:
-                raise DetailedException("The MangaDex API failed to load.")
+                raise ProxyException("The MangaDex API failed to load.")
             if res["type"] == "main":
                 main_data = res["res"].json()
             elif res["type"] == "chapter":

@@ -51,18 +51,15 @@ class ProxySource(metaclass=abc.ABCMeta):
         )
 
     def _processing_error(self, request, exception):
-        if isinstance(exception, DetailedException):
+        if isinstance(exception, ProxyException):
             error_msg = exception.message
         else:
             error_msg = "Processing error. This could be a Cubari problem."
 
-        # Blame it on alg
-        error_msg = uwuify.uwu(error_msg)
-
         return render(
             request,
             "homepage/thonk_500.html",
-            {"error": error_msg},
+            {"error": error_msg, "error_uwu": uwuify.uwu(error_msg)},
             status=500,
         )
 
