@@ -48,6 +48,15 @@ class ChapterAPI:
         }
 
 
-class DetailedException(Exception):
+class ProxyException(Exception):
     def __init__(self, message):
         self.message = message
+
+
+class WrappedProxyDict(dict):
+    def get(self, key, default=None, exception: str = None):
+        _default_res = super().get(key, default)
+        if _default_res is None and exception is not None:
+            raise ProxyException(exception)
+        else:
+            return _default_res

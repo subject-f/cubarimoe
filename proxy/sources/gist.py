@@ -1,12 +1,12 @@
-import json
 from datetime import datetime
+from json.decoder import JSONDecodeError
 import random
 
 from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import SeriesAPI, SeriesPage
+from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
 from ..source.helpers import api_cache, get_wrapper
 
 """
@@ -19,7 +19,7 @@ Expected format of the raw gists should be:
     "cover": "<optional, str>",
     "chapters": {
         "1": {
-            "title": "<required, str>",
+            "title": "<optional, str>",
             "volume": "<optional, str>",
             "groups": {
                 "<group name>": "<proxy url>",
@@ -72,20 +72,38 @@ class Gist(ProxySource):
             date.second,
         ]
 
+    @staticmethod
+    def chapter_parser(chapter: str):
+        try:
+            return float(chapter)
+        except ValueError as e:
+            raise ProxyException(f"Failed to parse chapter as a number: {e}")
+
     @api_cache(prefix="gist_common_dt", time=300)
     def gist_common(self, meta_id):
         resp = get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
         if resp.status_code != 302 or not resp.headers["location"]:
             return None
         resp = get_wrapper(f"{resp.headers['location']}?{random.random()}")
-        if resp.status_code == 200 and resp.headers["content-type"].startswith(
-            "text/plain"
-        ):
-            api_data = json.loads(resp.text)
-            title = api_data.get("title")
-            description = api_data.get("description")
-            if not title or not description:
-                return None
+        if not resp.headers["content-type"].startswith("text/plain"):
+            raise ProxyException(
+                "This git.io short URL doesn't redirect to a raw file. Try again."
+            )
+
+        if resp.status_code == 200:
+            try:
+                api_data = WrappedProxyDict(resp.json())
+            except JSONDecodeError as e:
+                raise ProxyException(f"Invalid JSON: {e}")
+
+            title = api_data.get("title", exception="Gist is missing a title.")
+            description = api_data.get(
+                "description", exception="Gist is missing a description."
+            )
+            chapters = api_data.get(
+                "chapters",
+                exception="Gist is missing a chapters object.",
+            )
 
             artist = api_data.get("artist", "")
             author = api_data.get("author", "")
@@ -93,16 +111,21 @@ class Gist(ProxySource):
 
             groups_set = {
                 group
-                for ch_data in api_data["chapters"].values()
-                for group in ch_data["groups"].keys()
+                for ch, ch_data in chapters.items()
+                for group in WrappedProxyDict(ch_data)
+                .get(
+                    "groups",
+                    exception=f"Chapter {ch} is missing a groups object.",
+                )
+                .keys()
             }
             groups_dict = {str(key): value for key, value in enumerate(groups_set)}
             groups_map = {value: str(key) for key, value in enumerate(groups_set)}
 
             chapter_dict = {
                 ch: {
-                    "volume": data.get("volume", "Uncategorized"),
-                    "title": data.get("title", ""),
+                    "volume": ch_data.get("volume", "Uncategorized"),
+                    "title": ch_data.get("title", "No Title"),
                     "groups": {
                         groups_map[group]: [
                             {
@@ -115,16 +138,16 @@ class Gist(ProxySource):
                         ]
                         if type(metadata) is list
                         else metadata
-                        for group, metadata in data["groups"].items()
+                        for group, metadata in ch_data["groups"].items()
                     },
                     "release_date": {
-                        groups_map[group]: data.get("last_updated", None)
-                        for group in data["groups"].keys()
-                        if "last_updated" in data
+                        groups_map[group]: ch_data.get("last_updated", None)
+                        for group in ch_data["groups"].keys()
+                        if "last_updated" in ch_data
                     },
-                    "last_updated": data.get("last_updated", None),
+                    "last_updated": ch_data.get("last_updated", None),
                 }
-                for ch, data in api_data["chapters"].items()
+                for ch, ch_data in chapters.items()
             }
 
             chapter_list = [
@@ -142,7 +165,9 @@ class Gist(ProxySource):
                     ch[1]["volume"],
                 ]
                 for ch in sorted(
-                    chapter_dict.items(), key=lambda m: float(m[0]), reverse=True
+                    chapter_dict.items(),
+                    key=lambda m: self.chapter_parser(m[0]),
+                    reverse=True,
                 )
             ]
 
@@ -179,7 +204,7 @@ class Gist(ProxySource):
                 "chapter_list": chapter_list,
             }
         else:
-            return None
+            raise ProxyException("Failed to resolve the given URL.")
 
     @api_cache(prefix="gist_dt", time=300)
     def series_api_handler(self, meta_id):

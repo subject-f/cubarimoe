@@ -53,12 +53,12 @@
 
 	</head>
 	<body>
-			<img src="{% static 'img/thonk.png' %}" />
+			<img src="{% static 'img/thonk.png' %}" title="{{ error_uwu }}" />
 			<content>
-				<p>Could not reach the external source due to an outage and/or API error.
-				<p>Check what the upstream says or try again later?
-				<p>500
-				<pre>{{ error }}</pre>
+				<p>Could not complete the request due to the following error:</p>
+				<code onclick="">{{ error }}</code>
+				<p>500</p>
+				<p>Server Error</p>
 				<a href="/">Return to main page</a>
 			</content>
 	</body>
