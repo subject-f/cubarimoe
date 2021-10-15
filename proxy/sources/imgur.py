@@ -146,8 +146,8 @@ class Imgur(ProxySource):
             resp = get_wrapper(request_url)
             if resp.status_code != 200:
                 resp = get_wrapper(
-                    f"https://cors.bridged.cc/{request_url}",
-                    headers={"x-requested-with": "cubari"},
+                    request_url,
+                    use_proxy=True,
                 )
             if resp.status_code == 200:
                 data = re.search(

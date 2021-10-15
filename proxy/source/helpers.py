@@ -7,7 +7,9 @@ ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
 GLOBAL_HEADERS = {
     "User-Agent": "Mozilla Firefox Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:53.0) Gecko/20100101 Firefox/53.0.",
+    "x-requested-with": "cubari",
 }
+PROXY = "https://cubari-cors.herokuapp.com/"
 
 
 def naive_encode(url):
@@ -26,11 +28,14 @@ def encode(url: str):
     return str(base64.urlsafe_b64encode(url.encode()), "utf-8")
 
 
-def get_wrapper(url, *, headers={}, **kwargs):
+def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
+    url = f"{PROXY}{url}" if use_proxy else url
+    print(url)
     return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
 
 
-def post_wrapper(url, headers={}, **kwargs):
+def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
+    url = f"{PROXY}{url}" if use_proxy else url
     return requests.post(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
 
 
