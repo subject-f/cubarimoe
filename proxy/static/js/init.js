@@ -1935,12 +1935,11 @@ function UI_ReaderImageView(o) {
 			this.imageWrappersMap[i] = this.imageWrappersMask.length;
 			if(wides.indexOf(i) > -1 || wides.indexOf(i+1) > -1){
 				spreadOffset++;
-
 			}
 			if(spreadOffset >= spreadCount - 1 || i >= images.length - 1) {
-				if(wides.indexOf(i) > -1)
-					spreadOffset = Settings.get('adv.spreadOffset');
-				else
+				// if(wides.indexOf(i) > -1)
+				// 	spreadOffset = Settings.get('adv.spreadOffset');
+				// else
 					spreadOffset = 0;
 				this.imageWrappersMask.push(imageIndices);
 				imageIndices = [];
