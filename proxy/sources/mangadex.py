@@ -1,6 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
+from typing import Dict
 from django.core.cache import cache
 
 from django.http import HttpResponse
@@ -295,12 +296,26 @@ class MangaDex(ProxySource):
             if data["type"] == "cover_art":
                 cover_filename = data["attributes"]["fileName"]
 
+        title: str = "Couldn't Resolve Title"
+        title_metadata: Dict[str, str] = {
+            **{
+                k: v
+                for alt_title in main_data["data"]["attributes"].get("altTitles", [])
+                for k, v in alt_title.items()
+            },
+            **main_data["data"]["attributes"].get("title", {}),
+        }
+        for title_precedence in [SUPPORTED_LANG, "jp", "fr"]:
+            if title_precedence in title_metadata:
+                title = title_metadata[title_precedence]
+                break
+
         return {
             "slug": meta_id,
-            "title": main_data["data"]["attributes"]["title"][SUPPORTED_LANG],
-            "description": main_data["data"]["attributes"]["description"][
-                SUPPORTED_LANG
-            ],
+            "title": title,
+            "description": main_data["data"]["attributes"]["description"].get(
+                SUPPORTED_LANG, "No English description."
+            ),
             "author": "",
             "artist": "",
             "groups": groups_dict,
