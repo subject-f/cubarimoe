@@ -10,11 +10,13 @@ from .sources.mangakatana import MangaKatana
 from .sources.nepnep import NepNep
 from .sources.imgbox import Imgbox
 from .sources.reddit import Reddit
+from .sources.mangadventure import MangAdventure
 
 sources = [
     MangaDex(),
     NHentai(),
     # FoolSlide(),
+    MangAdventure(),
     ReadManhwa(),
     Imgur(),
     # MangaBox(),
