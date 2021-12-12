@@ -1,7 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
-from typing import Dict
+from typing import Dict, Union
 from django.core.cache import cache
 
 from django.http import HttpResponse
@@ -310,12 +310,19 @@ class MangaDex(ProxySource):
                 title = title_metadata[title_precedence]
                 break
 
+        description_object: Union[list, Dict[str, str]] = main_data["data"][
+            "attributes"
+        ]["description"]
+        description: str = (
+            description_object.get(SUPPORTED_LANG, "No English description.")
+            if len(description_object)
+            else "No description."
+        )
+
         return {
             "slug": meta_id,
             "title": title,
-            "description": main_data["data"]["attributes"]["description"].get(
-                SUPPORTED_LANG, "No English description."
-            ),
+            "description": description,
             "author": "",
             "artist": "",
             "groups": groups_dict,
