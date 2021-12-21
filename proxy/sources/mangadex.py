@@ -247,6 +247,10 @@ class MangaDex(ProxySource):
                     chapter_group = relationship["id"]
                     break
 
+            # Bandaid fix but it should resolve most resolution issues
+            if chapter_group is None:
+                continue
+
             if chapter_number in chapter_dict:
                 chapter_obj = chapter_dict[chapter_number]
                 if not chapter_obj["title"]:
