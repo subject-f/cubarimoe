@@ -12,6 +12,7 @@
 {% endblock %}
 
 {% block head %}
+{{ chapter_list | json_script:"chapter_list" }}
 <script defer>
 var reading_button = null;
 var reading_button2 = null;
@@ -225,7 +226,7 @@ var reading_button2 = null;
 	}
 
 	function prettifyLastUpdatedTable() {
-		chapterList = {{ chapter_list | safe }};
+		chapterList = JSON.parse(document.getElementById("chapter_list").textContent);
 		let now = new Date();
 		let updaters = [
 			document.querySelectorAll(".detailed-chapter-upload-date"),
