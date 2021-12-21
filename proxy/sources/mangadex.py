@@ -249,7 +249,18 @@ class MangaDex(ProxySource):
 
             # Bandaid fix but it should resolve most resolution issues
             if chapter_group is None:
-                continue
+                for relationship in chapter["relationships"]:
+                    if relationship["type"] == "user":
+                        chapter_group = relationship["id"]
+                        break
+                # If at this point it still doesn't have a group, fail the processing
+                if chapter_group is None:
+                    raise ProxyException(
+                        "A chapter is missing a scanlator or user uploader."
+                    )
+                groups_set.add(chapter_group)
+                groups_dict[str(len(groups_set))] = chapter_group
+                groups_map[chapter_group] = str(len(groups_set))
 
             if chapter_number in chapter_dict:
                 chapter_obj = chapter_dict[chapter_number]
