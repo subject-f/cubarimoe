@@ -291,7 +291,12 @@ class MangaDex(ProxySource):
                 ch[1]["volume"] or "Unknown",
             ]
             for ch in sorted(
-                chapter_dict.items(), key=lambda m: float(m[0]), reverse=True
+                chapter_dict.items(),
+                key=lambda m: float(
+                    ".".join(str(m[0]).split(".")[:2])
+                    + "".join(str(m[0]).split(".")[2:])
+                ),  # To get around weird chapter numbering like 21.15.1..
+                reverse=True,
             )
         ]
 
