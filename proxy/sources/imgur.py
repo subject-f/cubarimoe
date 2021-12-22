@@ -137,6 +137,7 @@ class Imgur(ProxySource):
         }
 
     def imgur_embed_common(self, meta_id):
+        raise ProxyException("Imgur is over-capacity.")
         if "+" in meta_id:
             return self.imgur_chapter_collection(meta_id)
         else:
