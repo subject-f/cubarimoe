@@ -81,6 +81,7 @@ class Gist(ProxySource):
 
     @api_cache(prefix="gist_common_dt", time=300)
     def gist_common(self, meta_id):
+        raise ProxyException("EC2 is having issues: https://status.aws.amazon.com/")
         resp = get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
         if resp.status_code != 302 or not resp.headers["location"]:
             return None
