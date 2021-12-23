@@ -37,10 +37,6 @@ class MangaBox(ProxySource):
         ]
 
     @staticmethod
-    def wrap_image_url(url):
-        return f"{settings.IMAGE_PROXY_URL}/{url}"
-
-    @staticmethod
     def normalize_slug(denormal):
         if "/chapter/" in denormal:
             return "https://" + "/".join(

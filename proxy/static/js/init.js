@@ -3698,7 +3698,8 @@ function DownloadManager() {
 		await Reader.fetchChapter(chapter)
 		let chapURLArray = Reader.SCP.chapterObject.images[Reader.getGroup(chapter)];
 		if (await shouldUseProxy(chapURLArray[0])) {
-			chapURLArray = chapURLArray.map((url) => `${IMAGE_PROXY_URL}/${url}`);
+			// Base64 URL encode the URLs
+			chapURLArray = chapURLArray.map((url) => `${IMAGE_PROXY_URL}/v1/image/${btoa(url).replace(/\//g, "_").replace(/\//g, "+")}`);
 		}
 
 		try {

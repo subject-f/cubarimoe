@@ -38,10 +38,6 @@ class MangaKatana(ProxySource):
         ]
 
     @staticmethod
-    def wrap_image_url(url):
-        return f"{settings.IMAGE_PROXY_URL}/{url}"
-
-    @staticmethod
     def normalize_slug(denormal):
         if denormal.strip("/").split('c')[-1].isdigit() or '?sv=' in denormal:
             denormal = denormal.strip("/").split("/")

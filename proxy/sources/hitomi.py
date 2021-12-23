@@ -59,10 +59,6 @@ class Hitomi(ProxySource):
 
         return f"https://{Hitomi.get_gallery_subdomain(hash_path_2, base)}.hitomi.la/{path}/{hash_path_1}/{hash_path_2}/{hsh}.{ext}"
 
-    @staticmethod
-    def wrap_image_url(url):
-        return f"{settings.IMAGE_PROXY_URL}/{url}"
-
     def ht_api_common(self, meta_id):
         ht_series_api = f"https://ltn.hitomi.la/galleries/{meta_id}.js"
         resp = get_wrapper(ht_series_api)
