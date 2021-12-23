@@ -63,6 +63,10 @@ class ProxySource(metaclass=abc.ABCMeta):
             status=500,
         )
 
+    @staticmethod
+    def wrap_image_url(url):
+        return f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}"
+
     @cache_control(public=True, max_age=60, s_maxage=60)
     def reader_view(self, request, meta_id, chapter, page=None):
         if page:
@@ -80,7 +84,7 @@ class ProxySource(metaclass=abc.ABCMeta):
                     data[
                         "api_path"
                     ] = f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/series/"
-                    data["image_proxy_url"] = settings.IMAGE_PROXY_URL
+                    data["image_proxy_url"] = settings.EXTERNAL_PROXY_URL
                     data[
                         "reader_modifier"
                     ] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"

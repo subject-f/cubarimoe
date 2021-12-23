@@ -2,6 +2,7 @@ import base64
 
 import requests
 from django.core.cache import cache
+from django.conf import settings
 
 ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
@@ -29,13 +30,13 @@ def encode(url: str):
 
 
 def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
-    url = f"{PROXY}{url}" if use_proxy else url
+    url = f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}" if use_proxy else url
     print(url)
     return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
 
 
 def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
-    url = f"{PROXY}{url}" if use_proxy else url
+    url = f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}" if use_proxy else url
     return requests.post(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
 
 

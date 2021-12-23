@@ -38,9 +38,6 @@ class NepNep(ProxySource):
             re_path(r"^ms/(?P<raw_url>[\w\d\/:.-]+)", handler),
             re_path(r"^ml/(?P<raw_url>[\w\d\/:.-]+)", handler)
         ]
-    @staticmethod
-    def wrap_image_url(url):
-        return f"{settings.IMAGE_PROXY_URL}/{url}"
 
     @staticmethod
     def normalize_slug(denormal):

@@ -154,7 +154,9 @@ class MangaDex(ProxySource):
 
         for res in result:
             if res["res"].status_code != 200:
-                raise ProxyException("The MangaDex API failed to load.")
+                raise ProxyException(
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                )
             if res["type"] == "main":
                 main_data = res["res"].json()
             elif res["type"] == "chapter":
