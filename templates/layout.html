@@ -31,6 +31,15 @@
       <meta name="description" content="{% firstof page_description brand.description %}">
 	{% endif %}
   {% endif %}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{% firstof page_title brand.name %}" />
+  <meta name="twitter:image" content="{{ brand.image_url }}" />
+  <meta property="og:image" content="{{ brand.image_url }}">
+  <meta property="og:url" content="{{ absolute_url }}">
+
+  {% endblock %}
+	{% block head %} {% endblock %}
+	{% include "history.html" %}
   <style>
 		.pog {
 			position: absolute;
@@ -70,15 +79,6 @@
 			margin-top: 0.4em;
 		}
   </style>
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="{% firstof page_title brand.name %}" />
-  <meta name="twitter:image" content="{{ brand.image_url }}" />
-  <meta property="og:image" content="{{ brand.image_url }}">
-  <meta property="og:url" content="{{ absolute_url }}">
-
-  {% endblock %}
-	{% block head %} {% endblock %}
-	{% include "history.html" %}
 </head>
 
 <body>
