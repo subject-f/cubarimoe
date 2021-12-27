@@ -32,12 +32,12 @@ def encode(url: str):
 def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
     url = f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}" if use_proxy else url
     print(url)
-    return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
+    return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, timeout=8, **kwargs)
 
 
 def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
     url = f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}" if use_proxy else url
-    return requests.post(url, headers={**GLOBAL_HEADERS, **headers}, **kwargs)
+    return requests.post(url, headers={**GLOBAL_HEADERS, **headers}, timeout=8, **kwargs)
 
 
 def api_cache(*, prefix, time):
