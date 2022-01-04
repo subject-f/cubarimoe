@@ -15,6 +15,8 @@ from ..source.helpers import api_cache, get_wrapper, post_wrapper
 SUPPORTED_LANG = "en"
 GROUP_KEY = "scanlation_group"
 
+CONTENT_RATINGS = "contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
+
 HEADERS_COMMON = {
     "Referer": "https://mangadex.org",
     "x-requested-with": "cubari",
@@ -144,7 +146,7 @@ class MangaDex(ProxySource):
                     },
                     {
                         "type": "chapter",
-                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&limit=500",
+                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?{CONTENT_RATINGS}&translatedLanguage[]={SUPPORTED_LANG}&limit=500",
                     },
                 ],
             )
@@ -167,7 +169,7 @@ class MangaDex(ProxySource):
             unfetched_urls = []
             while current_offset < chapter_data["total"]:
                 unfetched_urls.append(
-                    f"https://api.mangadex.org/manga/{meta_id}/feed?translatedLanguage[]={SUPPORTED_LANG}&offset={current_offset}&limit=500"
+                    f"https://api.mangadex.org/manga/{meta_id}/feed?{CONTENT_RATINGS}&translatedLanguage[]={SUPPORTED_LANG}&offset={current_offset}&limit=500"
                 )
                 current_offset = current_offset + 500
 
