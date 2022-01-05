@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
 
@@ -23,7 +23,7 @@ class Hitomi(ProxySource):
                     f"reader-{self.get_reader_prefix()}-chapter-page",
                     series_id,
                     "1",
-                    "1",  # TODO: parse page
+                    "1",
                 )
             else:
                 return redirect(
@@ -31,35 +31,45 @@ class Hitomi(ProxySource):
                 )
 
         return [
-            re_path(r"^ht/(?P<raw_url>[\w\d\/:.-]+)", handler),
+            re_path(r"^ht/(?P<raw_url>.+)", handler),
         ]
+
+
+    @staticmethod
+    def get_partial_gg():
+        resp = get_wrapper("https://ltn.hitomi.la/gg.js")
+        text = resp.text
+        m_groups = [int(re.search(r'[0-9]+', case)[0]) for case in re.findall(r'case\s+[0-9]+:', text)]
+        gg = dict()
+        gg['m'] = m_groups
+        gg['b'] = re.search(r'b:\s*[\'\"][0-9]+/[\'\"]', text)[0].split(" ")[-1].replace("/", "").replace("'", "")
+        return gg
 
     @staticmethod
     def extract_hitomi_id(url: str):
-        return url.split("/")[-1].split("-")[-1].split(".")[-2]
+        hitomi_id = url.split("/")[-1].split("-")[-1].split(".")[-2]
+        if not hitomi_id.isdigit():
+            raise ProxyException("This hitomi ID is invalid, this could be a cubari problem in some cases.")
+        return hitomi_id
 
     @staticmethod
-    def get_gallery_subdomain(segment: str, base: str):
-        number_of_frontends = 3
-        g = int(segment, 16)
-        if g < 0x30:
-            number_of_frontends = 2
-        if g < 0x09:
-            g = 1
-        return chr(97 + g % number_of_frontends) + base
-
-    @staticmethod
-    def get_page_from_obj(gallery_id, obj: dict):
+    def get_page_from_obj(gallery_id, obj: dict, gg: dict):
         hsh = obj["hash"]
-        hash_path_1 = hsh[-1]
-        hash_path_2 = hsh[-3:-1]
+        m1 = hsh[-1]
+        m2 = hsh[-3:-1]
+        location_id = int(m1+m2, 16)
         ext = "webp" if obj["haswebp"] else obj["name"].split(".")[-1]
         path = "webp" if obj["haswebp"] else "images"
-        base = "a" if obj["haswebp"] else "b"
-
-        return f"https://{Hitomi.get_gallery_subdomain(hash_path_2, base)}.hitomi.la/{path}/{hash_path_1}/{hash_path_2}/{hsh}.{ext}"
+        base = "a" if (obj["haswebp"] and obj["hasavif"]) else "b"
+        if location_id in gg["m"]:
+            base = "b" + base
+        else:
+            base = "a" + base
+        page_url = f"https://{base}.hitomi.la/{path}/{gg['b']}/{location_id}/{hsh}.{ext}"
+        return page_url
 
     def ht_api_common(self, meta_id):
+        gg = Hitomi.get_partial_gg()
         ht_series_api = f"https://ltn.hitomi.la/galleries/{meta_id}.js"
         resp = get_wrapper(ht_series_api)
         if resp.status_code == 200:
@@ -69,7 +79,7 @@ class Hitomi(ProxySource):
             title = api_data["title"]
 
             pages_list = [
-                self.wrap_image_url(self.get_page_from_obj(meta_id, page))
+                self.wrap_image_url(self.get_page_from_obj(meta_id, page, gg))
                 for page in api_data["files"]
             ]
             chapter_dict = {
@@ -158,7 +168,7 @@ class Hitomi(ProxySource):
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
-                original_url=f"https://ltn.hitomi.la/galleries/{data['slug']}.js",
+                original_url=f"https://hitomi.la/reader/{meta_id}.html#1",
             )
         else:
             return None
