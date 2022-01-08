@@ -1,7 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 from django.core.cache import cache
 
 from django.http import HttpResponse
@@ -372,32 +372,53 @@ class MangaDex(ProxySource):
 
     @api_cache(prefix="md_chapter_dt", time=300)
     def chapter_api_handler(self, meta_id):
-        resp = get_wrapper(
-            f"https://api.mangadex.org/chapter/{meta_id}",
-            headers=HEADERS_COMMON,
-            use_proxy=True,
-        )
-        if resp.status_code == 200:
-            api_data = resp.json()
-            resp = get_wrapper(
-                f"https://api.mangadex.org/at-home/server/{api_data['data']['id']}?forcePort443=true",
-                headers=HEADERS_COMMON,
-                use_proxy=True,
+        at_home: str = "at-home"
+        chapter: str = "chapter"
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            result = executor.map(
+                lambda req: {
+                    "type": req["type"],
+                    "res": get_wrapper(
+                        req["url"], headers=HEADERS_COMMON, use_proxy=True
+                    ),
+                },
+                [
+                    {
+                        "type": at_home,
+                        "url": f"https://api.mangadex.org/at-home/server/{meta_id}?forcePort443=true",
+                    },
+                    {
+                        "type": chapter,
+                        "url": f"https://api.mangadex.org/chapter/{meta_id}",
+                    },
+                ],
             )
-            if resp.status_code == 200:
-                server_base = resp.json()["baseUrl"]
-                pages = [
-                    f"{server_base}/data/{api_data['data']['attributes']['hash']}/{page}"
-                    for page in api_data["data"]["attributes"]["data"]
-                ]
-                series = None
-                chapter = api_data["data"]["attributes"]["chapter"]
-                for relationship in api_data["data"]["relationships"]:
-                    if relationship["type"] == "manga":
-                        series = relationship["id"]
-                        break
 
-                return ChapterAPI(pages=pages, series=series, chapter=chapter)
+        at_home_data: Optional[Dict[str, str]] = None
+        chapter_data: Optional[Dict[str, str]] = None
+        for res in result:
+            if res["res"].status_code != 200:
+                raise ProxyException(
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                )
+            if res["type"] == at_home:
+                at_home_data = res["res"].json()
+            elif res["type"] == chapter:
+                chapter_data = res["res"].json()
+
+        server_base = at_home_data["baseUrl"]
+        pages = [
+            f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"
+            for page in at_home_data["chapter"]["data"]
+        ]
+        series = None
+        chapter = chapter_data["data"]["attributes"]["chapter"]
+        for relationship in chapter_data["data"]["relationships"]:
+            if relationship["type"] == "manga":
+                series = relationship["id"]
+                break
+
+        return ChapterAPI(pages=pages, series=series, chapter=chapter)
 
     @api_cache(prefix="md_series_page_dt", time=600)
     def series_page_handler(self, meta_id):
