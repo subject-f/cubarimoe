@@ -406,7 +406,6 @@ class MangaDex(ProxySource):
             elif res["type"] == chapter:
                 chapter_data = res["res"].json()
 
-        server_base = at_home_data["baseUrl"]
         pages = [
             f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"
             for page in at_home_data["chapter"]["data"]
