@@ -42,17 +42,17 @@ class ReadManhwa(ProxySource):
             )
 
         return [
-            re_path(r"^en/webtoon/(?P<series_slug>[\d\w-]+)/$", series_handler),
+            re_path(r"^en/comic/(?P<series_slug>[\d\w-]+)/$", series_handler),
             re_path(
-                r"^en/webtoon/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/$",
+                r"^en/comic/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/$",
                 chapter_handler,
             ),
             re_path(
-                r"^en/webtoon/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/reader/$",
+                r"^en/comic/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/reader/$",
                 chapter_handler,
             ),
             re_path(
-                r"^en/webtoon/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/reader/(?P<page>[\d]+)/$",
+                r"^en/comic/(?P<series_slug>[\d\w-]+)/(?P<chapter_slug>[\d\w-]+)/reader/(?P<page>[\d]+)/$",
                 chapter_handler,
             ),
         ]
