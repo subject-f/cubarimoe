@@ -26,7 +26,7 @@ class Imgur(ProxySource):
             )
 
         return [
-            re_path(r"^(?:a|gallery)/(?P<album_hash>[\d\w]+)/$", handler),
+            re_path(r"^(?:a)/(?P<album_hash>[\d\w]+)/$", handler),
         ]
 
     @staticmethod
