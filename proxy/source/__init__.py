@@ -65,7 +65,7 @@ class ProxySource(metaclass=abc.ABCMeta):
 
     @staticmethod
     def wrap_image_url(url):
-        return f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}"
+        return f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}?source=cubari_host"
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def reader_view(self, request, meta_id, chapter, page=None):
