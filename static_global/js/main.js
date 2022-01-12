@@ -16,6 +16,16 @@ let error = '';
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/gist/' + result[2];
 			break;
+		case /(raw|gist)\.githubusercontent/.test(text):
+			if (!text.startsWith("http")) {
+				text = "https://" + text;
+			}
+			const url = new URL(text);
+			result = '/read/gist/'
+				+ btoa(`${url.host.split(".")[0]}${url.pathname}`)
+				.replace(/\+/g, "-")
+				.replace(/\//g, "_");
+			break;
 		case (/^[0-9]{5}[0-9]?$/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
 			result = /(\/?)(\b[0-9]+\b)/.exec(text);
 			console.log(result)
