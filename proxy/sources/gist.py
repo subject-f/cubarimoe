@@ -1,13 +1,16 @@
 from datetime import datetime
 from json.decoder import JSONDecodeError
 import random
+import binascii
+from typing import Dict, Tuple
 
 from django.shortcuts import redirect
 from django.urls import re_path
+from requests.models import Response
 
 from ..source import ProxySource
 from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
-from ..source.helpers import api_cache, get_wrapper
+from ..source.helpers import api_cache, decode, get_wrapper
 
 """
 Expected format of the raw gists should be:
@@ -40,6 +43,12 @@ Expected format of the raw gists should be:
 }
 Make sure you pass in the shortened key from git.io.
 """
+
+
+DOMAIN_MAPPING: Dict[str, str] = {
+    "gist": "https://gist.githubusercontent.com/",
+    "raw": "https://raw.githubusercontent.com/",
+}
 
 
 class Gist(ProxySource):
@@ -79,15 +88,54 @@ class Gist(ProxySource):
         except ValueError as e:
             raise ProxyException(f"Failed to parse chapter as a number: {e}")
 
+    @staticmethod
+    def request_handler(meta_id: str) -> Tuple[str, Response]:
+        """
+        Handler that supports legacy git.io links, as well as the newest schema.
+
+        :return: tuple of the original URL and request response
+        """
+        try:
+            decoded_identifier: str = decode(meta_id)
+
+            if "/" not in decoded_identifier:
+                raise ValueError(
+                    "Decoded value isn't slash-separated, falling back to git.io"
+                )
+
+            location: str
+            path: str
+            location, path = decoded_identifier.split("/", 1)
+            if location not in DOMAIN_MAPPING:
+                raise ProxyException(
+                    "Domain fragment doesn't start with one of: "
+                    + ", ".join(DOMAIN_MAPPING.keys())
+                )
+
+            url: str = DOMAIN_MAPPING[location] + path
+            resp: Response = get_wrapper(f"{url}?{random.random()}")
+
+        except (binascii.Error, ValueError):
+            # If it fails to decode, it's _probably_ a legacy git.io link
+            url: str = f"https://git.io/{meta_id}"
+            resp: Response = get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
+
+            if resp.status_code != 302 or not resp.headers["location"]:
+                raise ProxyException("The git.io redirect did not succeed.")
+
+            resp: Response = get_wrapper(f"{resp.headers['location']}?{random.random()}")
+
+        return (url, resp)
+
     @api_cache(prefix="gist_common_dt", time=300)
     def gist_common(self, meta_id):
-        resp = get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
-        if resp.status_code != 302 or not resp.headers["location"]:
-            return None
-        resp = get_wrapper(f"{resp.headers['location']}?{random.random()}")
+        original_url: str
+        resp: Response
+        original_url, resp = self.request_handler(meta_id)
+
         if not resp.headers["content-type"].startswith("text/plain"):
             raise ProxyException(
-                "This git.io short URL doesn't redirect to a raw file. Try again."
+                "The requested content doesn't direct to a raw file."
             )
 
         if resp.status_code == 200:
@@ -202,6 +250,7 @@ class Gist(ProxySource):
                 "cover": cover,
                 "chapter_dict": chapter_dict,
                 "chapter_list": chapter_list,
+                "original_url": original_url,
             }
         else:
             raise ProxyException("Failed to resolve the given URL.")
@@ -240,7 +289,7 @@ class Gist(ProxySource):
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
-                original_url=f"https://git.io/{meta_id}",
+                original_url=data["original_url"],
             )
         else:
             return None
