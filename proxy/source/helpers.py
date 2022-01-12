@@ -29,7 +29,6 @@ def decode(url: str):
 
 def encode(url: str):
     """Base64 URL encoding wrapper that automatically strips the = symbols, ensuring URL safety."""
-    # return str(base64.urlsafe_b64encode(url.encode()), "utf-8")
     return str(base64.urlsafe_b64encode(url.encode()), "utf-8").rstrip("=")
 
 
@@ -39,7 +38,6 @@ def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
         if use_proxy
         else url
     )
-    print(url)
     return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, timeout=8, **kwargs)
 
 
