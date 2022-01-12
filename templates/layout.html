@@ -40,54 +40,10 @@
   {% endblock %}
 	{% block head %} {% endblock %}
 	{% include "history.html" %}
-  <style>
-.pog {
-	position: absolute;
-	left: 0;
-	right: 0;
-	display: flex;
-	justify-content: space-around;
-	pointer-events: none;
-	top: -0.2em;
-	max-width: 100vw;
-	overflow: hidden;
-	height: 3em;
-}
-.pog i {
-	display: inline-block;
-	flex-grow: 0;
-	width: 0.9em;
-	height: 0.9em;
-	background: rgba(255,100,100,0.9);
-	border-radius: 50%;
-	position: relative;
-	box-shadow: 0px 5px 8px rgba(255,100,100,0.8);
-	margin-right: 20px;
-	flex-shrink: 0;
-}
-.pog i:nth-child(2n) {
-	background: white;
-	box-shadow: 0px 5px 8px rgba(255,255,255,0.8);
-}
-.pog i:nth-child(3n) {
-	top: 1em;
-}
-.pog i:nth-child(3n+2) {
-	margin-top: 0.7em;
-}
-.pog i:nth-child(4n) {
-	top: 0.4em;
-}
-.pog i:nth-child(2n) {
-	top: 1em;
-	margin-top: 0.4em;
-}
-  </style>
 </head>
 
 <body>
 	<div class="body-wrapper">
-	<div class="pog"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 	<div class="home-background"></div>
 	{% include "tracking.html" %}
 	{% load cache %} {% cache 1 sidebar %}
