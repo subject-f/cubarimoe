@@ -24,7 +24,8 @@ let error = '';
 			result = '/read/gist/'
 				+ btoa(`${url.host.split(".")[0]}${url.pathname}`)
 				.replace(/\+/g, "-")
-				.replace(/\//g, "_");
+				.replace(/\//g, "_")
+				.replace(/\=/g, "");
 			break;
 		case (/^[0-9]{5}[0-9]?$/.test(text) || (/nhentai/.test(text) && /\/\b[0-9]+\b/.test(text))):
 			result = /(\/?)(\b[0-9]+\b)/.exec(text);
@@ -55,6 +56,9 @@ let error = '';
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
+	}
+	if (!result.endsWith("/")) {
+		result += "/";
 	}
 	if(result) {
 		sbox.classList.add('spin');
