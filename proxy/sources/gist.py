@@ -2,6 +2,7 @@ from datetime import datetime
 from json.decoder import JSONDecodeError
 import random
 import binascii
+from urllib.parse import ParseResult, urlparse
 from typing import Dict, Tuple
 
 from django.shortcuts import redirect
@@ -10,7 +11,7 @@ from requests.models import Response
 
 from ..source import ProxySource
 from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
-from ..source.helpers import api_cache, decode, get_wrapper
+from ..source.helpers import api_cache, decode, encode, get_wrapper
 
 """
 Expected format of the raw gists should be:
@@ -56,13 +57,27 @@ class Gist(ProxySource):
         return "gist"
 
     def shortcut_instantiator(self):
-        def handler(request, gist_hash):
+        def gitio_handler(request, gist_hash: str):
             # While git.io allows vanity URLs with special characters, chances are
             # they won't parse properly by a regular browser. So we don't deal with it
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", gist_hash)
 
+        def gist_raw_handler(request, raw_url: str):
+            if not raw_url.startswith("http"):
+                raw_url = "https://" + raw_url
+            parsed_url: ParseResult = urlparse(raw_url)
+            location: str = parsed_url.netloc.split(".")[0]
+            if parsed_url.netloc not in DOMAIN_MAPPING.get(location, ""):
+                raise ProxyException("This URL doesn't point to a GitHub-owned domain.")
+
+            return redirect(
+                f"reader-{self.get_reader_prefix()}-series-page",
+                encode(location + parsed_url.path),
+            )
+
         return [
-            re_path(r"^(?:gist|gh)/(?P<gist_hash>[\d\w/]+)/$", handler),
+            re_path(r"^(?:gitio)/(?P<gist_hash>[\d\w/]+)/$", gitio_handler),
+            re_path(r"^(?:gist|gh)/(?P<raw_url>.+)", gist_raw_handler),
         ]
 
     @staticmethod
@@ -118,12 +133,16 @@ class Gist(ProxySource):
         except (binascii.Error, ValueError):
             # If it fails to decode, it's _probably_ a legacy git.io link
             url: str = f"https://git.io/{meta_id}"
-            resp: Response = get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
+            resp: Response = get_wrapper(
+                f"https://git.io/{meta_id}", allow_redirects=False
+            )
 
             if resp.status_code != 302 or not resp.headers["location"]:
                 raise ProxyException("The git.io redirect did not succeed.")
 
-            resp: Response = get_wrapper(f"{resp.headers['location']}?{random.random()}")
+            resp: Response = get_wrapper(
+                f"{resp.headers['location']}?{random.random()}"
+            )
 
         return (url, resp)
 
@@ -134,9 +153,7 @@ class Gist(ProxySource):
         original_url, resp = self.request_handler(meta_id)
 
         if not resp.headers["content-type"].startswith("text/plain"):
-            raise ProxyException(
-                "The requested content doesn't direct to a raw file."
-            )
+            raise ProxyException("The requested content doesn't direct to a raw file.")
 
         if resp.status_code == 200:
             try:
