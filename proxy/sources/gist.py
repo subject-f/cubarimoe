@@ -132,6 +132,7 @@ class Gist(ProxySource):
 
         except (binascii.Error, ValueError):
             # If it fails to decode, it's _probably_ a legacy git.io link
+            raise ProxyException("git.io links have been deprecated. Refer to the deprecation notice on the frontpage for more details.")
             url: str = f"https://git.io/{meta_id}"
             resp: Response = get_wrapper(
                 f"https://git.io/{meta_id}", allow_redirects=False
