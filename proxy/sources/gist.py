@@ -141,7 +141,7 @@ class Gist(ProxySource):
                 raise ProxyException("The git.io redirect did not succeed.")
 
             # TODO remove this, it's very much a bandaid given the short deprecation notice
-            get_wrapper(f"https://gist-capture.f-ck.me/cache?shortcode={meta_id}&url={resp.headers['location']}")
+            get_wrapper(f"https://gist-capture.f-ck.me/cache?shortcode={meta_id}&url={resp.headers['location']}", timeout=4)
 
             resp: Response = get_wrapper(
                 f"{resp.headers['location']}?{random.random()}"
