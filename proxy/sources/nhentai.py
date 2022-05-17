@@ -3,10 +3,11 @@ from datetime import datetime
 
 from django.shortcuts import redirect
 from django.urls import re_path
+from django.conf import settings
 
 from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
-from ..source.helpers import api_cache, get_wrapper
+from ..source.helpers import api_cache, encode, get_wrapper
 
 
 class NHentai(ProxySource):
@@ -49,6 +50,7 @@ class NHentai(ProxySource):
     @api_cache(prefix="nh_series_common_dt", time=3600)
     def nh_api_common(self, meta_id):
         nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
+        nh_series_api = f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}"
         resp = get_wrapper(nh_series_api)
         if resp.status_code == 200:
             data = resp.text
