@@ -50,8 +50,11 @@ class NHentai(ProxySource):
     @api_cache(prefix="nh_series_common_dt", time=3600)
     def nh_api_common(self, meta_id):
         nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
-        nh_series_api = f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}"
         resp = get_wrapper(nh_series_api)
+
+        if resp.status_code != 200:
+            resp = get_wrapper(f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host")
+
         if resp.status_code == 200:
             data = resp.text
             api_data = json.loads(data)
