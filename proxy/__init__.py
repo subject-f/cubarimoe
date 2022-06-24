@@ -1,4 +1,5 @@
 # from .sources.foolslide import FoolSlide
+from .sources.imgbb import Imgbb
 from .sources.imgur import Imgur
 # from .sources.mangabox import MangaBox
 from .sources.mangadex import MangaDex
@@ -26,4 +27,5 @@ sources = [
     NepNep(),
     Imgbox(),
     Reddit(),
+    Imgbb(),
 ]
