@@ -42,12 +42,23 @@ class ProxySource(metaclass=abc.ABCMeta):
     def process_description(self, desc):
         return conditional_escape(desc)
 
+    @cache_control(public=True, max_age=5, s_maxage=5)
+    def _uncached_response(self, request, request_func):
+        return request_func(request)
+
+    @cache_control(public=True, max_age=60, s_maxage=60)
+    def _cached_response(self, request, request_func):
+        return request_func(request)
+
     def _api_error(self, request):
-        return render(
+        return self._uncached_response(
             request,
-            "homepage/thonk_500.html",
-            {"error": "External API error."},
-            status=500,
+            lambda request: render(
+                request,
+                "homepage/thonk_500.html",
+                {"error": "External API error."},
+                status=500,
+            ),
         )
 
     def _processing_error(self, request, exception):
@@ -56,16 +67,21 @@ class ProxySource(metaclass=abc.ABCMeta):
         else:
             error_msg = "Processing error. This could be a Cubari problem."
 
-        return render(
+        return self._uncached_response(
             request,
-            "homepage/thonk_500.html",
-            {"error": error_msg, "error_uwu": uwuify.uwu(error_msg)},
-            status=500,
+            lambda request: render(
+                request,
+                "homepage/thonk_500.html",
+                {"error": error_msg, "error_uwu": uwuify.uwu(error_msg)},
+                status=500,
+            ),
         )
 
     @staticmethod
     def wrap_image_url(url):
-        return f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}?source=cubari_host"
+        return (
+            f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}?source=cubari_host"
+        )
 
     @cache_control(public=True, max_age=60, s_maxage=60)
     def reader_view(self, request, meta_id, chapter, page=None):
@@ -89,14 +105,22 @@ class ProxySource(metaclass=abc.ABCMeta):
                         "reader_modifier"
                     ] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
                     data["chapter_number"] = chapter.replace("-", ".")
-                    return render(request, "reader/reader.html", data)
+                    return self._cached_response(
+                        request,
+                        lambda request: render(request, "reader/reader.html", data),
+                    )
             return self._api_error(request)
         else:
-            return redirect(
-                f"reader-{self.get_reader_prefix()}-chapter-page", meta_id, chapter, "1"
+            return self._cached_response(
+                request,
+                lambda request: redirect(
+                    f"reader-{self.get_reader_prefix()}-chapter-page",
+                    meta_id,
+                    chapter,
+                    "1",
+                ),
             )
 
-    @cache_control(public=True, max_age=60, s_maxage=60)
     def series_view(self, request, meta_id):
         try:
             data = self.series_page_handler(meta_id)
@@ -112,11 +136,12 @@ class ProxySource(metaclass=abc.ABCMeta):
             data[
                 "reader_modifier"
             ] = f"{settings.PROXY_BASE_PATH}/{self.get_reader_prefix()}"
-            return render(request, "reader/series.html", data)
+            return self._cached_response(
+                request, lambda request: render(request, "reader/series.html", data)
+            )
         else:
             return self._api_error(request)
 
-    @cache_control(public=True, max_age=60, s_maxage=60)
     def series_api_view(self, request, meta_id):
         try:
             data = self.series_api_handler(meta_id)
@@ -124,11 +149,15 @@ class ProxySource(metaclass=abc.ABCMeta):
             return self._processing_error(request, e)
         if data:
             data = data.objectify()
-            return HttpResponse(json.dumps(data), content_type="application/json")
+            return self._cached_response(
+                request,
+                lambda request: HttpResponse(
+                    json.dumps(data), content_type="application/json"
+                ),
+            )
         else:
             return self._api_error(request)
 
-    @cache_control(public=True, max_age=60, s_maxage=60)
     def chapter_api_view(self, request, meta_id):
         try:
             data = self.chapter_api_handler(meta_id)
@@ -136,8 +165,11 @@ class ProxySource(metaclass=abc.ABCMeta):
             return self._processing_error(request, e)
         if data:
             data = data.objectify()
-            return HttpResponse(
-                json.dumps(data["pages"]), content_type="application/json"
+            return self._cached_response(
+                request,
+                lambda request: HttpResponse(
+                    json.dumps(data["pages"]), content_type="application/json"
+                ),
             )
         else:
             return self._api_error(request)
