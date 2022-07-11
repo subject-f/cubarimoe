@@ -36,19 +36,29 @@ class ProxySource(metaclass=abc.ABCMeta):
     def series_page_handler(self, meta_id: str) -> SeriesPage:
         raise NotImplementedError
 
+    def uncache_duration(self) -> int:
+        return 5
+
+    def cache_duration(self) -> int:
+        return 60
+
     def wrap_chapter_meta(self, meta_id):
         return f"/{settings.PROXY_BASE_PATH}/api/{self.get_reader_prefix()}/chapter/{meta_id}/"
 
     def process_description(self, desc):
         return conditional_escape(desc)
 
-    @cache_control(public=True, max_age=5, s_maxage=5)
     def _uncached_response(self, request, request_func):
-        return request_func(request)
+        duration = self.uncache_duration()
+        return cache_control(public=True, max_age=duration, s_maxage=duration)(
+            request_func
+        )(request)
 
-    @cache_control(public=True, max_age=60, s_maxage=60)
     def _cached_response(self, request, request_func):
-        return request_func(request)
+        duration = self.cache_duration()
+        return cache_control(public=True, max_age=duration, s_maxage=duration)(
+            request_func
+        )(request)
 
     def _api_error(self, request):
         return self._uncached_response(
