@@ -11,6 +11,9 @@ from ..source.helpers import api_cache, encode, get_wrapper
 
 
 class NHentai(ProxySource):
+    def cache_duration(self) -> int:
+        return 60 * 60 * 60 * 6
+
     def get_reader_prefix(self):
         return "nhentai"
 
@@ -28,7 +31,7 @@ class NHentai(ProxySource):
                     f"reader-{self.get_reader_prefix()}-chapter-page",
                     series_id,
                     "1",
-                    "1"
+                    "1",
                 )
 
         def series(request, series_id):
@@ -53,7 +56,9 @@ class NHentai(ProxySource):
         resp = get_wrapper(nh_series_api, use_proxy=True)
 
         if resp.status_code != 200:
-            resp = get_wrapper(f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host")
+            resp = get_wrapper(
+                f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
+            )
 
         if resp.status_code == 200:
             data = resp.text
