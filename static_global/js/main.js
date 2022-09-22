@@ -48,10 +48,10 @@ let error = '';
 			result = '/read/mangasee/' + slug_name
 			break 
 		case /reddit\.com/i.test(text):
-			result = /reddit.com\/(?:r|u)\/(?:[a-z0-9_]+)\/comments\/([a-z0-9]+)/i.exec(text);
-			if (!result || !result[1]) result = /reddit.com\/gallery\/([a-z0-9]+)/i.exec(text);
-			if (!result || !result[1]) return message('Reader could not understand the given link.', 1);
-			result = '/read/reddit/' + result[1];
+			result = /reddit.com\/(?:r|u(ser)?)\/(?:[a-z0-9_\-]+)\/comments\/([a-z0-9]+)/i.exec(text);
+			if (!result || !result[2]) result = /reddit.com\/gallery\/([a-z0-9]+)/i.exec(text);
+			if (!result || !result[2]) return message('Reader could not understand the given link.', 1);
+			result = '/read/reddit/' + result[2];
 			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
