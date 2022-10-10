@@ -65,21 +65,20 @@ class MangAdventure(ProxySource):
             })
         }
         chapters = {}
-        for num, chapter in data["chapters"].items():
-            chapters[num] = {
+        for ch_id, chapter in data["chapters"].items():
+            chapters[ch_id] = {
                 "title": chapter["title"],
-                "volume": chapter["volume"]
+                "volume": chapter["volume"],
+                "chapter": chapter["number"]
             }
             group = next(
                 k for k in groups.keys() for g in
                 chapter["groups"].keys() if g == groups[k]
             )
-            chapters[num]["groups"] = {
-                group: self.wrap_chapter_meta(encode(
-                    base + chapter["volume"] + "/" + num
-                ))
+            chapters[ch_id]["groups"] = {
+                group: self.wrap_chapter_meta(encode(base + ch_id))
             }
-            chapters[num]["release_date"] = {
+            chapters[ch_id]["release_date"] = {
                 group: int(chapter["last_updated"])
             }
 
@@ -97,16 +96,15 @@ class MangAdventure(ProxySource):
 
     @api_cache(prefix="ma_series_page_dt", time=600)
     def chapter_api_handler(self, meta_id: str):
-        scheme, domain, slug, vol, num = decode(meta_id).split("/", 4)
+        scheme, domain, slug, id = decode(meta_id).split("/", 3)
         if domain not in self.whitelist:
             return None
-        qs = f"?series={slug}&volume={vol}&number={num}"
-        url = f"{scheme}://{domain}/api/v2/pages{qs}&track=true"
+        url = f"{scheme}://{domain}/api/v2/chapters/{id}/pages?track=true"
         res = get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
         pages = [page["image"] for page in res.json()["results"]]
-        return ChapterAPI(series=slug, pages=pages, chapter=num)
+        return ChapterAPI(series=slug, pages=pages, chapter=id)
 
     @api_cache(prefix="ma_series_page_dt", time=600)
     def series_page_handler(self, meta_id: str):
@@ -122,13 +120,14 @@ class MangAdventure(ProxySource):
         origin = f"{scheme}://{domain}{data['original_url']}"
         # simplified version of the gist mapper
         chapters = [[
-            num, num,
+            chapter["number"],
+            ch_id,
             chapter["title"],
-            num.replace(".", "-"),
+            ch_id,
             list(chapter["groups"].keys())[0],
             self.parse_date(chapter["last_updated"]),
             chapter["volume"],
-        ] for num, chapter in reversed(data["chapters"].items())]
+        ] for ch_id, chapter in reversed(data["chapters"].items())]
 
         return SeriesPage(
             series=data["title"],
