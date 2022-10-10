@@ -1255,14 +1255,15 @@ function UI_Reader(o) {
 		seriesPageLink.href = `${path.splice(0, path.indexOf(decodeURIComponent(this.current.slug))).join("/")}/${this.current.slug}/`;
 		this._.title.appendChild(seriesPageLink);
 		this.$.querySelector('aside').classList.remove('unload');
-	var chapterElements = [];
-	var volElements = {};
+		var chapterElements = [];
+		var volElements = {};
 		for (var i = this.current.chaptersIndex.length - 1; i >= 0; i--) {
-		var chapterNumber = this.current.chaptersIndex[i];
-		var chapter = this.current.chapters[chapterNumber];
+			var chapterId = this.current.chaptersIndex[i];
+			var chapter = this.current.chapters[chapterId];
+			var chapterNumber = parseFloat(chapter.chapter) || chapterId;
 			chapterElements.push({
 				text: chapterNumber + ' - ' + chapter.title,
-				value: chapterNumber
+				value: chapterId
 			});
 
 		}
