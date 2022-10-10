@@ -9,7 +9,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, decode, encode, get_wrapper
 
 #Should work with all image servers
@@ -160,9 +160,13 @@ class MangaKatana(ProxySource):
         resp = get_wrapper(decoded_url)
         if resp.status_code == 200:
             data = resp.text
-            r = re.compile(r'ytaw\s?=\s?.+,\]') #Stores images array in ytaw variable
+            search = re.search(r"'data-src',\s+([\w]+)\[", data)
+            if search is None:
+                raise ProxyException("Can't decode image array.")
+            img_array = search.group(1)
+            r = re.compile(f'{img_array}\s?=\s?.+,\]')
             m = re.search(r, data)
-            str_pages = re.split(re.compile(r'ytaw\s?=\s?'), m.group(0))[1]
+            str_pages = re.split(re.compile(f'{img_array}\s?=\s?'), m.group(0))[1]
             pages = ast.literal_eval(str_pages)
             return ChapterAPI(pages=pages, series=meta_id, chapter="")
         else:
