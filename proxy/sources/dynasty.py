@@ -123,7 +123,7 @@ class Dynasty(ProxySource):
                         },
                     }
                 except:
-                    return None
+                    pass
             return {
                 "slug": meta_id,
                 "title": title,
