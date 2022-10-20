@@ -1,4 +1,6 @@
 # from .sources.foolslide import FoolSlide
+import imp
+from proxy.sources.dynasty import Dynasty
 from .sources.imgbb import Imgbb
 from .sources.imgur import Imgur
 # from .sources.mangabox import MangaBox
@@ -12,6 +14,7 @@ from .sources.nepnep import NepNep
 from .sources.imgbox import Imgbox
 from .sources.reddit import Reddit
 from .sources.mangadventure import MangAdventure
+from .sources.dynasty import Dynasty
 
 sources = [
     MangaDex(),
@@ -28,4 +31,5 @@ sources = [
     Imgbox(),
     Reddit(),
     Imgbb(),
+    Dynasty()
 ]
