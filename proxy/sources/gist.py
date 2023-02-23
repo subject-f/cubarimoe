@@ -12,6 +12,7 @@ from requests.models import Response
 from ..source import ProxySource
 from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
 from ..source.helpers import api_cache, decode, encode, get_wrapper
+from ..source.markdown_parser import parse_html
 
 """
 Expected format of the raw gists should be:
@@ -79,6 +80,9 @@ class Gist(ProxySource):
             re_path(r"^(?:gitio)/(?P<gist_hash>[\d\w/]+)/$", gitio_handler),
             re_path(r"^(?:gist|gh)/(?P<raw_url>.+)", gist_raw_handler),
         ]
+
+    def process_description(self, desc):
+        return parse_html(desc)
 
     @staticmethod
     def date_parser(timestamp):
