@@ -11,6 +11,7 @@ from django.urls import re_path
 from ..source import ProxySource
 from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper, post_wrapper
+from ..source.markdown_parser import parse_html
 
 SUPPORTED_LANG = "en"
 GROUP_KEY = "scanlation_group"
@@ -98,7 +99,7 @@ class MangaDex(ProxySource):
         ]
 
     def process_description(self, desc):
-        return html.unescape(desc)
+        return parse_html(desc)
 
     def handle_oneshot_chapters(self, resp):
         """This expects a chapter API response object."""
@@ -146,7 +147,7 @@ class MangaDex(ProxySource):
                     },
                     {
                         "type": "chapter",
-                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?{CONTENT_RATINGS}&translatedLanguage[]={SUPPORTED_LANG}&limit=500",
+                        "url": f"https://api.mangadex.org/manga/{meta_id}/feed?{CONTENT_RATINGS}&translatedLanguage[]={SUPPORTED_LANG}&limit=500&includeEmptyPages=0&includeFuturePublishAt=0&includeExternalUrl=0",
                     },
                 ],
             )
