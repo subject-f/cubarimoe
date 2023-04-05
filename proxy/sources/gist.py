@@ -141,7 +141,7 @@ class Gist(ProxySource):
                 f"https://git.io/{meta_id}", allow_redirects=False
             )
 
-            if resp.status_code != 302 or not resp.headers["location"]:
+            if resp.status_code not in [301, 302] or not resp.headers["location"]:
                 raise ProxyException("The git.io redirect did not succeed.")
 
             resp: Response = get_wrapper(
