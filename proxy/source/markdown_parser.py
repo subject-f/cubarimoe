@@ -58,9 +58,15 @@ def _convert_crlf(input_str: str) -> str:
 
 
 def _parse_links(input_str: str) -> str:
-    return re.sub(
+    input_str = re.sub(
         r"\[([\w\W]+?)\]\(([\w\W]+?)\)",
         r'<a href="\2">\1</a>',
+        input_str,
+        flags=re.MULTILINE,
+    )
+    return re.sub(
+        r"(?<!href=\")(https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%]+')",
+        r'<a href="\1">\1</a>',
         input_str,
         flags=re.MULTILINE,
     )
