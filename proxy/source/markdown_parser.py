@@ -65,7 +65,7 @@ def _parse_links(input_str: str) -> str:
         flags=re.MULTILINE,
     )
     return re.sub(
-        r"(?<!href=\")(https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%]+')",
+        r"(?<!href=\")(https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)",
         r'<a href="\1">\1</a>',
         input_str,
         flags=re.MULTILINE,
