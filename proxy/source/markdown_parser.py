@@ -59,7 +59,7 @@ def _convert_crlf(input_str: str) -> str:
 
 def _parse_links(input_str: str) -> str:
     input_str = re.sub(
-        r"\[([\w\W]+?)\]\((https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)\)",
+        r"\[(.+?)\]\((https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)\)",
         r'<a href="\2">\1</a>',
         input_str,
         flags=re.MULTILINE,
@@ -87,7 +87,7 @@ def _parse_headers(input_str: str) -> str:
 def _parse_strong_emphasis(input_str: str) -> str:
     return "\n".join(
         re.sub(
-            r"(?:\*\*|\_\_)([\w]+?[\w\W]+?[\w]+?)(?:\*\*|\_\_)",
+            r"[*_]{2}(.+?)[*_]{2}",
             r"<strong>\1</strong>",
             l,
         )
@@ -97,14 +97,14 @@ def _parse_strong_emphasis(input_str: str) -> str:
 
 def _parse_em_emphasis(input_str: str) -> str:
     return "\n".join(
-        re.sub(r"(?:\*|\_)([\w]+?[\w\W]+?[\w]+?)(?:\*|\_)", r"<em>\1</em>", l)
+        re.sub(r"[*_](.+?)[*_]", r"<em>\1</em>", l)
         for l in input_str.splitlines()
     )
 
 
 def _parse_code(input_str: str) -> str:
     return "\n".join(
-        re.sub(r"(?:\`)([\w]+?[\w\W]+?[\w]+?)(?:\`)", r"<code>\1</code>", l)
+        re.sub(r"`(.+?)`", r"<code>\1</code>", l)
         for l in input_str.splitlines()
     )
 
