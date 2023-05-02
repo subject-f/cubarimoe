@@ -73,7 +73,15 @@ def _parse_links(input_str: str) -> str:
 
 
 def _parse_headers(input_str: str) -> str:
-    return re.sub(r"^#+ +([\w\W]+?)\n", r"<h3>\1</h3>\n", input_str, flags=re.MULTILINE)
+    search = re.finditer(r"^(#{1,5}) (.+)$", input_str, re.MULTILINE)
+    for i in search:
+        h = 2 - (min(len(i.group(1)) + 1, 5) / 10)
+        input_str = re.sub(
+            i.group(),
+            f'<span style="font-size: {h}em;">{i.group(2)}</span>',
+            input_str,
+        )
+    return input_str
 
 
 def _parse_strong_emphasis(input_str: str) -> str:
