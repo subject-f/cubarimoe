@@ -9,7 +9,7 @@ import re
 
 # The supported tags are:
 # - URLs
-# - Headers (atx-style, parses to a single level)
+# - Headers (span blocks with font-size, parses up to 4 levels)
 # - Inline emphasis (bold, italics)
 # - Inline code
 
@@ -21,17 +21,15 @@ import re
 #############################################################################
 # text = """
 # [This is a link](http://example.net/).
-
 # Another inline link [here](http://example.net/).
-
-# # Header
-
-# ## Another header
-
-# *some italics* _more italics_
-
-# **some bold** __more bold__
-
+# One more link for good measure: http://example.net/
+# # Header 1
+# ## Header 2
+# ### Header 3
+# #### Header 4
+# ##### Header 5 - Capped Size
+# *some italics* and _more italics_
+# **some bold** and __more bold__
 # `code`
 # """
 
@@ -39,17 +37,15 @@ import re
 
 # print(result)
 # | <a href="http://example.net/">This is a link</a>.
-# |
 # | Another inline link <a href="http://example.net/">here</a>.
-# |
-# | <h3>Header</h3>
-# |
-# | <h3>Another header</h3>
-# |
-# | <em>some italics</em> <em>more italics</em>
-# |
-# | <strong>some bold</strong> <strong>more bold</strong>
-# |
+# | One more link for good measure: <a href="http://example.net/">http://example.net/</a>
+# | <span style="font-size: 1.8em;">Header 1</span>
+# | <span style="font-size: 1.7em;">Header 2</span>
+# | <span style="font-size: 1.6em;">Header 3</span>
+# | <span style="font-size: 1.5em;">Header 4</span>
+# | <span style="font-size: 1.5em;">Header 5 - Capped Size</span>
+# | <em>some italics</em> and <em>more italics</em>
+# | <strong>some bold</strong> and <strong>more bold</strong>
 # | <code>code</code>
 
 
