@@ -56,13 +56,13 @@ def _convert_crlf(input_str: str) -> str:
 def _parse_links(input_str: str) -> str:
     input_str = re.sub(
         r"\[(.+?)\]\((https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)\)",
-        r'<a href="\2">\1</a>',
+        r'<a href="\2" target="_blank" rel="nofollow noreferrer noopener">\1</a>',
         input_str,
         flags=re.MULTILINE|re.IGNORECASE,
     )
     return re.sub(
         r"(?<!href=\")(https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)",
-        r'<a href="\1">\1</a>',
+        r'<a href="\1" target="_blank" rel="nofollow noreferrer noopener">\1</a>',
         input_str,
         flags=re.MULTILINE|re.IGNORECASE,
     )
