@@ -34,7 +34,7 @@ let error = '';
 			result = '/read/nhentai/' + result[2];
 			break;
 		case (/1drv\.ms\/f\/s![A-Z0-9a-z]+/.test(text)):
-			result = /1drv\.ms\/f\/s!([A-Z0-9a-z]+)\b/.exec(text);
+			result = /1drv\.ms\/f\/(s![A-Z0-9a-z]+)\b/.exec(text);
 			console.log(result)
 			if (!result || !result[1]) return message('Reader could not understand the given link.', 1)
 			result = '/read/onedrive/' + result[1];
