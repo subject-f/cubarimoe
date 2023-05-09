@@ -202,7 +202,11 @@ class OneDrive(ProxySource):
         data = self.od_common(meta_id)
         return (
             ChapterAPI(
-                pages=data["chapters"]["1"]["groups"]["OneDrive"],
+                pages=[
+                    page
+                    for c in [ch["groups"]["OneDrive"] for ch in data["chapters"].values()]
+                    for page in c
+                ],
                 series=data["slug"],
                 chapter="1",
             )
