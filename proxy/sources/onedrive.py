@@ -90,6 +90,11 @@ class OneDrive(ProxySource):
                         map["cover"] = contents["@content.downloadUrl"]
                         continue
                     map["files"].append(contents["@content.downloadUrl"])
+                elif "file" in contents and contents["name"].endswith(".json"):
+                    try:
+                        map["metadata"] = get_wrapper(contents["@content.downloadUrl"]).json()
+                    except (JSONDecodeError, RequestException):
+                        continue
                 if "folder" in contents:
                     map["folders"].append(contents.get("webUrl").split("/")[-1])
             if not map.get("cover") and map["files"]:
@@ -113,13 +118,19 @@ class OneDrive(ProxySource):
             "cover": None,
         }
         series = od_api(meta_id)
-        series_dict["title"] = self.parse_title(series["title"])[1]
+        series_dict["title"] = series.get("metadata", {}).get(
+            "title", self.parse_title(series["title"])[1]
+        )
         has_artist = re.search(r"^\[(.+?)\] ", series["title"], re.IGNORECASE)
-        series_dict["artist"] = has_artist.group(1) if has_artist else "Unknown"
+        series_dict["description"] = series.get("metadata", {}).get("description", "")
+        series_dict["artist"] = series.get("metadata", {}).get(
+            "artist", has_artist.group(1) if has_artist else "Unknown"
+        )
+        series_dict["author"] = series.get("metadata", {}).get("author", series_dict["artist"])
         series_dict["alt_title"] = (
             series_dict["title"].replace(has_artist.group(), "") if has_artist else ""
         )
-        series_dict["cover"] = series.get("cover")
+        series_dict["cover"] = series.get("metadata", {}).get("cover", series.get("cover"))
 
         if series.get("files"):
             chapters_dict["1"] = {
@@ -164,8 +175,9 @@ class OneDrive(ProxySource):
             "slug": meta_id,
             "title": series_dict["title"],
             "alt_title": series_dict["alt_title"],
-            "description": "",
+            "description": series_dict["description"],
             "artist": series_dict["artist"],
+            "author": series_dict["author"],
             "cover": series_dict["cover"],
             "chapters": chapters_dict,
             "chapter_list": chapter_list,
@@ -224,7 +236,7 @@ class OneDrive(ProxySource):
                 alt_titles_str=data["alt_title"],
                 slug=data["slug"],
                 cover_vol_url=data["cover"],
-                metadata=[["Author", data["artist"]], ["Artist", data["artist"]]],
+                metadata=[["Author", data["author"]], ["Artist", data["artist"]]],
                 synopsis=data["description"],
                 author=data["artist"],
                 chapter_list=data["chapter_list"],
