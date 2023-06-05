@@ -69,7 +69,7 @@ def _parse_links(input_str: str) -> str:
 
 
 def _parse_headers(input_str: str) -> str:
-    search = re.finditer(r"^(#{1,5}) (.+)$", input_str, re.MULTILINE)
+    search = re.finditer(r"^(#{1,5}) +(.+)[# ]?$", input_str, re.MULTILINE)
     for i in search:
         h = 2 - (min(len(i.group(1)) + 1, 5) / 10)
         input_str = re.sub(
