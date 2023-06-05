@@ -9,7 +9,7 @@ import re
 
 # The supported tags are:
 # - URLs
-# - Headers (span blocks with font-size, parses up to 4 levels)
+# - Headers (atx-style. Parsed into span blocks with font-size. Capped at 4 levels)
 # - Inline emphasis (bold, italics)
 # - Inline code
 
