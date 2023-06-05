@@ -33,6 +33,12 @@ let error = '';
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/nhentai/' + result[2];
 			break;
+		case (/1drv\.ms\/f\/s![A-Z0-9a-z]+/.test(text)):
+			result = /1drv\.ms\/f\/(s![A-Z0-9a-z]+)\b/.exec(text);
+			console.log(result)
+			if (!result || !result[1]) return message('Reader could not understand the given link.', 1)
+			result = '/read/onedrive/' + result[1];
+			break;
 		case (/mangadex\.org\/title/.test(text)):
 			result = /(\/?)([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/.exec(text)
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)

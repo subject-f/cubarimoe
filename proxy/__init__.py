@@ -15,6 +15,7 @@ from .sources.imgbox import Imgbox
 from .sources.reddit import Reddit
 from .sources.mangadventure import MangAdventure
 from .sources.dynasty import Dynasty
+from .sources.onedrive import OneDrive
 
 sources = [
     MangaDex(),
@@ -31,5 +32,6 @@ sources = [
     Imgbox(),
     Reddit(),
     Imgbb(),
-    Dynasty()
+    Dynasty(),
+    OneDrive(),
 ]
