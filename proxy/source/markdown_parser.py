@@ -83,7 +83,7 @@ def _parse_headers(input_str: str) -> str:
 def _parse_strong_emphasis(input_str: str) -> str:
     return "\n".join(
         re.sub(
-            r"[*_]{2}(.+?)[*_]{2}",
+            r"(?<!\\)\*\*(\w.*?)(?<!\\)\*\*|(?<!\\)__(\w.*?)(?<!\\)__",
             r"<strong>\1</strong>",
             l,
         )
@@ -93,7 +93,11 @@ def _parse_strong_emphasis(input_str: str) -> str:
 
 def _parse_em_emphasis(input_str: str) -> str:
     return "\n".join(
-        re.sub(r"[*_](.+?)[*_]", r"<em>\1</em>", l)
+        re.sub(
+            r"(?<!\\)\*(\w.*?)(?<!\\)\*|(?<!\\)_(\w.*?)(?<!\\)_",
+            r"<em>\1</em>",
+            l,
+        )
         for l in input_str.splitlines()
     )
 
