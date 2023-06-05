@@ -21,6 +21,7 @@ CONTENT_RATINGS = "contentRating[]=safe&contentRating[]=suggestive&contentRating
 HEADERS_COMMON = {
     "Referer": "https://mangadex.org",
     "x-requested-with": "cubari",
+    "User-Agent": "Cubari/1.0",
 }
 
 
@@ -35,6 +36,7 @@ class MangaDex(ProxySource):
                 resp = post_wrapper(
                     f"https://api.mangadex.org/legacy/mapping",
                     json={"type": "manga", "ids": [series_id]},
+                    headers=HEADERS_COMMON,
                     use_proxy=True,
                 )
                 if resp.status_code != 200:
@@ -212,7 +214,7 @@ class MangaDex(ProxySource):
             for group in remaining_groups:
                 groups_api_url += f"&ids[]={group}"
             groups_resp = get_wrapper(
-                groups_api_url, headers={"x-requested-with": "cubari"}
+                groups_api_url, headers=HEADERS_COMMON
             )
             if groups_resp.status_code != 200:
                 return
