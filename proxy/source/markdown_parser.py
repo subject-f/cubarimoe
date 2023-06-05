@@ -9,7 +9,7 @@ import re
 
 # The supported tags are:
 # - URLs
-# - Headers (atx-style, parses to a single level)
+# - Headers (atx-style. Parsed into span blocks with font-size. Capped at 4 levels)
 # - Inline emphasis (bold, italics)
 # - Inline code
 
@@ -21,17 +21,15 @@ import re
 #############################################################################
 # text = """
 # [This is a link](http://example.net/).
-
 # Another inline link [here](http://example.net/).
-
-# # Header
-
-# ## Another header
-
-# *some italics* _more italics_
-
-# **some bold** __more bold__
-
+# One more link for good measure: http://example.net/
+# # Header 1
+# ## Header 2
+# ### Header 3
+# #### Header 4
+# ##### Header 5 - Capped Size
+# *some italics* and _more italics_
+# **some bold** and __more bold__
 # `code`
 # """
 
@@ -39,17 +37,15 @@ import re
 
 # print(result)
 # | <a href="http://example.net/">This is a link</a>.
-# |
 # | Another inline link <a href="http://example.net/">here</a>.
-# |
-# | <h3>Header</h3>
-# |
-# | <h3>Another header</h3>
-# |
-# | <em>some italics</em> <em>more italics</em>
-# |
-# | <strong>some bold</strong> <strong>more bold</strong>
-# |
+# | One more link for good measure: <a href="http://example.net/">http://example.net/</a>
+# | <span style="font-size: 1.8em;">Header 1</span>
+# | <span style="font-size: 1.7em;">Header 2</span>
+# | <span style="font-size: 1.6em;">Header 3</span>
+# | <span style="font-size: 1.5em;">Header 4</span>
+# | <span style="font-size: 1.5em;">Header 5 - Capped Size</span>
+# | <em>some italics</em> and <em>more italics</em>
+# | <strong>some bold</strong> and <strong>more bold</strong>
 # | <code>code</code>
 
 
@@ -58,22 +54,36 @@ def _convert_crlf(input_str: str) -> str:
 
 
 def _parse_links(input_str: str) -> str:
-    return re.sub(
-        r"\[([\w\W]+?)\]\(([\w\W]+?)\)",
-        r'<a href="\2">\1</a>',
+    input_str = re.sub(
+        r"\[(.+?)\]\((https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)\)",
+        r'<a href="\2" target="_blank" rel="nofollow noreferrer noopener">\1</a>',
         input_str,
-        flags=re.MULTILINE,
+        flags=re.MULTILINE|re.IGNORECASE,
+    )
+    return re.sub(
+        r"(?<!href=\")(https?:\/\/[-a-zA-Z0-9._~:/?#@!$&()*+,;=%']+)",
+        r'<a href="\1" target="_blank" rel="nofollow noreferrer noopener">\1</a>',
+        input_str,
+        flags=re.MULTILINE|re.IGNORECASE,
     )
 
 
 def _parse_headers(input_str: str) -> str:
-    return re.sub(r"^#+ +([\w\W]+?)\n", r"<h3>\1</h3>\n", input_str, flags=re.MULTILINE)
+    search = re.finditer(r"^(#{1,5}) +(.+)[# ]?$", input_str, re.MULTILINE)
+    for i in search:
+        h = 2 - (min(len(i.group(1)) + 1, 5) / 10)
+        input_str = re.sub(
+            i.group(),
+            f'<span style="font-size: {h}em;">{i.group(2)}</span>',
+            input_str,
+        )
+    return input_str
 
 
 def _parse_strong_emphasis(input_str: str) -> str:
     return "\n".join(
         re.sub(
-            r"(?:\*\*|\_\_)([\w]+?[\w\W]+?[\w]+?)(?:\*\*|\_\_)",
+            r"(?<!\\)\*\*(\w.*?)(?<!\\)\*\*|(?<!\\)__(\w.*?)(?<!\\)__",
             r"<strong>\1</strong>",
             l,
         )
@@ -83,14 +93,18 @@ def _parse_strong_emphasis(input_str: str) -> str:
 
 def _parse_em_emphasis(input_str: str) -> str:
     return "\n".join(
-        re.sub(r"(?:\*|\_)([\w]+?[\w\W]+?[\w]+?)(?:\*|\_)", r"<em>\1</em>", l)
+        re.sub(
+            r"(?<!\\)\*(\w.*?)(?<!\\)\*|(?<!\\)_(\w.*?)(?<!\\)_",
+            r"<em>\1</em>",
+            l,
+        )
         for l in input_str.splitlines()
     )
 
 
 def _parse_code(input_str: str) -> str:
     return "\n".join(
-        re.sub(r"(?:\`)([\w]+?[\w\W]+?[\w]+?)(?:\`)", r"<code>\1</code>", l)
+        re.sub(r"`(.+?)`", r"<code>\1</code>", l)
         for l in input_str.splitlines()
     )
 
