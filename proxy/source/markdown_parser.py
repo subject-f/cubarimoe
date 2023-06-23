@@ -156,10 +156,10 @@ def parse_html(input_str: str) -> str:
     parsers = [
         _convert_crlf,
         _escape,
-        _parse_headers,
         _parse_links,
-        _parse_em_emphasis,
+        _parse_headers,
         _parse_strong_emphasis,
+        _parse_em_emphasis,
         _parse_code,
     ]
 
