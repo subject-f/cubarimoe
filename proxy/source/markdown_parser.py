@@ -166,6 +166,5 @@ def parse_html(input_str: str) -> str:
     intermediate_parse_result = input_str
 
     for parser in parsers:
-        previous_parse_result = intermediate_parse_result
         intermediate_parse_result = parser(intermediate_parse_result)
     return intermediate_parse_result
