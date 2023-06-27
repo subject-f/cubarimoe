@@ -12,6 +12,7 @@ from .sources.gist import Gist
 from .sources.mangakatana import MangaKatana
 from .sources.nepnep import NepNep
 from .sources.imgbox import Imgbox
+from .sources.imgchest import ImageChest
 from .sources.reddit import Reddit
 from .sources.mangadventure import MangAdventure
 from .sources.dynasty import Dynasty
@@ -29,6 +30,7 @@ sources = [
     MangaKatana(),
     NepNep(),
     Imgbox(),
+    ImageChest(),
     Reddit(),
     Imgbb(),
     Dynasty()
