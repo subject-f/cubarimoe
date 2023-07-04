@@ -53,6 +53,11 @@ let error = '';
 			if (!result || !result[1]) return message('Reader could not understand the given link.', 1);
 			result = '/read/reddit/' + result[1];
 			break;
+		case /imgchest\.com/.test(text):
+			result = /p\/(\w+)/i.exec(text);
+			if(!result || !result[1]) return message('Reader could not understand the given link.', 1);
+			result = '/read/imgchest/' + result[1];
+			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
@@ -150,7 +155,7 @@ function UI_HistoryView(o) {
 	}
 
 	this.firstUse = true;
-	
+
 	this.render = async () => {
 		if(globalHistoryHandler.enabled()) {
 			this._.history_button.classList.add('hidden');
@@ -261,7 +266,7 @@ function UI_HistoryUnit(o) {
 	this.source = o.source;
 	this.pinned = o.pinned;
 	this.coverUrl = o.coverUrl;
-	
+
 	this.render = () => {
 		this.$.firstElementChild.href = this.url;
 		this._.bloor.style.backgroundImage = `url('${this.coverUrl}')`;
