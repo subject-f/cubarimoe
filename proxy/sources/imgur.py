@@ -147,7 +147,6 @@ class Imgur(ProxySource):
             if resp.status_code != 200:
                 resp = get_wrapper(
                     request_url,
-                    use_proxy=True,
                 )
             if resp.status_code == 200:
                 data = re.search(
