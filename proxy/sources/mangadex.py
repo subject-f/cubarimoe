@@ -37,6 +37,7 @@ class MangaDex(ProxySource):
                     f"https://api.mangadex.org/legacy/mapping",
                     json={"type": "manga", "ids": [series_id]},
                     headers=HEADERS_COMMON,
+                    use_proxy=True,
                 )
                 if resp.status_code != 200:
                     raise Exception("Failed to translate ID.")
@@ -138,7 +139,7 @@ class MangaDex(ProxySource):
                 lambda req: {
                     "type": req["type"],
                     "res": get_wrapper(
-                        req["url"], headers=HEADERS_COMMON
+                        req["url"], headers=HEADERS_COMMON, use_proxy=True
                     ),
                 },
                 [
@@ -181,6 +182,7 @@ class MangaDex(ProxySource):
                     lambda url: get_wrapper(
                         url=url,
                         headers=HEADERS_COMMON,
+                        use_proxy=True,
                     ),
                     unfetched_urls,
                 )
@@ -380,7 +382,7 @@ class MangaDex(ProxySource):
                 lambda req: {
                     "type": req["type"],
                     "res": get_wrapper(
-                        req["url"], headers=HEADERS_COMMON
+                        req["url"], headers=HEADERS_COMMON, use_proxy=True
                     ),
                 },
                 [
