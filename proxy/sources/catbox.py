@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional, Dict
 
 from django.shortcuts import redirect
@@ -33,6 +34,7 @@ class Catbox(ProxySource):
         url_prefix = "https://files.catbox.moe/"
         pages = [url_prefix + file_name for file_name in file_names]
         title = json["data"]["title"]
+        date = datetime.strptime(json["data"]["datecreated"], "%Y-%m-%d")
 
         if pages.count(None) == len(pages):
             return None
@@ -59,7 +61,14 @@ class Catbox(ProxySource):
                     title,
                     "1",
                     "Catbox",
-                    json["data"]["datecreated"],
+                    [
+                        date.year,
+                        date.month - 1,
+                        date.day,
+                        date.hour,
+                        date.minute,
+                        date.second,
+                    ],
                     "1",
                 ],
             ],
