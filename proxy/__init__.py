@@ -16,6 +16,7 @@ from .sources.imgchest import ImageChest
 from .sources.reddit import Reddit
 from .sources.mangadventure import MangAdventure
 from .sources.dynasty import Dynasty
+from .sources.catbox import Catbox
 
 sources = [
     MangaDex(),
@@ -33,5 +34,6 @@ sources = [
     ImageChest(),
     Reddit(),
     Imgbb(),
-    Dynasty()
+    Dynasty(),
+    Catbox()
 ]

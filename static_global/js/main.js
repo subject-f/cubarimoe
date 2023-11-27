@@ -58,6 +58,11 @@ let error = '';
 			if(!result || !result[1]) return message('Reader could not understand the given link.', 1);
 			result = '/read/imgchest/' + result[1];
 			break;
+		case /catbox\.moe/.test(text):
+			result = /c\/(\w+)/i.exec(text);
+			if(!result || !result[1]) return message('Reader could not understand the given link.', 1);
+			result = '/read/catbox/' + result[1];
+			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
