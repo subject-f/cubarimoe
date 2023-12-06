@@ -18,8 +18,7 @@ class MangAdventure(ProxySource):
         "arc-relight.com",
         "www.arc-relight.com",
         "assortedscans.com",
-        "helveticascans.com",
-        "mangadventure.herokuapp.com",
+        # "mangadventure.onrender.com",
     }
 
     def get_reader_prefix(self) -> str:
