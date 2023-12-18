@@ -963,6 +963,21 @@ function SettingsHandler(){
 		compact: true,
 		type: SETTING_BOOLEAN,
 	})
+    .newSetting({
+        addr: 'bhv.arrowTurnPage',
+        prettyName: 'Turn pages with arrow keys in vertical view',
+        strings: {
+            true: 'Turn page',
+            false: 'Disabled',
+        },
+        help: {
+            true: 'Left and right arrow keys turn pages.',
+            false: 'Left and right arrow keys do nothing.',
+        },
+        default: false,
+        compact: true,
+        type: SETTING_BOOLEAN,
+    })
 	.newSetting({
 		addr: 'bhv.swipeGestures',
 		prettyName: `Enable swipe gestures`,
@@ -1159,6 +1174,11 @@ function UI_Reader(o) {
 		.condition(() => Settings.get('lyt.direction') == 'rtl')
 		.attach('prev', ['ArrowRight'], e => this.prevPage())
 		.attach('next', ['ArrowLeft'], e => this.nextPage());
+
+    new KeyListener(document.body)
+        .condition(() => Settings.get('bhv.arrowTurnPage') && Settings.get('lyt.direction') == 'ttb')
+        .attach('prev', ['ArrowLeft'], e => this.prevPage())
+        .attach('next', ['ArrowRight'], e => this.nextPage());
 
 	let refocus = (e) => {
 		if(this.imageView.getScrollElement()) this.imageView.getScrollElement().focus();
