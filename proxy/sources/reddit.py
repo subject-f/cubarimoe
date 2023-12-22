@@ -36,6 +36,7 @@ class Reddit(ProxySource):
     def reddit_api(self, meta_id):
         resp = get_wrapper(
             f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1",
+            use_proxy=True,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
