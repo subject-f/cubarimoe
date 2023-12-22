@@ -35,19 +35,26 @@ class Reddit(ProxySource):
 
     def reddit_api(self, meta_id):
         resp = get_wrapper(
-            f"https://api.reddit.com/api/info/?id=t3_{meta_id}&raw_json=1",
-            use_proxy=True,
+            f"https://old.reddit.com/{meta_id}.json",
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5"
-            }
+            },
+            allow_redirects=True,
         )
+
         if resp.status_code != 200:
             raise ProxyException("The reddit API didn't return properly.")
 
         api_data = resp.json()
-        api_data = api_data["data"]["children"][0]["data"]
+        try:
+            if isinstance(api_data, list):
+                api_data = api_data[0]["data"]["children"][0]["data"]
+            else:
+                api_data = api_data["data"]["children"][0]["data"]
+        except (ValueError, TypeError):
+            raise ProxyException(f"Failed to deserialize reddit response.")
 
         if (
             "is_gallery" not in api_data
