@@ -63,11 +63,11 @@ let error = '';
 			if(!result || !result[1]) return message('Reader could not understand the given link.', 1);
 			result = '/read/catbox/' + result[1];
 			break;
-        case /rawkuma\.com/.test(text):
-            result = /rawkuma\.com\/(manga\/)?[A-Za-z0-9-]+/i.exec(text);
-            if(!result) return message('Reader could not understand the given link.', 1);
-            result = '/rk/' + text;
-            break;
+		case /rawkuma\.com/.test(text):
+			result = /rawkuma\.com\/(manga\/)?[A-Za-z0-9-]+/i.exec(text);
+			if(!result) return message('Reader could not understand the given link.', 1);
+			result = '/rk/' + text;
+			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
