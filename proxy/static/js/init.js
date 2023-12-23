@@ -18,7 +18,7 @@ function shadowScroll() {
 	PROGRAMMATIC_SCROLL = true;
 	if(SCROLL_TIMER) clearTimeout(SCROLL_TIMER);
 	SCROLL_TIMER = setTimeout(() => {
-  		PROGRAMMATIC_SCROLL = false;
+		PROGRAMMATIC_SCROLL = false;
 	}, 50)
 } 
 
@@ -573,21 +573,21 @@ function SettingsHandler(){
 	}
 
 	this.refreshAll = function() {
-    	var settings = Object.keys(this.all).map(setting => this.all[setting]);
-        settings.forEach(setting => setting.refresh());
-        settings.forEach(setting => {
-            if(setting.condition) {
-            var result = this.query(setting.condition);
-                if(result) {
-                    if(!setting.disabled) return;
-                    this.enable(setting);
-                }else{
-                    if(setting.disabled) return;
-                    this.disable(setting);
-                }
-            }
-        });
-    }
+		var settings = Object.keys(this.all).map(setting => this.all[setting]);
+		settings.forEach(setting => setting.refresh());
+		settings.forEach(setting => {
+			if(setting.condition) {
+			var result = this.query(setting.condition);
+				if(result) {
+					if(!setting.disabled) return;
+					this.enable(setting);
+				}else{
+					if(setting.disabled) return;
+					this.disable(setting);
+				}
+			}
+		});
+	}
 
 	this.settingUpdated = function(e) {
 		if(e.type == 'change') {
@@ -963,21 +963,21 @@ function SettingsHandler(){
 		compact: true,
 		type: SETTING_BOOLEAN,
 	})
-    .newSetting({
-        addr: 'bhv.arrowTurnPage',
-        prettyName: 'Turn pages with arrow keys in vertical view',
-        strings: {
-            true: 'Turn page',
-            false: 'Disabled',
-        },
-        help: {
-            true: 'Left and right arrow keys turn pages.',
-            false: 'Left and right arrow keys do nothing.',
-        },
-        default: false,
-        compact: true,
-        type: SETTING_BOOLEAN,
-    })
+	.newSetting({
+		addr: 'bhv.arrowTurnPage',
+		prettyName: 'Turn pages with arrow keys in vertical view',
+		strings: {
+			true: 'Turn page',
+			false: 'Disabled',
+		},
+		help: {
+			true: 'Left and right arrow keys turn pages.',
+			false: 'Left and right arrow keys do nothing.',
+		},
+		default: false,
+		compact: true,
+		type: SETTING_BOOLEAN,
+	})
 	.newSetting({
 		addr: 'bhv.swipeGestures',
 		prettyName: `Enable swipe gestures`,
@@ -1175,10 +1175,10 @@ function UI_Reader(o) {
 		.attach('prev', ['ArrowRight'], e => this.prevPage())
 		.attach('next', ['ArrowLeft'], e => this.nextPage());
 
-    new KeyListener(document.body)
-        .condition(() => Settings.get('bhv.arrowTurnPage') && Settings.get('lyt.direction') == 'ttb')
-        .attach('prev', ['ArrowLeft'], e => this.prevPage())
-        .attach('next', ['ArrowRight'], e => this.nextPage());
+	new KeyListener(document.body)
+		.condition(() => Settings.get('bhv.arrowTurnPage') && Settings.get('lyt.direction') == 'ttb')
+		.attach('prev', ['ArrowLeft'], e => this.prevPage())
+		.attach('next', ['ArrowRight'], e => this.nextPage());
 
 	let refocus = (e) => {
 		if(this.imageView.getScrollElement()) this.imageView.getScrollElement().focus();
@@ -2120,8 +2120,8 @@ const SCROLL_X = 3;
 			this._.image_container.ontouchcancel = this.touch.endHandler;
 		}else{
 			this._.image_container.ontouchstart = undefined;
-            this._.image_container.removeEventListener('touchmove', this.touch.moveHandler);
-            this._.image_container.ontouchend = undefined;
+			this._.image_container.removeEventListener('touchmove', this.touch.moveHandler);
+			this._.image_container.ontouchend = undefined;
 			this._.image_container.ontouchcancel = undefined;
 		}
 	}
@@ -2422,24 +2422,24 @@ const SCROLL_X = 3;
 	}
 
 	this.S.mapIn({
-	 	imageDimensions: (a,b) => {
-	 		if(a.h/a.w > 3 && !this.webtoonPrompt) {
-	 			this.webtoonPrompt = true;
-	 			if(Settings.get('lyt.direction') == 'ttb') return;
-	 			Loda.display('webtoon');
-	 		}
-	 	},
-	 	dead: (image) => {
-	 		if(Reader.SCP.page == image.index) {
-	 			this.corpses.unshift(image)
-	 		}else{
-	 			this.corpses.push(image);
-	 		}
-	 		if(!this.necromancer) {
-	 			this.necromancer = setInterval(this.resurrect, 2000)
-	 		}
-	 	},
-	 })
+		imageDimensions: (a,b) => {
+			if(a.h/a.w > 3 && !this.webtoonPrompt) {
+				this.webtoonPrompt = true;
+				if(Settings.get('lyt.direction') == 'ttb') return;
+				Loda.display('webtoon');
+			}
+		},
+		dead: (image) => {
+			if(Reader.SCP.page == image.index) {
+				this.corpses.unshift(image)
+			}else{
+				this.corpses.push(image);
+			}
+			if(!this.necromancer) {
+				this.necromancer = setInterval(this.resurrect, 2000)
+			}
+		},
+	})
 }
 
 
@@ -3043,7 +3043,7 @@ function UI_Loda_Gdrive(o) {
 	this.noPropagation = true;
 	this._.button.onclick = this.close.bind(this);
 
-}	
+}
 
 function UI_Loda_Webtoon(o) {
 	o=be(o);
