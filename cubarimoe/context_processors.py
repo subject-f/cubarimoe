@@ -24,3 +24,9 @@ def urls(request):
         "uri_scheme": request.scheme,
         "absolute_url": request.build_absolute_uri(request.path),
     }
+
+def metrics(request):
+    return {
+        "metrics_endpoint": settings.METRICS_ENDPOINT,
+        "proxy_base_path": settings.PROXY_BASE_PATH,
+    }

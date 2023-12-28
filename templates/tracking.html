@@ -7,3 +7,34 @@
 
   gtag('config', 'G-ZX1TZQKKPL');
 </script>
+{% if metrics_endpoint and proxy_base_path %}
+<script>
+  const science = () => {
+    const scienceEndpoint = "{{ metrics_endpoint }}";
+    const proxyBasePath = "{{ proxy_base_path }}";
+    const pathFragments = location.pathname.split("/");
+    const proxyMetadata = pathFragments[pathFragments.findIndex(e => e === proxyBasePath) + 1];
+
+    if (!proxyMetadata) {
+      return;
+    }
+
+    fetch(`${scienceEndpoint}`, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "p": "cubari.moe",
+        "m": proxyMetadata,
+      })
+    })
+  };
+
+  window.science = science;
+
+  // Science once when the page is loaded
+  science();
+</script>
+{% endif %}
