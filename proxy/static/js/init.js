@@ -2767,6 +2767,14 @@ function URLChanger(o) {
 		}
 		if(Reader.getGroup(undefined, true) !== Reader.SCP.group)
 			location.hash = '#' + Reader.SCP.group;
+
+		// Metrics -- check tracking.html for the implementation
+		if (this.page && this.page !== SCP.page) {
+			if (window.science) {
+				window.science();
+			}
+		}
+
 		this.page = SCP.page;
 		this.chapter = SCP.chapter;
 	}

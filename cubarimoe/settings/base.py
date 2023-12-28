@@ -88,6 +88,7 @@ TEMPLATES = [
                 "cubarimoe.context_processors.branding",
                 "cubarimoe.context_processors.home_branding",
                 "cubarimoe.context_processors.urls",
+                "cubarimoe.context_processors.metrics",
             ],
         },
     },
@@ -164,3 +165,5 @@ HOME_BRANDING_IMAGE_URL = "/static/cubari_logo.png"
 EXTERNAL_PROXY_URL = "https://services.f-ck.me"
 
 PROXY_BASE_PATH = "read"
+
+METRICS_ENDPOINT = ""

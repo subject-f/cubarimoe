@@ -81,3 +81,5 @@ DATABASES = {
 }
 
 OCR_SCRIPT_PATH = os.path.join(PARENT_DIR, "ocr_tool.sh")
+
+METRICS_ENDPOINT = "https://obs.f-ck.me/ingest"
