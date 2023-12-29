@@ -9,7 +9,7 @@
 </script>
 {% if metrics_endpoint and proxy_base_path %}
 <script>
-  const science = () => {
+  const science = (measurePerformance = false) => {
     const scienceEndpoint = "{{ metrics_endpoint }}";
     const proxyBasePath = "{{ proxy_base_path }}";
     const pathFragments = location.pathname.split("/");
@@ -19,22 +19,37 @@
       return;
     }
 
+    const sciencePayload = {
+      "p": "cubari.moe",
+      "m": proxyMetadata,
+    };
+
+    if (measurePerformance) {
+      const navPerf = performance.getEntriesByType("navigation");
+      if (navPerf.length === 1) {
+        sciencePayload["t"] = navPerf[0].duration;
+      }
+    }
+
     fetch(`${scienceEndpoint}`, {
       method: "POST",
       mode: "no-cors",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        "p": "cubari.moe",
-        "m": proxyMetadata,
-      })
-    })
+      body: JSON.stringify(sciencePayload),
+    });
   };
 
   window.science = science;
 
   // Science once when the page is loaded
-  science();
+  window.addEventListener("load", () => {
+    // We need to add this to the event loop so that the load
+    // event can be properly hydrated in the performance object
+    setTimeout(() => {
+      science(true);
+    }, 0);
+  });
 </script>
 {% endif %}
