@@ -20,9 +20,9 @@ from .sources.catbox import Catbox
 
 sources = [
     MangaDex(),
-    NHentai(),
+    # NHentai(),
     # FoolSlide(),
-    # MangAdventure(),
+    MangAdventure(),
     ReadManhwa(),
     Imgur(),
     # MangaBox(),
