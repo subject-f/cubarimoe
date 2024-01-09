@@ -3,6 +3,8 @@ import base64
 import requests
 from django.core.cache import cache
 from django.conf import settings
+from urllib.parse import urlparse
+from .data import ProxyException
 
 ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
@@ -11,6 +13,12 @@ GLOBAL_HEADERS = {
     "x-requested-with": "cubari",
 }
 PROXY = "https://cubari-cors.herokuapp.com/"
+
+REQUEST_TIMEOUT = 8
+SENSOR_TIMEOUT_PREFIX = "timeout_sensor/"
+SENSOR_TIMEOUT_TTL = 10 * 60      # 10 minute timeout on automatic suspension.
+SENSOR_TIMEOUT_MAX_FAILURES = 25  # 25 requests within 5 minutes time out? Drop the proxy.
+
 
 
 def naive_encode(url):
@@ -32,24 +40,36 @@ def encode(url: str):
     return str(base64.urlsafe_b64encode(url.encode()), "utf-8").rstrip("=")
 
 
+def sensored_request_handler(req_handler, original_url):
+    original_hostname = urlparse(original_url).hostname
+    sensor_cache_key = f"{SENSOR_TIMEOUT_PREFIX}{original_hostname}"
+
+    if cache.get(sensor_cache_key, 0) > SENSOR_TIMEOUT_MAX_FAILURES:
+        raise ProxyException(f"This proxy has temporarily been disabled due to service degradation. Please try again in {SENSOR_TIMEOUT_TTL / 60} minutes.")
+
+    try:
+        return req_handler()
+    except requests.exceptions.Timeout:
+        # This isn't atomic, but rather a "best-effort" guard on the number of failures
+        cache.set(sensor_cache_key, cache.get(sensor_cache_key, 0) + 1, SENSOR_TIMEOUT_TTL)
+        raise ProxyException("Downstream server timed out. Please try again.")
+
 def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
-    url = (
+    request_url = (
         f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
         if use_proxy
         else url
     )
-    return requests.get(url, headers={**GLOBAL_HEADERS, **headers}, timeout=8, **kwargs)
+    return sensored_request_handler(lambda: requests.get(request_url, headers={**GLOBAL_HEADERS, **headers}, timeout=REQUEST_TIMEOUT, **kwargs), url)
 
 
 def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
-    url = (
+    request_url = (
         f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
         if use_proxy
         else url
     )
-    return requests.post(
-        url, headers={**GLOBAL_HEADERS, **headers}, timeout=8, **kwargs
-    )
+    return sensored_request_handler(lambda: requests.post(request_url, headers={**GLOBAL_HEADERS, **headers}, timeout=REQUEST_TIMEOUT, **kwargs), url)
 
 
 def api_cache(*, prefix, time):
