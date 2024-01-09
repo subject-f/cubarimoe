@@ -16,9 +16,10 @@ PROXY = "https://cubari-cors.herokuapp.com/"
 
 REQUEST_TIMEOUT = 8
 SENSOR_TIMEOUT_PREFIX = "timeout_sensor/"
-SENSOR_TIMEOUT_TTL = 10 * 60      # 10 minute timeout on automatic suspension.
-SENSOR_TIMEOUT_MAX_FAILURES = 25  # 25 requests within 5 minutes time out? Drop the proxy.
-
+SENSOR_TIMEOUT_TTL = 10 * 60  # 10 minute timeout on automatic suspension.
+SENSOR_TIMEOUT_MAX_FAILURES = (
+    25  # 25 requests within 5 minutes time out? Drop the proxy.
+)
 
 
 def naive_encode(url):
@@ -45,14 +46,19 @@ def sensored_request_handler(req_handler, original_url):
     sensor_cache_key = f"{SENSOR_TIMEOUT_PREFIX}{original_hostname}"
 
     if cache.get(sensor_cache_key, 0) > SENSOR_TIMEOUT_MAX_FAILURES:
-        raise ProxyException(f"This proxy has temporarily been disabled due to service degradation. Please try again in {SENSOR_TIMEOUT_TTL / 60} minutes.")
+        raise ProxyException(
+            f"This proxy has temporarily been disabled due to service degradation. Please try again in {SENSOR_TIMEOUT_TTL / 60} minutes."
+        )
 
     try:
         return req_handler()
     except requests.exceptions.Timeout:
         # This isn't atomic, but rather a "best-effort" guard on the number of failures
-        cache.set(sensor_cache_key, cache.get(sensor_cache_key, 0) + 1, SENSOR_TIMEOUT_TTL)
+        cache.set(
+            sensor_cache_key, cache.get(sensor_cache_key, 0) + 1, SENSOR_TIMEOUT_TTL
+        )
         raise ProxyException("Downstream server timed out. Please try again.")
+
 
 def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
     request_url = (
@@ -60,7 +66,15 @@ def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
         if use_proxy
         else url
     )
-    return sensored_request_handler(lambda: requests.get(request_url, headers={**GLOBAL_HEADERS, **headers}, timeout=REQUEST_TIMEOUT, **kwargs), url)
+    return sensored_request_handler(
+        lambda: requests.get(
+            request_url,
+            headers={**GLOBAL_HEADERS, **headers},
+            timeout=REQUEST_TIMEOUT,
+            **kwargs,
+        ),
+        url,
+    )
 
 
 def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
@@ -69,7 +83,15 @@ def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
         if use_proxy
         else url
     )
-    return sensored_request_handler(lambda: requests.post(request_url, headers={**GLOBAL_HEADERS, **headers}, timeout=REQUEST_TIMEOUT, **kwargs), url)
+    return sensored_request_handler(
+        lambda: requests.post(
+            request_url,
+            headers={**GLOBAL_HEADERS, **headers},
+            timeout=REQUEST_TIMEOUT,
+            **kwargs,
+        ),
+        url,
+    )
 
 
 def api_cache(*, prefix, time):
