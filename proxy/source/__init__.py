@@ -25,15 +25,15 @@ class ProxySource(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def series_api_handler(self, meta_id: str) -> SeriesAPI:
+    async def series_api_handler(self, meta_id: str) -> SeriesAPI:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
+    async def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def series_page_handler(self, meta_id: str) -> SeriesPage:
+    async def series_page_handler(self, meta_id: str) -> SeriesPage:
         raise NotImplementedError
 
     def uncache_duration(self) -> int:
@@ -93,11 +93,10 @@ class ProxySource(metaclass=abc.ABCMeta):
             f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}?source=cubari_host"
         )
 
-    @cache_control(public=True, max_age=60, s_maxage=60)
-    def reader_view(self, request, meta_id, chapter, page=None):
+    async def reader_view(self, request, meta_id, chapter, page=None):
         if page:
             try:
-                data = self.series_api_handler(meta_id)
+                data = await self.series_api_handler(meta_id)
             except Exception as e:
                 return self._processing_error(request, e)
             if data:
@@ -131,9 +130,9 @@ class ProxySource(metaclass=abc.ABCMeta):
                 ),
             )
 
-    def series_view(self, request, meta_id):
+    async def series_view(self, request, meta_id):
         try:
-            data = self.series_page_handler(meta_id)
+            data = await self.series_page_handler(meta_id)
         except Exception as e:
             return self._processing_error(request, e)
         if data:
@@ -152,9 +151,9 @@ class ProxySource(metaclass=abc.ABCMeta):
         else:
             return self._api_error(request)
 
-    def series_api_view(self, request, meta_id):
+    async def series_api_view(self, request, meta_id):
         try:
-            data = self.series_api_handler(meta_id)
+            data = await self.series_api_handler(meta_id)
         except Exception as e:
             return self._processing_error(request, e)
         if data:
@@ -168,9 +167,9 @@ class ProxySource(metaclass=abc.ABCMeta):
         else:
             return self._api_error(request)
 
-    def chapter_api_view(self, request, meta_id):
+    async def chapter_api_view(self, request, meta_id):
         try:
-            data = self.chapter_api_handler(meta_id)
+            data = await self.chapter_api_handler(meta_id)
         except Exception as e:
             return self._processing_error(request, e)
         if data:

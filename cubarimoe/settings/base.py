@@ -94,7 +94,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "cubarimoe.wsgi.application"
+ASGI_APPLICATION = "cubarimoe.asgi.application"
 
 
 # Database
@@ -115,9 +115,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -167,3 +173,5 @@ EXTERNAL_PROXY_URL = "https://services.f-ck.me"
 PROXY_BASE_PATH = "read"
 
 METRICS_ENDPOINT = ""
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -1,4 +1,3 @@
-import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.deprecation import MiddlewareMixin
