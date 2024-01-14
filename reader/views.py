@@ -19,7 +19,7 @@ from .users_cache_lib import get_user_ip
 
 @csrf_exempt
 @decorator_from_middleware(OnlineNowMiddleware)
-def hit_count(request):
+async def hit_count(request):
     if request.method == "POST":
         user_ip = get_user_ip(request)
         page_id = f"url_{request.POST['series']}/{request.POST['chapter'] if 'chapter' in request.POST else ''}{user_ip}"
@@ -44,7 +44,8 @@ def hit_count(request):
                 ).first()
                 if ch_obj:
                     hit, _ = HitCount.objects.get_or_create(
-                        content_type=chapter, object_id=ch_obj.id,
+                        content_type=chapter,
+                        object_id=ch_obj.id,
                     )
                     hit.hits = F("hits") + 1
                     hit.save()
@@ -53,7 +54,7 @@ def hit_count(request):
 
 
 @cache_control(public=True, max_age=60, s_maxage=60)
-def series_page_data(series_slug):
+async def series_page_data(series_slug):
     series_page_dt = cache.get(f"series_page_dt_{series_slug}")
     if not series_page_dt:
         series = get_object_or_404(Series, slug=series_slug)
@@ -155,7 +156,7 @@ def series_page_data(series_slug):
 
 @cache_control(public=True, max_age=60, s_maxage=60)
 @decorator_from_middleware(OnlineNowMiddleware)
-def series_info(request, series_slug):
+async def series_info(request, series_slug):
     data = series_page_data(series_slug)
     data["version_query"] = settings.STATIC_VERSION
     return render(request, "reader/series.html", data)
@@ -164,14 +165,14 @@ def series_info(request, series_slug):
 @staff_member_required
 @cache_control(public=True, max_age=60, s_maxage=60)
 @decorator_from_middleware(OnlineNowMiddleware)
-def series_info_admin(request, series_slug):
+async def series_info_admin(request, series_slug):
     data = series_page_data(series_slug)
     data["version_query"] = settings.STATIC_VERSION
     data["available_features"].append("admin")
     return render(request, "reader/series.html", data)
 
 
-def get_all_metadata(series_slug):
+async def get_all_metadata(series_slug):
     series_metadata = cache.get(f"series_metadata_{series_slug}")
     if not series_metadata:
         series = Series.objects.filter(slug=series_slug).first()
@@ -194,7 +195,7 @@ def get_all_metadata(series_slug):
 
 @cache_control(public=True, max_age=30, s_maxage=30)
 @decorator_from_middleware(OnlineNowMiddleware)
-def reader(request, series_slug, chapter, page=None):
+async def reader(request, series_slug, chapter, page=None):
     if page:
         data = get_all_metadata(series_slug)
         if data and chapter in data:

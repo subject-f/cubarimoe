@@ -15,7 +15,7 @@ from reader.views import series_page_data
 
 @staff_member_required
 @cache_control(public=True, max_age=30, s_maxage=30)
-def admin_home(request):
+async def admin_home(request):
     online = cache.get("online_now")
     peak_traffic = cache.get("peak_traffic")
     return render(
@@ -32,7 +32,7 @@ def admin_home(request):
 
 @cache_control(public=True, max_age=300, s_maxage=300)
 @decorator_from_middleware(OnlineNowMiddleware)
-def home(request):
+async def home(request):
     home_screen_series = {
         "Kaguya-Wants-To-Be-Confessed-To": "",
         "We-Want-To-Talk-About-Kaguya": "",
@@ -50,9 +50,9 @@ def home(request):
     )
 
 
-def handle404(request, exception):
+async def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
 
 
-def proxy_redirect(request, path):
+async def proxy_redirect(request, path):
     return HttpResponsePermanentRedirect(f"/read/{path}")

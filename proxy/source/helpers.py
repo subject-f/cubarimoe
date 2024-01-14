@@ -1,10 +1,12 @@
+import asyncio
 import base64
 
-import requests
+
 from django.core.cache import cache
 from django.conf import settings
 from urllib.parse import urlparse
 from .data import ProxyException
+import aiohttp
 
 ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
@@ -41,7 +43,7 @@ def encode(url: str):
     return str(base64.urlsafe_b64encode(url.encode()), "utf-8").rstrip("=")
 
 
-def sensored_request_handler(req_handler, original_url):
+async def sensored_request_handler(req_handler, original_url):
     original_hostname = urlparse(original_url).hostname
     sensor_cache_key = f"{SENSOR_TIMEOUT_PREFIX}{original_hostname}"
 
@@ -51,8 +53,9 @@ def sensored_request_handler(req_handler, original_url):
         )
 
     try:
-        return req_handler()
-    except requests.exceptions.Timeout:
+        return await req_handler()
+
+    except asyncio.exceptions.TimeoutError:
         # This isn't atomic, but rather a "best-effort" guard on the number of failures
         cache.set(
             sensor_cache_key, cache.get(sensor_cache_key, 0) + 1, SENSOR_TIMEOUT_TTL
@@ -60,14 +63,33 @@ def sensored_request_handler(req_handler, original_url):
         raise ProxyException("Downstream server timed out. Please try again.")
 
 
-def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
+async def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
     request_url = (
         f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
         if use_proxy
         else url
     )
-    return sensored_request_handler(
-        lambda: requests.get(
+
+    # TODO: Creating new session object is very inefficient, need to see a way to make it global
+    async def get_handler(request_url, headers, timeout, **kwargs):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                request_url, headers=headers, timeout=timeout, **kwargs
+            ) as response:
+                # I know this is stupid but I don't wanna change this everywhere as well
+                return_object = lambda: None
+                return_object.text = await response.text()
+                return_object.status_code = response.status
+                return_object.headers = response.headers
+                try:
+                    return_object.json = await response.json()
+                except:
+                    return_object.json = {}
+
+                return return_object
+
+    return await sensored_request_handler(
+        lambda: get_handler(
             request_url,
             headers={**GLOBAL_HEADERS, **headers},
             timeout=REQUEST_TIMEOUT,
@@ -77,14 +99,31 @@ def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
     )
 
 
-def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
+async def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
     request_url = (
         f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
         if use_proxy
         else url
     )
-    return sensored_request_handler(
-        lambda: requests.post(
+
+    async def post_handler(request_url, headers, timeout, **kwargs):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                request_url, headers=headers, timeout=timeout, **kwargs
+            ) as response:
+                # I know this is stupid but I don't wanna change this everywhere as well
+                return_object = lambda: None
+                return_object.text = await response.text()
+                return_object.status_code = response.status
+                try:
+                    return_object.json = await response.json()
+                except:
+                    return_object.json = {}
+
+                return return_object
+
+    return await sensored_request_handler(
+        lambda: post_handler(
             request_url,
             headers={**GLOBAL_HEADERS, **headers},
             timeout=REQUEST_TIMEOUT,
@@ -96,10 +135,10 @@ def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
 
 def api_cache(*, prefix, time):
     def wrapper(f):
-        def inner(self, meta_id):
+        async def inner(self, meta_id):
             data = cache.get(f"{prefix}_{meta_id}")
             if not data:
-                data = f(self, meta_id)
+                data = await f(self, meta_id)
                 if not data:
                     return None
                 else:

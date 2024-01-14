@@ -20,7 +20,7 @@ from .models import Page
 
 @csrf_exempt
 @decorator_from_middleware(OnlineNowMiddleware)
-def hit_count(request):
+async def hit_count(request):
     if request.method == "POST":
         user_ip = get_user_ip(request)
         page_id = f"url_{request.POST['page_url']}/{user_ip}"
@@ -40,7 +40,7 @@ def hit_count(request):
 
 @cache_control(public=True, max_age=3600, s_maxage=60)
 @decorator_from_middleware(OnlineNowMiddleware)
-def content(request, page_url):
+async def content(request, page_url):
     try:
         page = Page.objects.get(page_url=page_url)
     except Page.DoesNotExist:
@@ -71,7 +71,7 @@ def content(request, page_url):
 
 @cache_control(public=True, max_age=300, s_maxage=60)
 @decorator_from_middleware(OnlineNowMiddleware)
-def misc_pages(request):
+async def misc_pages(request):
     pages = cache.get("misc_pages")
     if not pages:
         pages = Page.objects.filter(hidden=False).order_by("-date")

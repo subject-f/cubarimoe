@@ -37,7 +37,7 @@ class MangAdventure(ProxySource):
             if len(path) > 0:
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-series-page",
-                    encode(base + path[0])
+                    encode(base + path[0]),
                 )
             return HttpResponseBadRequest()
 
@@ -46,41 +46,45 @@ class MangAdventure(ProxySource):
         ]
 
     @api_cache(prefix="ma_series_dt", time=600)
-    def series_api_handler(self, meta_id: str):
+    async def series_api_handler(self, meta_id: str):
         scheme, domain, slug = decode(meta_id).split("/", 2)
         if domain not in self.whitelist:
             return None
         base = f"{scheme}/{domain}/{slug}/"
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
-        data = res.json()
+        data = res.json
 
         # simplified version of the gist mappers
         groups = {
-            str(key): value for key, value in enumerate({
-                group for chapter in data["chapters"].values()
-                for group in chapter["groups"].keys()
-            })
+            str(key): value
+            for key, value in enumerate(
+                {
+                    group
+                    for chapter in data["chapters"].values()
+                    for group in chapter["groups"].keys()
+                }
+            )
         }
         chapters = {}
         for ch_id, chapter in data["chapters"].items():
             chapters[ch_id] = {
                 "title": chapter["title"],
                 "volume": chapter["volume"],
-                "chapter": chapter["number"]
+                "chapter": chapter["number"],
             }
             group = next(
-                k for k in groups.keys() for g in
-                chapter["groups"].keys() if g == groups[k]
+                k
+                for k in groups.keys()
+                for g in chapter["groups"].keys()
+                if g == groups[k]
             )
             chapters[ch_id]["groups"] = {
                 group: self.wrap_chapter_meta(encode(base + ch_id))
             }
-            chapters[ch_id]["release_date"] = {
-                group: int(chapter["last_updated"])
-            }
+            chapters[ch_id]["release_date"] = {group: int(chapter["last_updated"])}
 
         return SeriesAPI(
             slug=meta_id,
@@ -91,43 +95,46 @@ class MangAdventure(ProxySource):
             groups=groups,
             cover=data["cover"],
             chapters=chapters,
-            series_name=data["title"]
+            series_name=data["title"],
         )
 
     @api_cache(prefix="ma_series_page_dt", time=600)
-    def chapter_api_handler(self, meta_id: str):
+    async def chapter_api_handler(self, meta_id: str):
         scheme, domain, slug, id = decode(meta_id).split("/", 3)
         if domain not in self.whitelist:
             return None
         url = f"{scheme}://{domain}/api/v2/chapters/{id}/pages?track=true"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
         pages = [page["image"] for page in res.json()["results"]]
         return ChapterAPI(series=slug, pages=pages, chapter=id)
 
     @api_cache(prefix="ma_series_page_dt", time=600)
-    def series_page_handler(self, meta_id: str):
+    async def series_page_handler(self, meta_id: str):
         scheme, domain, slug = decode(meta_id).split("/", 2)
         if domain not in self.whitelist:
             return None
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
-        data = res.json()
+        data = res.json
 
         origin = f"{scheme}://{domain}{data['original_url']}"
         # simplified version of the gist mapper
-        chapters = [[
-            chapter["number"],
-            ch_id,
-            chapter["title"],
-            ch_id,
-            list(chapter["groups"].keys())[0],
-            self.parse_date(chapter["last_updated"]),
-            chapter["volume"],
-        ] for ch_id, chapter in reversed(data["chapters"].items())]
+        chapters = [
+            [
+                chapter["number"],
+                ch_id,
+                chapter["title"],
+                ch_id,
+                list(chapter["groups"].keys())[0],
+                self.parse_date(chapter["last_updated"]),
+                chapter["volume"],
+            ]
+            for ch_id, chapter in reversed(data["chapters"].items())
+        ]
 
         return SeriesPage(
             series=data["title"],
