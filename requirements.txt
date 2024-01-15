@@ -1,5 +1,6 @@
 beautifulsoup4==4.12.2
 discord.py==1.6.0
+Django==5.0.1
 django-extensions==3.2.3
 django-ratelimit==4.1.0
 Markdown==3.5.2
