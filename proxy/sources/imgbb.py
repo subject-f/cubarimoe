@@ -31,8 +31,8 @@ class Imgbb(ProxySource):
             f"https://ibb.co/json",
             data={"action": "get-album-contents", "albumid": meta_id},
         )
-        if resp.status_code == 200:
-            json_response = resp.json
+        if resp.status == 200:
+            json_response = await resp.json()
             api_data = json_response["album"]
             date = datetime.utcfromtimestamp(int(api_data["time"]))
             title = api_data["name"] or "Untitled"

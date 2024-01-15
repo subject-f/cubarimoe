@@ -93,8 +93,8 @@ class ReadManhwa(ProxySource):
 
         for res in result:
             resp = res["res"]
-            if resp.status_code == 200:
-                api_data = json.loads(resp.text)
+            if resp.status == 200:
+                api_data = json.loads(await resp.text())
                 if res["type"] == "main":
                     slug = api_data["slug"]
                     title = api_data["title"]
@@ -143,8 +143,8 @@ class ReadManhwa(ProxySource):
             headers={"X-NSFW": "true"},
             params={"nsfw": "true"},
         )
-        if resp.status_code == 200:
-            api_data = json.loads(resp.text)
+        if resp.status == 200:
+            api_data = json.loads(await resp.text())
             series, chapter = decode(meta_id).split("/")
             return ChapterAPI(
                 pages=[page["source_url"] for page in api_data["images"]],
@@ -192,8 +192,8 @@ class ReadManhwa(ProxySource):
 
         for res in result:
             resp = res["res"]
-            if resp.status_code == 200:
-                api_data = json.loads(resp.text)
+            if resp.status == 200:
+                api_data = json.loads(await resp.text())
                 if res["type"] == "main":
                     series = api_data["title"]
                     alt_titles = (

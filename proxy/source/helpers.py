@@ -7,6 +7,7 @@ from django.conf import settings
 from urllib.parse import urlparse
 from .data import ProxyException
 import aiohttp
+from .session import Session
 
 ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
@@ -70,23 +71,13 @@ async def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
         else url
     )
 
-    # TODO: Creating new session object is very inefficient, need to see a way to make it global
     async def get_handler(request_url, headers, timeout, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                request_url, headers=headers, timeout=timeout, **kwargs
-            ) as response:
-                # I know this is stupid but I don't wanna change this everywhere as well
-                return_object = lambda: None
-                return_object.text = await response.text()
-                return_object.status_code = response.status
-                return_object.headers = response.headers
-                try:
-                    return_object.json = await response.json()
-                except:
-                    return_object.json = {}
-
-                return return_object
+        session = Session.get_session()
+        async with session.get(
+            request_url, headers=headers, timeout=timeout, **kwargs
+        ) as response:
+            await response.read()
+        return response
 
     return await sensored_request_handler(
         lambda: get_handler(
@@ -107,20 +98,12 @@ async def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
     )
 
     async def post_handler(request_url, headers, timeout, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                request_url, headers=headers, timeout=timeout, **kwargs
-            ) as response:
-                # I know this is stupid but I don't wanna change this everywhere as well
-                return_object = lambda: None
-                return_object.text = await response.text()
-                return_object.status_code = response.status
-                try:
-                    return_object.json = await response.json()
-                except:
-                    return_object.json = {}
-
-                return return_object
+        session = Session.get_session()
+        async with session.post(
+            request_url, headers=headers, timeout=timeout, **kwargs
+        ) as response:
+            await response.read()
+        return response
 
     return await sensored_request_handler(
         lambda: post_handler(

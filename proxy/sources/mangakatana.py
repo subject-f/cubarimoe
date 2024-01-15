@@ -66,8 +66,8 @@ class MangaKatana(ProxySource):
     async def mk_scrape_common(self, meta_id):
         decoded_url = self.construct_url(meta_id)
         resp = await get_wrapper(decoded_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             try:
                 title = soup.title.text
@@ -163,8 +163,8 @@ class MangaKatana(ProxySource):
     async def chapter_api_handler(self, meta_id):
         decoded_url = self.construct_url(meta_id)
         resp = await get_wrapper(decoded_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             search = re.search(r"'data-src',\s+([\w]+)\[", data)
             if search is None:
                 raise ProxyException("Can't decode image array.")

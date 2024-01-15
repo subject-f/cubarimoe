@@ -55,13 +55,13 @@ class NHentai(ProxySource):
         nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
         resp = await get_wrapper(nh_series_api, use_proxy=True)
 
-        if resp.status_code != 200:
+        if resp.status != 200:
             resp = await get_wrapper(
                 f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
             )
 
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             api_data = json.loads(data)
 
             artist = api_data["scanlator"]

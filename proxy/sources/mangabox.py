@@ -62,16 +62,16 @@ class MangaBox(ProxySource):
         decoded_url = self.construct_url(meta_id)
         resp = await get_wrapper(decoded_url)
         # There's a page redirect sometimes
-        if resp.status_code == 200 and "window.location.assign" in resp.text:
+        if resp.status == 200 and "window.location.assign" in (await resp.text()):
             decoded_url = re.findall(
-                r"(?:window.location.assign\(\")([\s\S]+)(?:\"\))", resp.text
+                r"(?:window.location.assign\(\")([\s\S]+)(?:\"\))", (await resp.text())
             )
             if decoded_url:
                 resp = await get_wrapper(decoded_url[0])
             else:
                 return None
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             elems = soup.select("div.manga-info-top, div.panel-story-info")
             if not elems:
@@ -179,8 +179,8 @@ class MangaBox(ProxySource):
     async def chapter_api_handler(self, meta_id):
         decoded_url = self.construct_url(meta_id)
         resp = await get_wrapper(decoded_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             pages = [
                 src

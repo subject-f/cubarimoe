@@ -44,10 +44,10 @@ class Reddit(ProxySource):
             allow_redirects=True,
         )
 
-        if resp.status_code != 200:
+        if resp.status != 200:
             raise ProxyException("The reddit API didn't return properly.")
 
-        api_data = resp.json
+        api_data = await resp.json()
         try:
             if isinstance(api_data, list):
                 api_data = api_data[0]["data"]["children"][0]["data"]

@@ -30,10 +30,10 @@ class ImageChest(ProxySource):
         url = f"https://imgchest.com/p/{meta_id}"
 
         resp = await get_wrapper(url)
-        if resp.status_code != 200:
+        if resp.status != 200:
             return None
 
-        soup = BeautifulSoup(resp.text, "html.parser")
+        soup = BeautifulSoup(await resp.text(), "html.parser")
         page_elements = soup.find_all("meta", attrs={"name": "twitter:image"})
         pages = [page["content"] for page in page_elements]
 

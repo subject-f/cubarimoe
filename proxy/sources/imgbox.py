@@ -36,8 +36,8 @@ class Imgbox(ProxySource):
     @api_cache(prefix="imgbox_api_dt", time=300)
     async def imgbox_common(self, meta_id):
         resp = await get_wrapper(f"https://imgbox.com/g/{meta_id}")
-        if resp.status_code == 200:
-            soup = BeautifulSoup(resp.text, "html.parser")
+        if resp.status == 200:
+            soup = BeautifulSoup(await resp.text(), "html.parser")
             gallery = soup.find("div", id="gallery-view-content")
             pages_list = [
                 self.image_url_handler(image["src"])

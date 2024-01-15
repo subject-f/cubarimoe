@@ -31,27 +31,27 @@ class MangaDex(ProxySource):
         return "mangadex"
 
     def shortcut_instantiator(self):
-        def legacy_mapper(series_id):
+        async def legacy_mapper(series_id):
             try:
                 series_id = int(series_id)
-                resp = post_wrapper(
+                resp = await post_wrapper(
                     f"https://api.mangadex.org/legacy/mapping",
                     json={"type": "manga", "ids": [series_id]},
                     headers=HEADERS_COMMON,
                     use_proxy=True,
                 )
-                if resp.status_code != 200:
+                if resp.status != 200:
                     raise Exception("Failed to translate ID.")
-                return resp.json["data"][0]["attributes"]["newId"]
+                return (await resp.json())["data"][0]["attributes"]["newId"]
             except ValueError:
                 return series_id
 
-        def series(request, series_id):
-            series_id = legacy_mapper(series_id)
+        async def series(request, series_id):
+            series_id = await legacy_mapper(series_id)
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", series_id)
 
-        def series_chapter(request, series_id, chapter, page="1"):
-            series_id = legacy_mapper(series_id)
+        async def series_chapter(request, series_id, chapter, page="1"):
+            series_id = await legacy_mapper(series_id)
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
                 series_id,
@@ -163,14 +163,14 @@ class MangaDex(ProxySource):
         chapter_data = None
 
         for res in result:
-            if res["res"].status_code != 200:
+            if res["res"].status != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
                 )
             if res["type"] == "main":
-                main_data = res["res"].json
+                main_data = await res["res"].json()
             elif res["type"] == "chapter":
-                chapter_data = res["res"].json
+                chapter_data = await res["res"].json()
 
         current_offset = 500
         if "total" in chapter_data and current_offset < chapter_data["total"]:
@@ -193,7 +193,7 @@ class MangaDex(ProxySource):
                 )
 
             for result in results:
-                result_json = result.json
+                result_json = await result.json()
                 chapter_data["data"].extend(result_json["data"])
 
         groups_set = {
@@ -220,9 +220,9 @@ class MangaDex(ProxySource):
             for group in remaining_groups:
                 groups_api_url += f"&ids[]={group}"
             groups_resp = await get_wrapper(groups_api_url, headers=HEADERS_COMMON)
-            if groups_resp.status_code != 200:
+            if groups_resp.status != 200:
                 return
-            for result in groups_resp.json["data"]:
+            for result in (await groups_resp.json())["data"]:
                 group_id = result["id"]
                 group_name = result["attributes"]["name"]
                 resolved_groups_map[group_id] = group_name
@@ -409,14 +409,14 @@ class MangaDex(ProxySource):
         at_home_data: Optional[Dict[str, str]] = None
         chapter_data: Optional[Dict[str, str]] = None
         for res in result:
-            if res["res"].status_code != 200:
+            if res["res"].status != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
                 )
             if res["type"] == at_home:
-                at_home_data = res["res"].json
+                at_home_data = await res["res"].json()
             elif res["type"] == chapter:
-                chapter_data = res["res"].json
+                chapter_data = await res["res"].json()
 
         pages = [
             f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"

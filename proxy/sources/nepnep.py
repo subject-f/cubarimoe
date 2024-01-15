@@ -114,8 +114,8 @@ class NepNep(ProxySource):
     async def nn_scrape_common(self, meta_id):
         series_url = "https://mangasee123.com/manga/" + meta_id
         resp = await get_wrapper(series_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
 
             try:
@@ -238,8 +238,8 @@ class NepNep(ProxySource):
     async def chapter_api_handler(self, meta_id):
         chapter_url = "https://mangasee123.com/read-online/" + meta_id
         resp = await get_wrapper(chapter_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
 
             try:
                 m = re.search(r"vm\.CurChapter\s?=\s?.+\;", data)

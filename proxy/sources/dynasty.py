@@ -61,8 +61,8 @@ class Dynasty(ProxySource):
         base_url = "https://dynasty-scans.com"
         series_url = "https://dynasty-scans.com/series/" + meta_id
         resp = await get_wrapper(series_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             try:
                 title = soup.find("h2").find("b").contents[0]
@@ -163,8 +163,8 @@ class Dynasty(ProxySource):
         base_url = "https://dynasty-scans.com"
         chapter_url = "https://dynasty-scans.com/chapters/" + meta_id
         resp = await get_wrapper(chapter_url)
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             try:
                 m = re.search(r"pages\s?=\s?.+\;", data)
                 arr = str(m.group(0)).split()[2].strip(";")

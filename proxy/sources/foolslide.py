@@ -92,8 +92,8 @@ class FoolSlide(ProxySource):
             resp = await post_wrapper(
                 f"http://{decode(meta_id)}/", data={"adult": "true"}
             )
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
 
             comic_info = soup.find("div", class_="large comic")
@@ -205,8 +205,8 @@ class FoolSlide(ProxySource):
     @api_cache(prefix="fs_chapter_dt", time=3600)
     async def chapter_api_handler(self, meta_id):
         resp = await get_wrapper(decode(meta_id))
-        if resp.status_code == 200:
-            data = json.loads(resp.text)
+        if resp.status == 200:
+            data = json.loads(await resp.text())
             return ChapterAPI(
                 pages=[e["url"] for e in data["pages"]], series=meta_id, chapter=""
             )

@@ -33,10 +33,10 @@ class Catbox(ProxySource):
             data={"reqtype": "getalbum", "short": meta_id},
         )
 
-        if resp.status_code != 200:
+        if resp.status != 200:
             return None
 
-        response_json = json.loads(resp.text)
+        response_json = json.loads(await resp.text())
 
         if response_json["status"] != 200 or not response_json["success"]:
             return None

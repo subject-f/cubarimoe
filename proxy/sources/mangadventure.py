@@ -53,9 +53,9 @@ class MangAdventure(ProxySource):
         base = f"{scheme}/{domain}/{slug}/"
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
         res = await get_wrapper(url, headers=self.headers)
-        if res.status_code != 200:
+        if res.status != 200:
             return None
-        data = res.json
+        data = await res.json()
 
         # simplified version of the gist mappers
         groups = {
@@ -105,9 +105,9 @@ class MangAdventure(ProxySource):
             return None
         url = f"{scheme}://{domain}/api/v2/chapters/{id}/pages?track=true"
         res = await get_wrapper(url, headers=self.headers)
-        if res.status_code != 200:
+        if res.status != 200:
             return None
-        pages = [page["image"] for page in res.json()["results"]]
+        pages = [page["image"] for page in (await res.json())["results"]]
         return ChapterAPI(series=slug, pages=pages, chapter=id)
 
     @api_cache(prefix="ma_series_page_dt", time=600)
@@ -117,9 +117,9 @@ class MangAdventure(ProxySource):
             return None
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
         res = await get_wrapper(url, headers=self.headers)
-        if res.status_code != 200:
+        if res.status != 200:
             return None
-        data = res.json
+        data = await res.json()
 
         origin = f"{scheme}://{domain}{data['original_url']}"
         # simplified version of the gist mapper

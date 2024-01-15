@@ -38,7 +38,7 @@ class Hitomi(ProxySource):
     @staticmethod
     async def get_partial_gg():
         resp = await get_wrapper("https://ltn.hitomi.la/gg.js")
-        text = resp.text
+        text = await resp.text()
         m_groups = [
             int(re.search(r"[0-9]+", case)[0])
             for case in re.findall(r"case\s+[0-9]+:", text)
@@ -84,8 +84,8 @@ class Hitomi(ProxySource):
         gg = await Hitomi.get_partial_gg()
         ht_series_api = f"https://ltn.hitomi.la/galleries/{meta_id}.js"
         resp = await get_wrapper(ht_series_api)
-        if resp.status_code == 200:
-            data = resp.text.replace("var galleryinfo = ", "")
+        if resp.status == 200:
+            data = (await resp.text()).replace("var galleryinfo = ", "")
             api_data = json.loads(data)
 
             title = api_data["title"]

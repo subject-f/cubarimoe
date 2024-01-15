@@ -132,21 +132,17 @@ class Gist(ProxySource):
                 )
 
             url: str = DOMAIN_MAPPING[location] + path
-            resp: Response = await get_wrapper(f"{url}?{random.random()}")
+            resp = await get_wrapper(f"{url}?{random.random()}")
 
         except (binascii.Error, ValueError):
             # If it fails to decode, it's _probably_ a legacy git.io link
             url: str = f"https://git.io/{meta_id}"
-            resp: Response = await get_wrapper(
-                f"https://git.io/{meta_id}", allow_redirects=False
-            )
+            resp = await get_wrapper(f"https://git.io/{meta_id}", allow_redirects=False)
 
-            if resp.status_code not in [301, 302] or not resp.headers["location"]:
+            if resp.status not in [301, 302] or not resp.headers["location"]:
                 raise ProxyException("The git.io redirect did not succeed.")
 
-            resp: Response = await get_wrapper(
-                f"{resp.headers['location']}?{random.random()}"
-            )
+            resp = await get_wrapper(f"{resp.headers['location']}?{random.random()}")
 
         return (url, resp)
 
@@ -159,10 +155,10 @@ class Gist(ProxySource):
         if not resp.headers["content-type"].startswith("text/plain"):
             raise ProxyException("The requested content doesn't direct to a raw file.")
 
-        if resp.status_code == 200:
+        if resp.status == 200:
             try:
                 # Response type is text/plain
-                api_data = WrappedProxyDict(json.loads(resp.text))
+                api_data = WrappedProxyDict(json.loads(await resp.text()))
             except JSONDecodeError as e:
                 raise ProxyException(f"Invalid JSON: {e}")
 
