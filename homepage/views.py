@@ -49,8 +49,7 @@ async def home(request):
         },
     )
 
-
-async def handle404(request, exception):
+def handle404(request, exception):
     return render(request, "homepage/how_cute_404.html", status=404)
 
 
