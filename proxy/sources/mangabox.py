@@ -58,20 +58,20 @@ class MangaBox(ProxySource):
     def parse_chapter(raw_url):
         return [ch for ch in raw_url.split("/") if ch][-1].replace("chapter_", "")
 
-    def mb_scrape_common(self, meta_id):
+    async def mb_scrape_common(self, meta_id):
         decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
+        resp = await get_wrapper(decoded_url)
         # There's a page redirect sometimes
-        if resp.status_code == 200 and "window.location.assign" in resp.text:
+        if resp.status == 200 and "window.location.assign" in (await resp.text()):
             decoded_url = re.findall(
-                r"(?:window.location.assign\(\")([\s\S]+)(?:\"\))", resp.text
+                r"(?:window.location.assign\(\")([\s\S]+)(?:\"\))", (await resp.text())
             )
             if decoded_url:
-                resp = get_wrapper(decoded_url[0])
+                resp = await get_wrapper(decoded_url[0])
             else:
                 return None
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             elems = soup.select("div.manga-info-top, div.panel-story-info")
             if not elems:
@@ -159,8 +159,8 @@ class MangaBox(ProxySource):
             return None
 
     @api_cache(prefix="mb_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.mb_scrape_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.mb_scrape_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -176,11 +176,11 @@ class MangaBox(ProxySource):
             return None
 
     @api_cache(prefix="mb_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
-        if resp.status_code == 200:
-            data = resp.text
+        resp = await get_wrapper(decoded_url)
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             pages = [
                 src
@@ -195,8 +195,8 @@ class MangaBox(ProxySource):
             return None
 
     @api_cache(prefix="mb_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.mb_scrape_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.mb_scrape_common(meta_id)
         original_url = decode(meta_id)
         if not original_url.startswith("http"):
             original_url = "https://" + original_url

@@ -51,17 +51,17 @@ class NHentai(ProxySource):
         ]
 
     @api_cache(prefix="nh_series_common_dt", time=3600)
-    def nh_api_common(self, meta_id):
+    async def nh_api_common(self, meta_id):
         nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
-        resp = get_wrapper(nh_series_api, use_proxy=True)
+        resp = await get_wrapper(nh_series_api, use_proxy=True)
 
-        if resp.status_code != 200:
-            resp = get_wrapper(
+        if resp.status != 200:
+            resp = await get_wrapper(
                 f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
             )
 
-        if resp.status_code == 200:
-            data = resp.text
+        if resp.status == 200:
+            data = await resp.text()
             api_data = json.loads(data)
 
             artist = api_data["scanlator"]
@@ -116,8 +116,8 @@ class NHentai(ProxySource):
             return None
 
     @api_cache(prefix="nh_series_dt", time=3600)
-    def series_api_handler(self, meta_id):
-        data = self.nh_api_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.nh_api_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=meta_id,
@@ -133,8 +133,8 @@ class NHentai(ProxySource):
             return None
 
     @api_cache(prefix="nh_pages_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
-        data = self.nh_api_common(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.nh_api_common(meta_id)
         if data:
             return ChapterAPI(
                 pages=data["chapters"]["1"]["groups"]["1"],
@@ -145,8 +145,8 @@ class NHentai(ProxySource):
             return None
 
     @api_cache(prefix="nh_series_page_dt", time=3600)
-    def series_page_handler(self, meta_id):
-        data = self.nh_api_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.nh_api_common(meta_id)
         if data:
             date = datetime.utcfromtimestamp(data["timestamp"])
             chapter_list = [

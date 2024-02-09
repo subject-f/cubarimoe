@@ -1,7 +1,7 @@
+import asyncio
 import json
 import re
 
-import requests
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -83,13 +83,17 @@ class FoolSlide(ProxySource):
         url = "/".join(split[0 : split.index("series") + 2])
         return encode(url)
 
-    def fs_scrape_common(self, meta_id):
+    async def fs_scrape_common(self, meta_id):
         try:
-            resp = post_wrapper(f"https://{decode(meta_id)}/", data={"adult": "true"})
-        except requests.exceptions.ConnectionError:
-            resp = post_wrapper(f"http://{decode(meta_id)}/", data={"adult": "true"})
-        if resp.status_code == 200:
-            data = resp.text
+            resp = await post_wrapper(
+                f"https://{decode(meta_id)}/", data={"adult": "true"}
+            )
+        except asyncio.exceptions.TimeoutError:
+            resp = await post_wrapper(
+                f"http://{decode(meta_id)}/", data={"adult": "true"}
+            )
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
 
             comic_info = soup.find("div", class_="large comic")
@@ -182,8 +186,8 @@ class FoolSlide(ProxySource):
             return None
 
     @api_cache(prefix="fs_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.fs_scrape_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.fs_scrape_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -199,10 +203,10 @@ class FoolSlide(ProxySource):
             return None
 
     @api_cache(prefix="fs_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
-        resp = get_wrapper(decode(meta_id))
-        if resp.status_code == 200:
-            data = json.loads(resp.text)
+    async def chapter_api_handler(self, meta_id):
+        resp = await get_wrapper(decode(meta_id))
+        if resp.status == 200:
+            data = json.loads(await resp.text())
             return ChapterAPI(
                 pages=[e["url"] for e in data["pages"]], series=meta_id, chapter=""
             )
@@ -210,8 +214,8 @@ class FoolSlide(ProxySource):
             return None
 
     @api_cache(prefix="fs_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.fs_scrape_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.fs_scrape_common(meta_id)
         if data:
             return SeriesPage(
                 series=data["title"],

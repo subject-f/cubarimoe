@@ -25,14 +25,14 @@ class Imgbb(ProxySource):
             re_path(r"^(?:album)/(?P<album_hash>[\d\w]+)/$", handler),
         ]
 
-    def imgbb_api(self, meta_id):
+    async def imgbb_api(self, meta_id):
         """Backup handler using the API. It consumes the API key so be wary."""
-        resp = post_wrapper(
+        resp = await post_wrapper(
             f"https://ibb.co/json",
             data={"action": "get-album-contents", "albumid": meta_id},
         )
-        if resp.status_code == 200:
-            json_response = resp.json()
+        if resp.status == 200:
+            json_response = await resp.json()
             api_data = json_response["album"]
             date = datetime.utcfromtimestamp(int(api_data["time"]))
             title = api_data["name"] or "Untitled"
@@ -77,12 +77,12 @@ class Imgbb(ProxySource):
             raise ProxyException("Imgbb failed to load.")
 
     @api_cache(prefix="imgbb_api_dt", time=300)
-    def imgbb_common(self, meta_id):
-        return self.imgbb_api(meta_id)
+    async def imgbb_common(self, meta_id):
+        return await self.imgbb_api(meta_id)
 
     @api_cache(prefix="imgbb_series_dt", time=300)
-    def series_api_handler(self, meta_id):
-        data = self.imgbb_api(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.imgbb_api(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -99,8 +99,8 @@ class Imgbb(ProxySource):
         )
 
     @api_cache(prefix="imgbb_pages_dt", time=300)
-    def chapter_api_handler(self, meta_id):
-        data = self.imgbb_api(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.imgbb_api(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -110,8 +110,8 @@ class Imgbb(ProxySource):
         )
 
     @api_cache(prefix="imgbb_series_page_dt", time=300)
-    def series_page_handler(self, meta_id):
-        data = self.imgbb_api(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.imgbb_api(meta_id)
         return (
             SeriesPage(
                 series=data["title"],

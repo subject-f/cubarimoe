@@ -34,10 +34,10 @@ class Imgbox(ProxySource):
         return re.sub(r"_\w.", "_o.", url.replace("thumbs2", "images2"))
 
     @api_cache(prefix="imgbox_api_dt", time=300)
-    def imgbox_common(self, meta_id):
-        resp = get_wrapper(f"https://imgbox.com/g/{meta_id}")
-        if resp.status_code == 200:
-            soup = BeautifulSoup(resp.text, "html.parser")
+    async def imgbox_common(self, meta_id):
+        resp = await get_wrapper(f"https://imgbox.com/g/{meta_id}")
+        if resp.status == 200:
+            soup = BeautifulSoup(await resp.text(), "html.parser")
             gallery = soup.find("div", id="gallery-view-content")
             pages_list = [
                 self.image_url_handler(image["src"])
@@ -78,8 +78,8 @@ class Imgbox(ProxySource):
             return None
 
     @api_cache(prefix="imgbox_series_dt", time=300)
-    def series_api_handler(self, meta_id):
-        data = self.imgbox_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.imgbox_common(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -96,8 +96,8 @@ class Imgbox(ProxySource):
         )
 
     @api_cache(prefix="imgbox_pages_dt", time=300)
-    def chapter_api_handler(self, meta_id):
-        data = self.imgbox_common(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.imgbox_common(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -107,8 +107,8 @@ class Imgbox(ProxySource):
         )
 
     @api_cache(prefix="imgbox_series_page_dt", time=300)
-    def series_page_handler(self, meta_id):
-        data = self.imgbox_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.imgbox_common(meta_id)
         return (
             SeriesPage(
                 series=data["title"],

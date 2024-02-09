@@ -37,17 +37,17 @@ class Imgur(ProxySource):
             else metadata["link"]
         )
 
-    def imgur_api_common(self, meta_id):
+    async def imgur_api_common(self, meta_id):
         """Backup handler using the API. It consumes the API key so be wary."""
         if "+" in meta_id:
             return self.imgur_chapter_collection(meta_id)
         else:
-            resp = get_wrapper(
+            resp = await get_wrapper(
                 f"https://api.imgur.com/3/album/{meta_id}",
                 headers={"Authorization": f"Client-ID {settings.IMGUR_CLIENT_ID}"},
             )
-            if resp.status_code == 200:
-                api_data = resp.json()["data"]
+            if resp.status == 200:
+                api_data = (await resp.json())["data"]
                 date = datetime.utcfromtimestamp(api_data["datetime"])
                 return {
                     "slug": meta_id,
@@ -136,22 +136,23 @@ class Imgur(ProxySource):
             "original_url": "https://imgur.com/",
         }
 
-    def imgur_embed_common(self, meta_id):
+    async def imgur_embed_common(self, meta_id):
         if "+" in meta_id:
             return self.imgur_chapter_collection(meta_id)
         else:
             request_url = (
                 f"https://imgur.com/a/{meta_id}/embed?cache_buster={random.random()}"
             )
-            resp = get_wrapper(request_url)
-            if resp.status_code != 200:
-                resp = get_wrapper(
+            resp = await get_wrapper(request_url)
+            if resp.status != 200:
+                resp = await get_wrapper(
                     request_url,
                     use_proxy=True,
                 )
-            if resp.status_code == 200:
+            if resp.status == 200:
                 data = re.search(
-                    r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)", resp.text
+                    r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)",
+                    await resp.text(),
                 )
                 api_data = json.loads(data.group(1))
                 try:
@@ -215,12 +216,12 @@ class Imgur(ProxySource):
                 raise ProxyException("Imgur failed to load.")
 
     @api_cache(prefix="imgur_api_dt", time=300)
-    def imgur_common(self, meta_id):
-        return self.imgur_embed_common(meta_id)
+    async def imgur_common(self, meta_id):
+        return await self.imgur_embed_common(meta_id)
 
     @api_cache(prefix="imgur_series_dt", time=300)
-    def series_api_handler(self, meta_id):
-        data = self.imgur_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.imgur_common(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -237,8 +238,8 @@ class Imgur(ProxySource):
         )
 
     @api_cache(prefix="imgur_pages_dt", time=300)
-    def chapter_api_handler(self, meta_id):
-        data = self.imgur_common(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.imgur_common(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -248,8 +249,8 @@ class Imgur(ProxySource):
         )
 
     @api_cache(prefix="imgur_series_page_dt", time=300)
-    def series_page_handler(self, meta_id):
-        data = self.imgur_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.imgur_common(meta_id)
         return (
             SeriesPage(
                 series=data["title"],

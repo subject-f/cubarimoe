@@ -22,7 +22,6 @@ class Dynasty(ProxySource):
             if "/chapters/" in raw_url:
                 slug_name = self.get_slug_name(self.normalize_slug(raw_url))
                 canonical_chapter = self.parse_chapter(raw_url)
-                print(slug_name, canonical_chapter)
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-chapter-page",
                     slug_name,
@@ -58,12 +57,12 @@ class Dynasty(ProxySource):
         int(raw_url.split("ch")[-1])
         return raw_url.split("ch")[-1].replace("_", ".")
 
-    def ds_scrape_common(self, meta_id):
+    async def ds_scrape_common(self, meta_id):
         base_url = "https://dynasty-scans.com"
         series_url = "https://dynasty-scans.com/series/" + meta_id
-        resp = get_wrapper(series_url)
-        if resp.status_code == 200:
-            data = resp.text
+        resp = await get_wrapper(series_url)
+        if resp.status == 200:
+            data = await resp.text()
             soup = BeautifulSoup(data, "html.parser")
             try:
                 title = soup.find("h2").find("b").contents[0]
@@ -143,8 +142,8 @@ class Dynasty(ProxySource):
             return None
 
     @api_cache(prefix="ds_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.ds_scrape_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.ds_scrape_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -160,12 +159,12 @@ class Dynasty(ProxySource):
             return None
 
     @api_cache(prefix="ds_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         base_url = "https://dynasty-scans.com"
         chapter_url = "https://dynasty-scans.com/chapters/" + meta_id
-        resp = get_wrapper(chapter_url)
-        if resp.status_code == 200:
-            data = resp.text
+        resp = await get_wrapper(chapter_url)
+        if resp.status == 200:
+            data = await resp.text()
             try:
                 m = re.search(r"pages\s?=\s?.+\;", data)
                 arr = str(m.group(0)).split()[2].strip(";")
@@ -176,8 +175,8 @@ class Dynasty(ProxySource):
                 return None
 
     @api_cache(prefix="ds_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.ds_scrape_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.ds_scrape_common(meta_id)
         original_url = "https://dynasty-scans.com/series/" + meta_id
 
         if data:

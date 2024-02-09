@@ -1,3 +1,4 @@
+import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
@@ -30,27 +31,27 @@ class MangaDex(ProxySource):
         return "mangadex"
 
     def shortcut_instantiator(self):
-        def legacy_mapper(series_id):
+        async def legacy_mapper(series_id):
             try:
                 series_id = int(series_id)
-                resp = post_wrapper(
+                resp = await post_wrapper(
                     f"https://api.mangadex.org/legacy/mapping",
                     json={"type": "manga", "ids": [series_id]},
                     headers=HEADERS_COMMON,
                     use_proxy=True,
                 )
-                if resp.status_code != 200:
+                if resp.status != 200:
                     raise Exception("Failed to translate ID.")
-                return resp.json()["data"][0]["attributes"]["newId"]
+                return (await resp.json())["data"][0]["attributes"]["newId"]
             except ValueError:
                 return series_id
 
-        def series(request, series_id):
-            series_id = legacy_mapper(series_id)
+        async def series(request, series_id):
+            series_id = await legacy_mapper(series_id)
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", series_id)
 
-        def series_chapter(request, series_id, chapter, page="1"):
-            series_id = legacy_mapper(series_id)
+        async def series_chapter(request, series_id, chapter, page="1"):
+            series_id = await legacy_mapper(series_id)
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
                 series_id,
@@ -132,16 +133,19 @@ class MangaDex(ProxySource):
         ]
 
     @api_cache(prefix="md_common_dt", time=600)
-    def md_api_common(self, meta_id):
+    async def md_api_common(self, meta_id):
         current_offset = 0
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            result = executor.map(
-                lambda req: {
-                    "type": req["type"],
-                    "res": get_wrapper(
-                        req["url"], headers=HEADERS_COMMON, use_proxy=True
-                    ),
-                },
+
+        async def fetch_task(req):
+            resp = await get_wrapper(req["url"], headers=HEADERS_COMMON, use_proxy=True)
+            return {
+                "type": req["type"],
+                "res": resp,
+            }
+
+        result = await asyncio.gather(
+            *map(
+                lambda req: fetch_task(req),
                 [
                     {
                         "type": "main",
@@ -153,19 +157,20 @@ class MangaDex(ProxySource):
                     },
                 ],
             )
+        )
 
         main_data = None
         chapter_data = None
 
         for res in result:
-            if res["res"].status_code != 200:
+            if res["res"].status != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
                 )
             if res["type"] == "main":
-                main_data = res["res"].json()
+                main_data = await res["res"].json()
             elif res["type"] == "chapter":
-                chapter_data = res["res"].json()
+                chapter_data = await res["res"].json()
 
         current_offset = 500
         if "total" in chapter_data and current_offset < chapter_data["total"]:
@@ -176,18 +181,19 @@ class MangaDex(ProxySource):
                 )
                 current_offset = current_offset + 500
 
-            # workers = 3 because aren't getting 2000+ chapter series soon (hopefully)
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                results = executor.map(
-                    lambda url: get_wrapper(
-                        url=url,
-                        headers=HEADERS_COMMON,
-                        use_proxy=True,
-                    ),
-                    unfetched_urls,
+                results = await asyncio.gather(
+                    *map(
+                        lambda url: get_wrapper(
+                            url=url,
+                            headers=HEADERS_COMMON,
+                            use_proxy=True,
+                        ),
+                        unfetched_urls,
+                    )
                 )
+
             for result in results:
-                result_json = result.json()
+                result_json = await result.json()
                 chapter_data["data"].extend(result_json["data"])
 
         groups_set = {
@@ -213,12 +219,10 @@ class MangaDex(ProxySource):
             groups_api_url = f"https://api.mangadex.org/group?limit=100"
             for group in remaining_groups:
                 groups_api_url += f"&ids[]={group}"
-            groups_resp = get_wrapper(
-                groups_api_url, headers=HEADERS_COMMON
-            )
-            if groups_resp.status_code != 200:
+            groups_resp = await get_wrapper(groups_api_url, headers=HEADERS_COMMON)
+            if groups_resp.status != 200:
                 return
-            for result in groups_resp.json()["data"]:
+            for result in (await groups_resp.json())["data"]:
                 group_id = result["id"]
                 group_name = result["attributes"]["name"]
                 resolved_groups_map[group_id] = group_name
@@ -359,8 +363,8 @@ class MangaDex(ProxySource):
         }
 
     @api_cache(prefix="md_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.md_api_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.md_api_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -374,17 +378,21 @@ class MangaDex(ProxySource):
             )
 
     @api_cache(prefix="md_chapter_dt", time=300)
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         at_home: str = "at-home"
         chapter: str = "chapter"
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            result = executor.map(
-                lambda req: {
-                    "type": req["type"],
-                    "res": get_wrapper(
-                        req["url"], headers=HEADERS_COMMON, use_proxy=True
-                    ),
-                },
+
+        async def fetch_task(req):
+            return {
+                "type": req["type"],
+                "res": await get_wrapper(
+                    req["url"], headers=HEADERS_COMMON, use_proxy=True
+                ),
+            }
+
+        result = await asyncio.gather(
+            *map(
+                lambda req: fetch_task(req),
                 [
                     {
                         "type": at_home,
@@ -396,18 +404,19 @@ class MangaDex(ProxySource):
                     },
                 ],
             )
+        )
 
         at_home_data: Optional[Dict[str, str]] = None
         chapter_data: Optional[Dict[str, str]] = None
         for res in result:
-            if res["res"].status_code != 200:
+            if res["res"].status != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
                 )
             if res["type"] == at_home:
-                at_home_data = res["res"].json()
+                at_home_data = await res["res"].json()
             elif res["type"] == chapter:
-                chapter_data = res["res"].json()
+                chapter_data = await res["res"].json()
 
         pages = [
             f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"
@@ -423,8 +432,8 @@ class MangaDex(ProxySource):
         return ChapterAPI(pages=pages, series=series, chapter=chapter)
 
     @api_cache(prefix="md_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.md_api_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.md_api_common(meta_id)
         if data:
             return SeriesPage(
                 series=data["title"],
