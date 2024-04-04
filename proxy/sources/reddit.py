@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 
+from bs4 import BeautifulSoup
 from django.shortcuts import redirect
 from django.urls import re_path
 
@@ -33,13 +34,112 @@ class Reddit(ProxySource):
         #                           to https://i.redd.it/media_id.ext
         return re.sub(r"\?.*", "", url.replace("preview.redd.it", "i.redd.it"))
 
+    def reddit_sh(self, meta_id):
+        resp = get_wrapper(
+            f"https://sh.reddit.com/comments/{meta_id}",
+            allow_redirects=True,
+            use_proxy=True,
+        )
+
+        if resp.status_code != 200:
+            raise ProxyException("Failed to retrieve from reddit API.")
+
+        matches = re.search(r"<shreddit-redirect href=\"(.+?)\">", resp.text)
+
+        if not matches:
+            raise ProxyException("Failed to find reddit redirect.")
+
+        possible_full_path = matches.group(1)
+
+        if not possible_full_path.startswith("/r/"):
+            raise ProxyException("Failed to find reddit path.")
+
+        resp = get_wrapper(f"https://sh.reddit.com{possible_full_path}")
+
+        if resp.status_code != 200:
+            raise ProxyException("Failed to retrieve the reddit post.")
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        post_info = soup.find("shreddit-post")
+        post_attrs = post_info.attrs
+
+        if post_attrs["post-type"] != "gallery":
+            raise ProxyException("This reddit post isn't a gallery.")
+
+        title = post_attrs["post-title"]
+        description = f"Post from {post_attrs['subreddit-prefixed-name']}"
+        author = post_attrs["author"]
+        original_url = post_attrs["content-href"]
+        try:
+            date_str = post_attrs["created-timestamp"]
+            date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f%z")
+        except ValueError:
+            date = datetime.now()
+
+        carousel = soup.find("gallery-carousel")
+
+        preview_images = []
+
+        for figure in carousel.find_all("figure"):
+            img = figure.find("img")
+            img_attrs = img.attrs
+
+            preview_images.append(img_attrs.get("src", img_attrs.get("data-lazy-src")))
+
+        # The preview URL is signed, so let's unsign it by doing software crimes
+        def image_unsigner(img: str):
+            raw_url = img.split("?")[0]
+            media_id = raw_url.split("-")[-1]
+
+            return f"https://i.redd.it/{media_id}"
+
+        images = [image_unsigner(img) for img in preview_images]
+
+        return {
+            "slug": meta_id,
+            "title": title,
+            "description": description,
+            "author": author,
+            "artist": "Unknown",
+            "cover": images[0],
+            "groups": {"1": "Reddit"},
+            "chapter_dict": {
+                "1": {
+                    "volume": "1",
+                    "title": title,
+                    "groups": {"1": images},
+                }
+            },
+            "chapter_list": [
+                [
+                    "1",
+                    "1",
+                    title,
+                    "1",
+                    "No group",
+                    [
+                        date.year,
+                        date.month - 1,
+                        date.day,
+                        date.hour,
+                        date.minute,
+                        date.second,
+                    ],
+                    "1",
+                ],
+            ],
+            "pages_list": images,
+            "original_url": original_url,
+        }
+
     def reddit_api(self, meta_id):
         resp = get_wrapper(
             f"https://old.reddit.com/{meta_id}.json",
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5"
+                "Accept-Language": "en-US,en;q=0.5",
             },
             allow_redirects=True,
         )
@@ -117,7 +217,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_dt", time=300)
     def series_api_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.reddit_sh(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -135,7 +235,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_pages_dt", time=300)
     def chapter_api_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.reddit_sh(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -146,7 +246,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_page_dt", time=300)
     def series_page_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.reddit_sh(meta_id)
         return (
             SeriesPage(
                 series=data["title"],
