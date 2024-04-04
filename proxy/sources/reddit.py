@@ -92,7 +92,10 @@ class Reddit(ProxySource):
             raw_url = img.split("?")[0]
             media_id = raw_url.split("-")[-1]
 
-            return f"https://i.redd.it/{media_id}"
+            if media_id.startswith("http"):
+                return media_id
+            else:
+                return f"https://i.redd.it/{media_id}"
 
         images = [image_unsigner(img) for img in preview_images]
 
