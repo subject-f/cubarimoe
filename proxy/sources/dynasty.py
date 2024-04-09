@@ -103,7 +103,7 @@ class Dynasty(ProxySource):
                 description = soup.get_text("\n").strip()
             else:
                 description = "No description."
-
+            
             author = next(
                 (tag["name"] for tag in data["tags"] if tag["type"] == "Author"), "Unknown"
             )
@@ -130,9 +130,9 @@ class Dynasty(ProxySource):
             chapter_dict = {}
             volume = None
             
-            for tagging in data["taggings"]:            
+            for tagging in data["taggings"]:
                 if "header" in tagging:
-                    match =  re.match(r"Volume (\d+)", tagging["header"])
+                    match = re.match(r"Volume (\d+)", tagging["header"])
                     if match is None:
                         volume = None
                     else:
@@ -144,9 +144,7 @@ class Dynasty(ProxySource):
                         canonical_chapter = tagging["permalink"].replace(meta_id + "_", "")
                     chapter_title = tagging["title"]
                     upload_date = self.parse_date(tagging["released_on"])
-                    groups = [
-                        tag["name"] for tag in tagging["tags"] if tag["type"] == "Scanlator"
-                    ]
+                    groups = [tag["name"] for tag in tagging["tags"] if tag["type"] == "Scanlator"]
                     group = ", ".join(groups)
                     
                     chapter_list.append(
