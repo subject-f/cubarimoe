@@ -44,6 +44,7 @@ class Imgur(ProxySource):
         else:
             resp = get_wrapper(
                 f"https://api.imgur.com/3/album/{meta_id}",
+                use_proxy=True,
                 headers={"Authorization": f"Client-ID {settings.IMGUR_CLIENT_ID}"},
             )
             if resp.status_code == 200:
@@ -148,6 +149,7 @@ class Imgur(ProxySource):
                 resp = get_wrapper(
                     request_url,
                     use_proxy=True,
+                    secondary=True
                 )
             if resp.status_code == 200:
                 data = re.search(
