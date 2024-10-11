@@ -1,4 +1,5 @@
 import re
+import json
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -34,58 +35,37 @@ class Reddit(ProxySource):
         #                           to https://i.redd.it/media_id.ext
         return re.sub(r"\?.*", "", url.replace("preview.redd.it", "i.redd.it"))
 
-    def reddit_sh(self, meta_id):
+    def reddit_gallery(self, meta_id):
         resp = get_wrapper(
-            f"https://sh.reddit.com/comments/{meta_id}",
+            f"https://www.reddit.com/gallery/{meta_id}",
             allow_redirects=True,
             use_proxy=True,
         )
 
         if resp.status_code != 200:
-            raise ProxyException("Failed to retrieve from reddit API.")
-
-        matches = re.search(r"<shreddit-redirect href=\"(.+?)\">", resp.text)
-
-        if not matches:
-            raise ProxyException("Failed to find reddit redirect.")
-
-        possible_full_path = matches.group(1)
-
-        if not possible_full_path.startswith("/r/"):
-            raise ProxyException("Failed to find reddit path.")
-
-        resp = get_wrapper(f"https://sh.reddit.com{possible_full_path}")
-
-        if resp.status_code != 200:
-            raise ProxyException("Failed to retrieve the reddit post.")
+            raise ProxyException("Failed to retrieve data from reddit.")
 
         soup = BeautifulSoup(resp.text, "html.parser")
+        react_data = soup.find("script", {"id": "data"})
 
-        post_info = soup.find("shreddit-post")
-        post_attrs = post_info.attrs
+        json_data_str = "{" + react_data.text.split("{", 1)[-1]
+        json_data = json.loads(json_data_str)
+        all_post_data = json_data.get("posts", {}).get("models", {})
+        post_metadata = [*all_post_data.values()][0]
 
-        if post_attrs["post-type"] != "gallery":
-            raise ProxyException("This reddit post isn't a gallery.")
+        if post_metadata.get("media", {}).get("type") != "gallery":
+            raise ProxyException("Cubari only supports reddit galleries.")
 
-        title = post_attrs["post-title"]
-        description = f"Post from {post_attrs['subreddit-prefixed-name']}"
-        author = post_attrs["author"]
-        original_url = post_attrs["content-href"]
-        try:
-            date_str = post_attrs["created-timestamp"]
-            date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f%z")
-        except ValueError:
-            date = datetime.now()
+        title = post_metadata.get("title", "Couldn't find title")
+        description = f"No description."  # No real description, unfortunately
+        author = post_metadata.get("author", "Unknown")
+        original_url = f"https://reddit.com/gallery/{meta_id}"
+        date = datetime.fromtimestamp(post_metadata.get("created", 0) / 1000)
 
-        carousel = soup.find("gallery-carousel")
-
-        preview_images = []
-
-        for figure in carousel.find_all("figure"):
-            img = figure.find("img")
-            img_attrs = img.attrs
-
-            preview_images.append(img_attrs.get("src", img_attrs.get("data-lazy-src")))
+        preview_images = [
+            i.get("s", {}).get("u", "")
+            for i in post_metadata.get("media", {}).get("mediaMetadata", {}).values()
+        ]
 
         # The preview URL is signed, so let's unsign it by doing software crimes
         def image_unsigner(img: str):
@@ -93,11 +73,14 @@ class Reddit(ProxySource):
             media_id = raw_url.split("-")[-1]
 
             if media_id.startswith("http"):
-                return media_id
+                return media_id.replace("preview.redd.it", "i.redd.it")
             else:
                 return f"https://i.redd.it/{media_id}"
 
         images = [image_unsigner(img) for img in preview_images]
+
+        if not images:
+            raise ProxyException("Couldn't parse out any images from the gallery.")
 
         return {
             "slug": meta_id,
@@ -220,7 +203,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_dt", time=300)
     def series_api_handler(self, meta_id):
-        data = self.reddit_sh(meta_id)
+        data = self.reddit_gallery(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -238,7 +221,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_pages_dt", time=300)
     def chapter_api_handler(self, meta_id):
-        data = self.reddit_sh(meta_id)
+        data = self.reddit_gallery(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -249,7 +232,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_page_dt", time=300)
     def series_page_handler(self, meta_id):
-        data = self.reddit_sh(meta_id)
+        data = self.reddit_gallery(meta_id)
         return (
             SeriesPage(
                 series=data["title"],
