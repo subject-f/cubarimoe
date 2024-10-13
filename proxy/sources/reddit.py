@@ -62,9 +62,15 @@ class Reddit(ProxySource):
         original_url = f"https://reddit.com/gallery/{meta_id}"
         date = datetime.fromtimestamp(post_metadata.get("created", 0) / 1000)
 
+        post_media = post_metadata.get("media", {})
+
+        gallery_images = [
+            item["mediaId"] for item in post_media.get("gallery", {}).get("items", [])
+        ]
+
         preview_images = [
-            i.get("s", {}).get("u", "")
-            for i in post_metadata.get("media", {}).get("mediaMetadata", {}).values()
+            post_media.get("mediaMetadata", {}).get(i, {}).get("s", {}).get("u", "")
+            for i in gallery_images
         ]
 
         # The preview URL is signed, so let's unsign it by doing software crimes
