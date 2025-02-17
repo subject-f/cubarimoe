@@ -112,7 +112,7 @@ class NepNep(ProxySource):
 
             chapter_list = [
                 [
-                    ch[0],
+                    "",
                     ch[0],
                     ch[1]["title"],
                     ch[0],

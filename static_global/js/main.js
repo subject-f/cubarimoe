@@ -38,14 +38,14 @@ let error = '';
 			if(!result || !result[2]) return message('Reader could not understand the given link.', 1)
 			result = '/read/mangadex/' + result[2]
 			break;
-		case (/mangasee123\.com/).test(text) || (/manga4life\.com/).test(text):
+		case (/weebcentral\.com/).test(text):
 			text = text.replace(/\/$/, "")
-			if(text.includes("/manga/")) {
-				slug_name = text.split("/manga/").pop()
+			if(text.includes("/series/")) {
+				slug_name = text.split("/series/").pop().split("/")[0]
 			} else {
 				return message('Reader could not understand the given link.', 1)
 			}
-			result = '/read/mangasee/' + slug_name
+			result = '/read/weebcentral/' + slug_name
 			break 
 		case /reddit\.com/i.test(text):
 			result = /reddit\.com\/(?:r|u(?:ser)?)\/(?:[a-z0-9_\-]+)\/comments\/([a-z0-9]+)/i.exec(text);
