@@ -53,11 +53,17 @@ class NepNep(ProxySource):
 
     @api_cache(prefix="nn_common_scrape_dt", time=600)
     def nn_scrape_common(self, meta_id):
+        is_fallback_enabled = False
         series_url = 'https://weebcentral.com/series/' + meta_id
         chapter_list_url = 'https://weebcentral.com/series/' + \
             meta_id + "/full-chapter-list"
         series_resp = get_wrapper(series_url)
         chapter_list_resp = get_wrapper(chapter_list_url)
+        if chapter_list_resp.status_code != 200:
+            chapter_list_url_fallback = 'https://weebcentral.com/series/' + \
+                meta_id + "/chapter-select?current_chapter=0&current_page=0"
+            chapter_list_resp = get_wrapper(chapter_list_url_fallback)
+            is_fallback_enabled = True
         if series_resp.status_code == 200 and chapter_list_resp.status_code == 200:
             series_resp_data = series_resp.text
             chapter_list_resp_data = chapter_list_resp.text
@@ -90,10 +96,16 @@ class NepNep(ProxySource):
             chapter_list = []
             chapter_dict = {}
 
-            chapter_list_data = chapter_list_resp_soup.select(
-                "div[x-data] > a")
+            if not is_fallback_enabled:
+                chapter_list_data = chapter_list_resp_soup.select(
+                    "div[x-data] > a")
+            else:
+                chapter_list_data = chapter_list_resp_soup.select("div > a")
             for ch, chapter in enumerate(chapter_list_data):
-                name = chapter.select_one("span.flex > span").get_text()
+                if not is_fallback_enabled:
+                    name = chapter.select_one("span.flex > span").get_text()
+                else:
+                    name = chapter.get_text()
                 date = "No date."
                 try:
                     date = chapter.select_one(
