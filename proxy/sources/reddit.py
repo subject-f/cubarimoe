@@ -209,7 +209,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_dt", time=300)
     def series_api_handler(self, meta_id):
-        data = self.reddit_gallery(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -227,7 +227,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_pages_dt", time=300)
     def chapter_api_handler(self, meta_id):
-        data = self.reddit_gallery(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             ChapterAPI(
                 pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
@@ -238,7 +238,7 @@ class Reddit(ProxySource):
 
     @api_cache(prefix="reddit_series_page_dt", time=300)
     def series_page_handler(self, meta_id):
-        data = self.reddit_gallery(meta_id)
+        data = self.reddit_api(meta_id)
         return (
             SeriesPage(
                 series=data["title"],
