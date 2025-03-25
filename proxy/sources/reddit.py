@@ -134,6 +134,7 @@ class Reddit(ProxySource):
                 "Accept-Language": "en-US,en;q=0.5",
             },
             allow_redirects=True,
+            use_proxy=True,
         )
 
         if resp.status_code != 200:
