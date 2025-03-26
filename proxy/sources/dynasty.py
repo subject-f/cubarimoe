@@ -43,7 +43,6 @@ class Dynasty(ProxySource):
                     else:
                         return None
                 
-                print(slug_name, canonical_chapter)
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-chapter-page",
                     slug_name,
