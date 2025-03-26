@@ -15,6 +15,7 @@ class Dynasty(ProxySource):
     
     def shortcut_instantiator(self):
         def handler(request, raw_url):
+            raw_url = raw_url.rstrip("/")
             if "/chapters/" in raw_url:
                 try:
                     canonical_chapter = self.parse_chapter(raw_url)
