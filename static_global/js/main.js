@@ -63,6 +63,11 @@ let error = '';
 			if(!result || !result[1]) return message('Reader could not understand the given link.', 1);
 			result = '/read/catbox/' + result[1];
 			break;
+		case /comick\.io/.test(text):
+			result = /comick\.io\/comic\/([\w-]+)/i.exec(text);
+			if (!result || !result[1]) return message('Reader could not understand the given link.', 1);
+			result = '/read/comick/' + result[1];
+			break;
 		default:
 			return message('Reader could not understand the given link.', 1)
 			break;
