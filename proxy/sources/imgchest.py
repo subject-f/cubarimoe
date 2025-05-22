@@ -10,6 +10,9 @@ from proxy.source import ProxySource, SeriesPage, ChapterAPI, SeriesAPI, api_cac
 
 
 class ImageChest(ProxySource):
+    @staticmethod
+    def image_url_handler(m): return m["link"] + "?_w." if m.get("width", 0) > m.get("height", 0) else m["link"]
+
     def get_reader_prefix(self) -> str:
         return "imgchest"
 
@@ -35,7 +38,7 @@ class ImageChest(ProxySource):
 
         files = post_data.get("files", [])
 
-        pages = [page["link"] for page in files]
+        pages = [self.image_url_handler(page) for page in files]
         title = post_data.get("title", "No title")
 
         return {
