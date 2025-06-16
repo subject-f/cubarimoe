@@ -21,17 +21,17 @@ class ComicK(ProxySource):
     def shortcut_instantiator(self):
         def handler(request, raw_url):
             m = re.match(
-                r"https?://comick\.io/comic/([\w-]+)(?:/([\w]+)-[\w-]+)?(?:page=(\d+))?",
+                r"https?://comick\.io/comic/([\w-]+)(?:/[\w]+-chapter-(\d+)-[\w-]+)?",
                 raw_url,
             )
             if m is not None:
-                series, chapter, page = m.groups()
+                series, chapter = m.groups()
                 if chapter is not None:
                     return redirect(
                         f"reader-{self.get_reader_prefix()}-chapter-page",
                         series,
                         chapter,
-                        page or "1",
+                        "1",
                     )
                 else:
                     return redirect(
