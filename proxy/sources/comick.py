@@ -142,29 +142,29 @@ class ComicK(ProxySource):
                 if chapter_data["total"] < page * limit:
                     break
 
-                chapter_list = [
-                    [
-                        chapter_number,
-                        chapter_number,
-                        chapter["title"],
-                        chapter_number.replace(".", "-"),
-                        "Multiple Groups"
-                        if len(chapter["groups"]) > 1
-                        else groups_dict[list(chapter["groups"].keys())[0]],
-                        "No date."
-                        if not chapter["last_updated"]
-                        else self.date_parser(chapter["last_updated"]),
-                        chapter["volume"] or "Unknown",
-                    ]
-                    for chapter_number, chapter in sorted(
-                        chapter_dict.items(),
-                        key=lambda chapter_number: float(
-                            ".".join(str(chapter_number[0]).split(".")[:2])
-                            + "".join(str(chapter_number[0]).split(".")[2:])
-                        ),  # To get around weird chapter numbering like 21.15.1..
-                        reverse=True,
-                    )
+            chapter_list = [
+                [
+                    chapter_number,
+                    chapter_number,
+                    chapter["title"],
+                    chapter_number.replace(".", "-"),
+                    "Multiple Groups"
+                    if len(chapter["groups"]) > 1
+                    else groups_dict[list(chapter["groups"].keys())[0]],
+                    "No date."
+                    if not chapter["last_updated"]
+                    else self.date_parser(chapter["last_updated"]),
+                    chapter["volume"] or "Unknown",
                 ]
+                for chapter_number, chapter in sorted(
+                    chapter_dict.items(),
+                    key=lambda chapter_number: float(
+                        ".".join(str(chapter_number[0]).split(".")[:2])
+                        + "".join(str(chapter_number[0]).split(".")[2:])
+                    ),  # To get around weird chapter numbering like 21.15.1..
+                    reverse=True,
+                )
+            ]
 
             return {
                 "slug": meta_id,
