@@ -9,6 +9,9 @@ from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, encode, get_wrapper
 
+# Anubis bypass
+HEADERS = {"User-Agent": "cubari"}
+
 
 class NHentai(ProxySource):
     def cache_duration(self) -> int:
@@ -53,11 +56,11 @@ class NHentai(ProxySource):
     @api_cache(prefix="nh_series_common_dt", time=3600)
     def nh_api_common(self, meta_id):
         nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
-        resp = get_wrapper(nh_series_api, use_proxy=True)
+        resp = get_wrapper(nh_series_api, use_proxy=True, headers=HEADERS)
 
         if resp.status_code != 200:
             resp = get_wrapper(
-                f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
+                f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host", headers=HEADERS
             )
 
         if resp.status_code == 200:
