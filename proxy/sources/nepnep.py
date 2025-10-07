@@ -44,7 +44,7 @@ class NepNep(ProxySource):
     def get_slug_name_with_chapter_url(chapter_url):
         # An extra call here, can be optimised
         url = 'https://weebcentral.com/chapters/' + chapter_url.split("/")[-1]
-        resp = get_wrapper(url)
+        resp = get_wrapper(url, use_proxy=True)
         if resp.status_code == 200:
             pattern = r'\'series_id\'\s*:\s*\'([A-Z0-9]+)\''
             match = re.search(pattern, resp.text)
@@ -57,12 +57,12 @@ class NepNep(ProxySource):
         series_url = 'https://weebcentral.com/series/' + meta_id
         chapter_list_url = 'https://weebcentral.com/series/' + \
             meta_id + "/full-chapter-list"
-        series_resp = get_wrapper(series_url)
-        chapter_list_resp = get_wrapper(chapter_list_url)
+        series_resp = get_wrapper(series_url, use_proxy=True)
+        chapter_list_resp = get_wrapper(chapter_list_url, use_proxy=True)
         if chapter_list_resp.status_code != 200:
             chapter_list_url_fallback = 'https://weebcentral.com/series/' + \
                 meta_id + "/chapter-select?current_chapter=0&current_page=0"
-            chapter_list_resp = get_wrapper(chapter_list_url_fallback)
+            chapter_list_resp = get_wrapper(chapter_list_url_fallback, use_proxy=True)
             is_fallback_enabled = True
         if series_resp.status_code == 200 and chapter_list_resp.status_code == 200:
             series_resp_data = series_resp.text
@@ -180,7 +180,7 @@ class NepNep(ProxySource):
     def chapter_api_handler(self, meta_id):
         url = 'https://weebcentral.com/chapters/' + meta_id + \
             "/images?is_prev=False&current_page=1&reading_style=long_strip"
-        resp = get_wrapper(url)
+        resp = get_wrapper(url, use_proxy=True)
         images = []
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "html.parser")
