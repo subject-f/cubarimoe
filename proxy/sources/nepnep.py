@@ -187,7 +187,6 @@ class NepNep(ProxySource):
             images_elements = soup.select("img")
             for el in images_elements:
                 images.append(el.attrs["src"])
-            images = [self.wrap_image_url(image) + "&host=weebcentral.com" for image in images]
             return ChapterAPI(pages=images, series=meta_id, chapter="")
         else:
             return None
