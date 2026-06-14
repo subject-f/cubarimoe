@@ -4,6 +4,7 @@ import ast
 from datetime import datetime
 
 from bs4 import BeautifulSoup
+from bs4 import element
 from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import re_path
@@ -80,8 +81,8 @@ class MangaKatana(ProxySource):
                 description = "No description."
             try:
                 for _ in soup.find_all("div", class_="cover")[0].children:
-                    if(_.name == 'img'):
-                        cover = _['src']
+                    if isinstance(_, element.Tag):
+                        cover = _.find('img')['src']
             except AttributeError:
                 cover = ""
 

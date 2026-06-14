@@ -165,6 +165,8 @@ HOME_BRANDING_IMAGE_URL = "/static/cubari_logo.png"
 EXTERNAL_PROXY_URL = "https://services.f-ck.me"
 SECONDARY_PROXY_URL = os.environ.get("SECONDARY_PROXY_URL", EXTERNAL_PROXY_URL)
 
+EXTERNAL_REDLIB_URL = "https://reddit.hasuki.moe"
+
 PROXY_BASE_PATH = "read"
 
 METRICS_ENDPOINT = ""

@@ -1,17 +1,20 @@
+import html
 import re
-import json
 from datetime import datetime
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 from django.shortcuts import redirect
 from django.urls import re_path
+from django.conf import settings
 
 from ..source import ProxySource
 from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
-
 class Reddit(ProxySource):
+    REDLIB_BASE_URL = settings.EXTERNAL_REDLIB_URL
+
     def get_reader_prefix(self):
         return "reddit"
 
@@ -25,73 +28,145 @@ class Reddit(ProxySource):
             )
 
         return [
-            re_path(r"^(?:reddit|r/[a-zA-Z0-9_]+/comments)/(?P<meta_id>[\d\w]+)", handler),
+            re_path(
+                r"^(?:reddit|r/[a-zA-Z0-9_]+/comments)/(?P<meta_id>[\d\w]+)",
+                handler,
+            ),
             re_path(r"^(?:gallery)/(?P<meta_id>[\d\w]+)", handler),
         ]
 
     @staticmethod
     def image_url_handler(url):
-        # transform thumbnail link from https://preview.redd.it/media_id.ext?junk
-        #                           to https://i.redd.it/media_id.ext
-        return re.sub(r"\?.*", "", url.replace("preview.redd.it", "i.redd.it"))
+        url = html.unescape(url or "").strip()
+        if not url:
+            return ""
 
-    def reddit_gallery(self, meta_id):
+        parsed = urlparse(url)
+
+        if url.startswith("/preview/"):
+            filename = parsed.path.rstrip("/").split("/")[-1]
+            return f"https://i.redd.it/{filename}"
+
+        if parsed.path.startswith("/preview/"):
+            filename = parsed.path.rstrip("/").split("/")[-1]
+            return f"https://i.redd.it/{filename}"
+
+        url = re.sub(r"\?.*", "", url)
+        url = url.replace("preview.redd.it", "i.redd.it")
+
+        return url
+
+    @staticmethod
+    def _parse_redlib_date(date_str):
+        if not date_str:
+            return datetime.now()
+
+        date_str = date_str.strip()
+
+        for fmt in (
+            "%b %d %Y, %H:%M:%S UTC",
+            "%b %d %Y, %H:%M:%S",
+        ):
+            try:
+                return datetime.strptime(date_str, fmt)
+            except ValueError:
+                pass
+
+        return datetime.now()
+
+    def _redlib_post_url(self, meta_id):
+        return urljoin(self.REDLIB_BASE_URL.rstrip("/") + "/", f"{meta_id}/")
+
+    def _extract_original_url(self, soup, meta_id):
+        reddit_popup = soup.select_one("#reddit_url")
+        if reddit_popup:
+            text = reddit_popup.get_text(strip=True)
+            if text:
+                return text
+
+        reddit_link = soup.select_one('a[href*="reddit.com"]')
+        if reddit_link and reddit_link.get("href"):
+            return reddit_link["href"]
+
+        og_url = soup.select_one('meta[property="og:url"]')
+        if og_url and og_url.get("content"):
+            content = og_url["content"]
+            if content.startswith("http"):
+                return content
+            return f"https://www.reddit.com{content}"
+
+        permalink = soup.select_one(".post_footer a[href*='/comments/']")
+        if permalink and permalink.get("href"):
+            href = permalink["href"]
+            if href.startswith("http"):
+                return href
+            return f"https://www.reddit.com{href}"
+
+        return f"https://www.reddit.com/comments/{meta_id}"
+
+    def redlib_gallery(self, meta_id):
         resp = get_wrapper(
-            f"https://www.reddit.com/gallery/{meta_id}/",
-            allow_redirects=True,
-            use_proxy=True,
+            self._redlib_post_url(meta_id),
+            allow_redirects=True
         )
 
         if resp.status_code != 200:
-            raise ProxyException("Failed to retrieve data from reddit.")
-
+            raise ProxyException("Unable to fetch post.")
+        
         soup = BeautifulSoup(resp.text, "html.parser")
-        react_data = soup.find("script", {"id": "data"})
 
-        json_data_str = "{" + react_data.text.split("{", 1)[-1]
-        json_data = json.loads(json_data_str)
-        all_post_data = json_data.get("posts", {}).get("models", {})
-        post_metadata = [*all_post_data.values()][0]
+        post = soup.select_one("div.post.highlighted") or soup.select_one("div.post")
+        if not post:
+            raise ProxyException("Unable to fetch post.")
 
-        if post_metadata.get("media", {}).get("type") != "gallery":
+        gallery = post.select_one(".gallery")
+        if not gallery:
             raise ProxyException("Cubari only supports reddit galleries.")
 
-        title = post_metadata.get("title", "Couldn't find title")
-        description = f"No description."  # No real description, unfortunately
-        author = post_metadata.get("author", "Unknown")
-        original_url = f"https://reddit.com/gallery/{meta_id}"
-        date = datetime.fromtimestamp(post_metadata.get("created", 0) / 1000)
+        images = []
+        for link in gallery.select("figure a[href]"):
+            image_url = self.image_url_handler(link.get("href"))
+            if image_url.startswith("https://i.redd.it/"):
+                images.append(image_url)
 
-        post_media = post_metadata.get("media", {})
-
-        gallery_images = [
-            item["mediaId"] for item in post_media.get("gallery", {}).get("items", [])
-        ]
-
-        preview_images = [
-            post_media.get("mediaMetadata", {}).get(i, {}).get("s", {}).get("u", "")
-            for i in gallery_images
-        ]
-
-        # The preview URL is signed, so let's unsign it by doing software crimes
-        def image_unsigner(img: str):
-            raw_url = img.split("?")[0]
-            media_id = raw_url.split("-")[-1]
-
-            if media_id.startswith("http"):
-                return media_id.replace("preview.redd.it", "i.redd.it")
-            else:
-                return f"https://i.redd.it/{media_id}"
-
-        images = [image_unsigner(img) for img in preview_images]
+        images = list(dict.fromkeys(images))
 
         if not images:
             raise ProxyException("Couldn't parse out any images from the gallery.")
 
+        title_el = post.select_one(".post_title")
+        title_meta = soup.select_one('meta[name="title"], meta[property="og:title"]')
+
+        if title_el:
+            title = title_el.contents[-1].strip()
+        elif title_meta and title_meta.get("content"):
+            title = title_meta["content"].strip()
+        else:
+            title = "No Title."
+
+        author_el = post.select_one(".post_author")
+        author_meta = soup.select_one('meta[name="author"]')
+
+        if author_el:
+            author = author_el.get_text(" ", strip=True)
+        elif author_meta and author_meta.get("content"):
+            author = author_meta["content"].strip()
+        else:
+            author = "N/A"
+
+        author = author.removeprefix("u/")
+
+        created_el = post.select_one(".created[title]")
+        date = self._parse_redlib_date(
+            created_el.get("title") if created_el else None
+        )
+
+        original_url = self._extract_original_url(soup, meta_id)
+
         return {
             "slug": meta_id,
             "title": title,
-            "description": description,
+            "description": "No description.",
             "author": author,
             "artist": "Unknown",
             "cover": images[0],
@@ -126,91 +201,12 @@ class Reddit(ProxySource):
         }
 
     def reddit_api(self, meta_id):
-        resp = get_wrapper(
-            f"https://old.reddit.com/{meta_id}.json",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-            },
-            allow_redirects=True,
-            use_proxy=True,
-        )
+        return self.redlib_gallery(meta_id)
 
-        if resp.status_code != 200:
-            raise ProxyException("The reddit API didn't return properly.")
-
-        api_data = resp.json()
-        try:
-            if isinstance(api_data, list):
-                api_data = api_data[0]["data"]["children"][0]["data"]
-            else:
-                api_data = api_data["data"]["children"][0]["data"]
-        except (ValueError, TypeError):
-            raise ProxyException(f"Failed to deserialize reddit response.")
-
-        if (
-            "is_gallery" not in api_data
-            or not api_data["is_gallery"]
-            or api_data["removed_by_category"] != None
-        ):
-            raise ProxyException("This reddit link doesn't resolve to a gallery.")
-
-        try:
-            date = datetime.utcfromtimestamp(api_data["created"])
-        except ValueError:
-            date = datetime.now()
-
-        images = []
-        for image in api_data["gallery_data"]["items"]:
-            metadata = api_data["media_metadata"][image["media_id"]]
-            if metadata["status"] != "valid" or metadata["e"] != "Image":
-                continue
-            url = self.image_url_handler(metadata["s"]["u"])
-            images.append(url)
-        if not images:
-            raise ProxyException("Couldn't find any images.")
-
-        return {
-            "slug": meta_id,
-            "title": api_data["title"],
-            "description": "No description",
-            "author": "Unknown",
-            "artist": "Unknown",
-            "cover": images[0],
-            "groups": {"1": "Reddit"},
-            "chapter_dict": {
-                "1": {
-                    "volume": "1",
-                    "title": api_data["title"],
-                    "groups": {"1": images},
-                }
-            },
-            "chapter_list": [
-                [
-                    "1",
-                    "1",
-                    api_data["title"],
-                    "1",
-                    "No group",
-                    [
-                        date.year,
-                        date.month - 1,
-                        date.day,
-                        date.hour,
-                        date.minute,
-                        date.second,
-                    ],
-                    "1",
-                ],
-            ],
-            "pages_list": images,
-            "original_url": f"https://www.reddit.com{api_data['permalink']}",
-        }
-
-    @api_cache(prefix="reddit_series_dt", time=300)
+    @api_cache(prefix="reddit_series_dt", time=3600)
     def series_api_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.redlib_gallery(meta_id)
+
         return (
             SeriesAPI(
                 slug=data["slug"],
@@ -226,20 +222,24 @@ class Reddit(ProxySource):
             else None
         )
 
-    @api_cache(prefix="reddit_pages_dt", time=300)
+    @api_cache(prefix="reddit_pages_dt", time=3600)
     def chapter_api_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.redlib_gallery(meta_id)
+
         return (
             ChapterAPI(
-                pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
+                pages=data["pages_list"],
+                series=data["slug"],
+                chapter="1",
             )
             if data
             else None
         )
 
-    @api_cache(prefix="reddit_series_page_dt", time=300)
+    @api_cache(prefix="reddit_series_page_dt", time=3600)
     def series_page_handler(self, meta_id):
-        data = self.reddit_api(meta_id)
+        data = self.redlib_gallery(meta_id)
+
         return (
             SeriesPage(
                 series=data["title"],
