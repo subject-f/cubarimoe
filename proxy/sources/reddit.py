@@ -154,7 +154,8 @@ class Reddit(ProxySource):
         else:
             author = "N/A"
 
-        author = author.removeprefix("u/")
+        username_prefix = "u/"
+        author = author[author.startswith(username_prefix) and len(username_prefix):]
 
         created_el = post.select_one(".created[title]")
         date = self._parse_redlib_date(
