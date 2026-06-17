@@ -410,7 +410,7 @@ class MangaDex(ProxySource):
                 chapter_data = res["res"].json()
 
         pages = [
-            f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"
+            self.wrap_image_url(f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}")
             for page in at_home_data["chapter"]["data"]
         ]
         series = None
