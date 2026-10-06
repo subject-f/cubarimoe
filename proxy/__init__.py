@@ -21,7 +21,7 @@ sources = [
     MangaDex(),
     NHentai(),
     # FoolSlide(),
-    MangAdventure(),
+    # MangAdventure(),
     ReadManhwa(),
     Imgur(),
     # MangaBox(),

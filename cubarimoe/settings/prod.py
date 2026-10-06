@@ -66,6 +66,9 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": "127.0.0.1:11211",
+        # Treat an unreachable memcached as a cache miss (python-memcached's behaviour)
+        # instead of failing every request.
+        "OPTIONS": {"ignore_exc": True},
     }
 }
 
