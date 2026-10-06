@@ -30,27 +30,39 @@ class MangaDex(ProxySource):
         return "mangadex"
 
     def shortcut_instantiator(self):
-        async def legacy_mapper(series_id):
+        async def legacy_mapper(legacy_id, kind="manga"):
+            """Translate a pre-v5 numeric MangaDex ID to its UUID; UUIDs pass through."""
             try:
-                series_id = int(series_id)
-                resp = await post_wrapper(
-                    f"https://api.mangadex.org/legacy/mapping",
-                    json={"type": "manga", "ids": [series_id]},
-                    headers=HEADERS_COMMON,
-                    use_proxy=True,
-                )
-                if resp.status_code != 200:
-                    raise Exception("Failed to translate ID.")
-                return resp.json()["data"][0]["attributes"]["newId"]
+                legacy_id = int(legacy_id)
             except ValueError:
-                return series_id
+                return legacy_id
+            # The CORS proxy drops POST bodies ("premature close"), so try directly first.
+            for use_proxy in (False, True):
+                resp = await post_wrapper(
+                    "https://api.mangadex.org/legacy/mapping",
+                    json={"type": kind, "ids": [legacy_id]},
+                    headers=HEADERS_COMMON,
+                    use_proxy=use_proxy,
+                )
+                if resp.status_code == 200:
+                    mapping = resp.json()["data"]
+                    if not mapping:
+                        raise ProxyNotFound(f"No MangaDex {kind} has the old ID {legacy_id}.")
+                    return mapping[0]["attributes"]["newId"]
+            raise ProxyException("Failed to translate the old MangaDex ID.")
 
         async def series(request, series_id):
-            series_id = await legacy_mapper(series_id)
+            try:
+                series_id = await legacy_mapper(series_id)
+            except ProxyException as e:
+                return self._processing_error(request, e)
             return redirect(f"reader-{self.get_reader_prefix()}-series-page", series_id)
 
         async def series_chapter(request, series_id, chapter, page="1"):
-            series_id = await legacy_mapper(series_id)
+            try:
+                series_id = await legacy_mapper(series_id)
+            except ProxyException as e:
+                return self._processing_error(request, e)
             return redirect(
                 f"reader-{self.get_reader_prefix()}-chapter-page",
                 series_id,
@@ -59,7 +71,11 @@ class MangaDex(ProxySource):
             )
 
         async def chapter(request, chapter_id, page="1"):
-            data = await self.chapter_api_handler(chapter_id)
+            try:
+                chapter_id = await legacy_mapper(chapter_id, kind="chapter")
+                data = await self.chapter_api_handler(chapter_id)
+            except ProxyException as e:
+                return self._processing_error(request, e)
             if data:
                 data = data.objectify()
                 return redirect(
