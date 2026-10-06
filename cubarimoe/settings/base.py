@@ -59,7 +59,6 @@ CACHES = {
 }
 
 MIDDLEWARE = [
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -94,6 +93,7 @@ TEMPLATES = [
     },
 ]
 
+WSGI_APPLICATION = "cubarimoe.wsgi.application"
 ASGI_APPLICATION = "cubarimoe.asgi.application"
 
 
@@ -115,15 +115,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
 ]
 
 
@@ -135,8 +129,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 
@@ -169,9 +161,13 @@ HOME_BRANDING_DESCRIPTION = BRANDING_DESCRIPTION
 HOME_BRANDING_IMAGE_URL = "/static/cubari_logo.png"
 
 EXTERNAL_PROXY_URL = "https://services.f-ck.me"
+SECONDARY_PROXY_URL = os.environ.get("SECONDARY_PROXY_URL", EXTERNAL_PROXY_URL)
+
+EXTERNAL_REDLIB_URL = "https://reddit.hasuki.moe"
 
 PROXY_BASE_PATH = "read"
 
 METRICS_ENDPOINT = ""
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# Keep 32-bit primary keys; BigAutoField would generate migrations for every existing table.
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

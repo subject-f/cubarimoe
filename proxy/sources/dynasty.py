@@ -22,6 +22,7 @@ class Dynasty(ProxySource):
             if "/chapters/" in raw_url:
                 slug_name = self.get_slug_name(self.normalize_slug(raw_url))
                 canonical_chapter = self.parse_chapter(raw_url)
+                print(slug_name, canonical_chapter)
                 return redirect(
                     f"reader-{self.get_reader_prefix()}-chapter-page",
                     slug_name,
@@ -61,8 +62,8 @@ class Dynasty(ProxySource):
         base_url = "https://dynasty-scans.com"
         series_url = "https://dynasty-scans.com/series/" + meta_id
         resp = await get_wrapper(series_url)
-        if resp.status == 200:
-            data = await resp.text()
+        if resp.status_code == 200:
+            data = resp.text
             soup = BeautifulSoup(data, "html.parser")
             try:
                 title = soup.find("h2").find("b").contents[0]
@@ -163,8 +164,8 @@ class Dynasty(ProxySource):
         base_url = "https://dynasty-scans.com"
         chapter_url = "https://dynasty-scans.com/chapters/" + meta_id
         resp = await get_wrapper(chapter_url)
-        if resp.status == 200:
-            data = await resp.text()
+        if resp.status_code == 200:
+            data = resp.text
             try:
                 m = re.search(r"pages\s?=\s?.+\;", data)
                 arr = str(m.group(0)).split()[2].strip(";")

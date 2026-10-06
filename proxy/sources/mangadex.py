@@ -1,5 +1,4 @@
 import asyncio
-from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 import html
 from typing import Dict, Optional, Union
@@ -40,9 +39,9 @@ class MangaDex(ProxySource):
                     headers=HEADERS_COMMON,
                     use_proxy=True,
                 )
-                if resp.status != 200:
+                if resp.status_code != 200:
                     raise Exception("Failed to translate ID.")
-                return (await resp.json())["data"][0]["attributes"]["newId"]
+                return resp.json()["data"][0]["attributes"]["newId"]
             except ValueError:
                 return series_id
 
@@ -59,8 +58,8 @@ class MangaDex(ProxySource):
                 page,
             )
 
-        def chapter(request, chapter_id, page="1"):
-            data = self.chapter_api_handler(chapter_id)
+        async def chapter(request, chapter_id, page="1"):
+            data = await self.chapter_api_handler(chapter_id)
             if data:
                 data = data.objectify()
                 return redirect(
@@ -136,16 +135,17 @@ class MangaDex(ProxySource):
     async def md_api_common(self, meta_id):
         current_offset = 0
 
-        async def fetch_task(req):
-            resp = await get_wrapper(req["url"], headers=HEADERS_COMMON, use_proxy=True)
+        async def fetch(req):
             return {
                 "type": req["type"],
-                "res": resp,
+                "res": await get_wrapper(
+                    req["url"], headers=HEADERS_COMMON, use_proxy=True
+                ),
             }
 
         result = await asyncio.gather(
             *map(
-                lambda req: fetch_task(req),
+                fetch,
                 [
                     {
                         "type": "main",
@@ -163,14 +163,14 @@ class MangaDex(ProxySource):
         chapter_data = None
 
         for res in result:
-            if res["res"].status != 200:
+            if res["res"].status_code != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
                 )
             if res["type"] == "main":
-                main_data = await res["res"].json()
+                main_data = res["res"].json()
             elif res["type"] == "chapter":
-                chapter_data = await res["res"].json()
+                chapter_data = res["res"].json()
 
         current_offset = 500
         if "total" in chapter_data and current_offset < chapter_data["total"]:
@@ -181,19 +181,18 @@ class MangaDex(ProxySource):
                 )
                 current_offset = current_offset + 500
 
-                results = await asyncio.gather(
-                    *map(
-                        lambda url: get_wrapper(
-                            url=url,
-                            headers=HEADERS_COMMON,
-                            use_proxy=True,
-                        ),
-                        unfetched_urls,
+            results = await asyncio.gather(
+                *(
+                    get_wrapper(
+                        url=url,
+                        headers=HEADERS_COMMON,
+                        use_proxy=True,
                     )
+                    for url in unfetched_urls
                 )
-
+            )
             for result in results:
-                result_json = await result.json()
+                result_json = result.json()
                 chapter_data["data"].extend(result_json["data"])
 
         groups_set = {
@@ -219,10 +218,12 @@ class MangaDex(ProxySource):
             groups_api_url = f"https://api.mangadex.org/group?limit=100"
             for group in remaining_groups:
                 groups_api_url += f"&ids[]={group}"
-            groups_resp = await get_wrapper(groups_api_url, headers=HEADERS_COMMON)
-            if groups_resp.status != 200:
+            groups_resp = await get_wrapper(
+                groups_api_url, headers=HEADERS_COMMON
+            )
+            if groups_resp.status_code != 200:
                 return
-            for result in (await groups_resp.json())["data"]:
+            for result in groups_resp.json()["data"]:
                 group_id = result["id"]
                 group_name = result["attributes"]["name"]
                 resolved_groups_map[group_id] = group_name
@@ -382,7 +383,7 @@ class MangaDex(ProxySource):
         at_home: str = "at-home"
         chapter: str = "chapter"
 
-        async def fetch_task(req):
+        async def fetch(req):
             return {
                 "type": req["type"],
                 "res": await get_wrapper(
@@ -392,7 +393,7 @@ class MangaDex(ProxySource):
 
         result = await asyncio.gather(
             *map(
-                lambda req: fetch_task(req),
+                fetch,
                 [
                     {
                         "type": at_home,
@@ -409,17 +410,17 @@ class MangaDex(ProxySource):
         at_home_data: Optional[Dict[str, str]] = None
         chapter_data: Optional[Dict[str, str]] = None
         for res in result:
-            if res["res"].status != 200:
+            if res["res"].status_code != 200:
                 raise ProxyException(
-                    f"The MangaDex API failed to load. Got status code: {res['res'].status}"
+                    f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
                 )
             if res["type"] == at_home:
-                at_home_data = await res["res"].json()
+                at_home_data = res["res"].json()
             elif res["type"] == chapter:
-                chapter_data = await res["res"].json()
+                chapter_data = res["res"].json()
 
         pages = [
-            f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}"
+            self.wrap_image_url(f"{at_home_data['baseUrl']}/data/{at_home_data['chapter']['hash']}/{page}")
             for page in at_home_data["chapter"]["data"]
         ]
         series = None

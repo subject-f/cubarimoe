@@ -1,6 +1,5 @@
 import asyncio
 import json
-from concurrent import futures
 from datetime import datetime
 
 from django.shortcuts import redirect
@@ -34,7 +33,7 @@ class ReadManhwa(ProxySource):
                         page,
                     )
             else:
-                return chapter_handler(request, series_slug, chapter_slug, "1")
+                return await chapter_handler(request, series_slug, chapter_slug, "1")
 
         def series_handler(request, series_slug):
             return redirect(
@@ -59,17 +58,17 @@ class ReadManhwa(ProxySource):
 
     @api_cache(prefix="readmanhwa_series_dt", time=600)
     async def series_api_handler(self, meta_id):
-        async def fetch_task(req):
+        async def fetch(req):
             return {
                 "type": req["type"],
                 "res": await get_wrapper(
-                    req["url"], headers={"X-NSFW": "true"}, use_proxy=True
+                    req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
                 ),
             }
 
         result = await asyncio.gather(
             *map(
-                lambda req: fetch_task(req),
+                fetch,
                 [
                     {
                         "type": "main",
@@ -93,8 +92,8 @@ class ReadManhwa(ProxySource):
 
         for res in result:
             resp = res["res"]
-            if resp.status == 200:
-                api_data = json.loads(await resp.text())
+            if resp.status_code == 200:
+                api_data = json.loads(resp.text)
                 if res["type"] == "main":
                     slug = api_data["slug"]
                     title = api_data["title"]
@@ -143,8 +142,8 @@ class ReadManhwa(ProxySource):
             headers={"X-NSFW": "true"},
             params={"nsfw": "true"},
         )
-        if resp.status == 200:
-            api_data = json.loads(await resp.text())
+        if resp.status_code == 200:
+            api_data = json.loads(resp.text)
             series, chapter = decode(meta_id).split("/")
             return ChapterAPI(
                 pages=[page["source_url"] for page in api_data["images"]],
@@ -156,17 +155,17 @@ class ReadManhwa(ProxySource):
 
     @api_cache(prefix="readmanhwa_series_page_dt", time=600)
     async def series_page_handler(self, meta_id):
-        async def fetch_task(req):
+        async def fetch(req):
             return {
                 "type": req["type"],
                 "res": await get_wrapper(
-                    req["url"], headers={"X-NSFW": "true"}, use_proxy=True
+                    req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
                 ),
             }
 
         result = await asyncio.gather(
             *map(
-                lambda req: fetch_task(req),
+                fetch,
                 [
                     {
                         "type": "main",
@@ -192,8 +191,8 @@ class ReadManhwa(ProxySource):
 
         for res in result:
             resp = res["res"]
-            if resp.status == 200:
-                api_data = json.loads(await resp.text())
+            if resp.status_code == 200:
+                api_data = json.loads(resp.text)
                 if res["type"] == "main":
                     series = api_data["title"]
                     alt_titles = (

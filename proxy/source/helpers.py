@@ -1,13 +1,13 @@
 import asyncio
 import base64
 
-
 from django.core.cache import cache
 from django.conf import settings
 from urllib.parse import urlparse
-from .data import ProxyException
 import aiohttp
-from .session import Session
+
+from .data import ProxyException
+from .session import ProxyResponse, get_session
 
 ENCODE_STR_SLASH = "%FF-"
 ENCODE_STR_QUESTION = "%DE-"
@@ -17,7 +17,8 @@ GLOBAL_HEADERS = {
 }
 PROXY = "https://cubari-cors.herokuapp.com/"
 
-REQUEST_TIMEOUT = 8
+# Mirrors the old requests `timeout=8` (per connect / per read), with an overall cap.
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30, connect=8, sock_read=8)
 SENSOR_TIMEOUT_PREFIX = "timeout_sensor/"
 SENSOR_TIMEOUT_TTL = 10 * 60  # 10 minute timeout on automatic suspension.
 SENSOR_TIMEOUT_MAX_FAILURES = (
@@ -55,8 +56,7 @@ async def sensored_request_handler(req_handler, original_url):
 
     try:
         return await req_handler()
-
-    except asyncio.exceptions.TimeoutError:
+    except asyncio.TimeoutError:
         # This isn't atomic, but rather a "best-effort" guard on the number of failures
         cache.set(
             sensor_cache_key, cache.get(sensor_cache_key, 0) + 1, SENSOR_TIMEOUT_TTL
@@ -64,55 +64,36 @@ async def sensored_request_handler(req_handler, original_url):
         raise ProxyException("Downstream server timed out. Please try again.")
 
 
-async def get_wrapper(url, *, headers={}, use_proxy=False, **kwargs):
+async def _request(method, url, *, headers, use_proxy, secondary, **kwargs):
+    base = settings.EXTERNAL_PROXY_URL if not secondary else settings.SECONDARY_PROXY_URL
     request_url = (
-        f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
+        f"{base}/v1/cors/{encode(url)}?source=cubari_host"
         if use_proxy
         else url
     )
 
-    async def get_handler(request_url, headers, timeout, **kwargs):
-        session = Session.get_session()
-        async with session.get(
-            request_url, headers=headers, timeout=timeout, **kwargs
-        ) as response:
-            await response.read()
-        return response
-
-    return await sensored_request_handler(
-        lambda: get_handler(
+    async def handler():
+        async with get_session().request(
+            method,
             request_url,
             headers={**GLOBAL_HEADERS, **headers},
             timeout=REQUEST_TIMEOUT,
             **kwargs,
-        ),
-        url,
+        ) as resp:
+            return ProxyResponse(resp, await resp.read())
+
+    return await sensored_request_handler(handler, url)
+
+
+async def get_wrapper(url, *, headers={}, use_proxy=False, secondary=False, **kwargs):
+    return await _request(
+        "GET", url, headers=headers, use_proxy=use_proxy, secondary=secondary, **kwargs
     )
 
 
 async def post_wrapper(url, headers={}, use_proxy=False, **kwargs):
-    request_url = (
-        f"{settings.EXTERNAL_PROXY_URL}/v1/cors/{encode(url)}?source=cubari_host"
-        if use_proxy
-        else url
-    )
-
-    async def post_handler(request_url, headers, timeout, **kwargs):
-        session = Session.get_session()
-        async with session.post(
-            request_url, headers=headers, timeout=timeout, **kwargs
-        ) as response:
-            await response.read()
-        return response
-
-    return await sensored_request_handler(
-        lambda: post_handler(
-            request_url,
-            headers={**GLOBAL_HEADERS, **headers},
-            timeout=REQUEST_TIMEOUT,
-            **kwargs,
-        ),
-        url,
+    return await _request(
+        "POST", url, headers=headers, use_proxy=use_proxy, secondary=False, **kwargs
     )
 
 

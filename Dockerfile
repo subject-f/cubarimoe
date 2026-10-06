@@ -1,5 +1,5 @@
-FROM python:3.10-slim
- 
+FROM python:3.12-slim
+
 RUN mkdir cubarimoe
 COPY . /cubarimoe/
 WORKDIR /cubarimoe
@@ -17,7 +17,6 @@ RUN apt-get update && \
 RUN pip install --upgrade pip
 
 RUN pip install -r requirements.txt
-RUN pip install uvicorn gunicorn
 RUN mkdir static
 RUN python manage.py collectstatic --no-input
 
@@ -33,4 +32,4 @@ ENV PYTHONUNBUFFERED 1
 
 EXPOSE 8000
 
-CMD ["gunicorn","--bind", ":8000", "cubarimoe.asgi:application", "-w", "4", "-k", "uvicorn.workers.UvicornWorker"]
+CMD ["gunicorn","--bind", ":8000", "cubarimoe.asgi:application", "-w", "4", "-k", "uvicorn_worker.UvicornWorker"]

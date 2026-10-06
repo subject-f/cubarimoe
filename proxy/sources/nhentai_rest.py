@@ -9,6 +9,12 @@ from ..source import ProxySource
 from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, encode, get_wrapper
 
+import logging as log
+
+log.basicConfig(
+    level=log.INFO,
+    format="%(levelname)s: %(message)s"
+)
 
 class NHentai(ProxySource):
     def cache_duration(self) -> int:
@@ -52,13 +58,15 @@ class NHentai(ProxySource):
 
     @api_cache(prefix="nh_series_common_dt", time=3600)
     async def nh_api_common(self, meta_id):
-        nh_series_api = f"https://nhentai.net/api/gallery/{meta_id}"
-        resp = await get_wrapper(nh_series_api, use_proxy=True)
+        nh_series_api = f"https://nhentai.net/api/v2/galleries/{meta_id}"
+        resp = await get_wrapper(nh_series_api, use_proxy=False, secondary=True)
 
         if resp.status_code != 200:
             resp = await get_wrapper(
                 f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
             )
+
+        log.info(f"Got {resp=} for {nh_series_api}")
 
         if resp.status_code == 200:
             data = resp.text
@@ -77,20 +85,11 @@ class NHentai(ProxySource):
                     lang_list.append(tag["name"])
                 elif tag["type"] == "tag":
                     tag_list.append(tag["name"])
-
             pages_list = []
-            for p, t in enumerate(api_data["images"]["pages"]):
-                file_format = "jpg"
-                if t["t"] == "p":
-                    file_format = "png"
-                if t["t"] == "g":
-                    file_format = "gif"
-                if t["t"] == "w":
-                    file_format = "webp"
+            for p, t in enumerate(api_data["pages"]):
                 pages_list.append(
-                    f"https://i2.nhentai.net/galleries/{api_data['media_id']}/{p + 1}.{file_format}"
+                    f"https://i3.nhentai.net/{t['path']}"
                 )
-
             groups_dict = {"1": group or "N-Hentai"}
             chapters_dict = {
                 "1": {
@@ -100,8 +99,7 @@ class NHentai(ProxySource):
                     "groups": {"1": pages_list},
                 }
             }
-
-            return {
+            final = {
                 "slug": meta_id,
                 "title": api_data["title"]["pretty"] or api_data["title"]["english"],
                 "description": api_data["title"]["english"],
@@ -111,9 +109,11 @@ class NHentai(ProxySource):
                 "tags": tag_list,
                 "lang": ", ".join(lang_list),
                 "chapters": chapters_dict,
-                "cover": f"https://t2.nhentai.net/galleries/{api_data['media_id']}/cover.{'jpg' if api_data['images']['cover']['t'] == 'j' else 'png'}",
+                "cover": f"https://t2.nhentai.net/{api_data['cover']['path']}",
                 "timestamp": api_data["upload_date"],
             }
+
+            return final
         else:
             return None
 

@@ -44,10 +44,11 @@ class Imgur(ProxySource):
         else:
             resp = await get_wrapper(
                 f"https://api.imgur.com/3/album/{meta_id}",
+                use_proxy=True,
                 headers={"Authorization": f"Client-ID {settings.IMGUR_CLIENT_ID}"},
             )
-            if resp.status == 200:
-                api_data = (await resp.json())["data"]
+            if resp.status_code == 200:
+                api_data = resp.json()["data"]
                 date = datetime.utcfromtimestamp(api_data["datetime"])
                 return {
                     "slug": meta_id,
@@ -144,15 +145,15 @@ class Imgur(ProxySource):
                 f"https://imgur.com/a/{meta_id}/embed?cache_buster={random.random()}"
             )
             resp = await get_wrapper(request_url)
-            if resp.status != 200:
+            if resp.status_code != 200:
                 resp = await get_wrapper(
                     request_url,
                     use_proxy=True,
+                    secondary=True
                 )
-            if resp.status == 200:
+            if resp.status_code == 200:
                 data = re.search(
-                    r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)",
-                    await resp.text(),
+                    r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)", resp.text
                 )
                 api_data = json.loads(data.group(1))
                 try:

@@ -1,10 +1,11 @@
 # from .sources.foolslide import FoolSlide
+import imp
 from proxy.sources.dynasty import Dynasty
 from .sources.imgbb import Imgbb
 from .sources.imgur import Imgur
 # from .sources.mangabox import MangaBox
 from .sources.mangadex import MangaDex
-from .sources.nhentai import NHentai
+from .sources.nhentai_rest import NHentai
 from .sources.readmanhwa import ReadManhwa
 # from .sources.hitomi import Hitomi
 from .sources.gist import Gist

@@ -1,20 +1,18 @@
+import json
+
 from typing import List, Optional, Dict
 
 from bs4 import BeautifulSoup
 from django.shortcuts import redirect
 from django.urls import re_path
 
-from proxy.source import (
-    ProxySource,
-    SeriesPage,
-    ChapterAPI,
-    SeriesAPI,
-    api_cache,
-    get_wrapper,
-)
+from proxy.source import ProxySource, SeriesPage, ChapterAPI, SeriesAPI, api_cache, get_wrapper
 
 
 class ImageChest(ProxySource):
+    @staticmethod
+    def image_url_handler(m): return m["link"] + "?_w." if m.get("width", 0) > m.get("height", 0) else m["link"]
+
     def get_reader_prefix(self) -> str:
         return "imgchest"
 
@@ -30,20 +28,18 @@ class ImageChest(ProxySource):
         url = f"https://imgchest.com/p/{meta_id}"
 
         resp = await get_wrapper(url)
-        if resp.status != 200:
+        if resp.status_code != 200:
             return None
 
-        soup = BeautifulSoup(await resp.text(), "html.parser")
-        page_elements = soup.find_all("meta", attrs={"name": "twitter:image"})
-        pages = [page["content"] for page in page_elements]
+        soup = BeautifulSoup(resp.text, "html.parser")
+        page_metadata = soup.find("div", attrs={"id": "app"})
+        page_data = json.loads(page_metadata.attrs["data-page"])
+        post_data = page_data.get("props", {}).get("post", {})
 
-        if pages.count(None) == len(pages):
-            # Could not retrieve content attribute from any image element.
-            return None
+        files = post_data.get("files", [])
 
-        title = (
-            soup.find("meta", property="og:title").get("content", "No title").strip()
-        )
+        pages = [self.image_url_handler(page) for page in files]
+        title = post_data.get("title", "No title")
 
         return {
             "slug": meta_id,
@@ -86,14 +82,16 @@ class ImageChest(ProxySource):
             artist=data["artist"],
             groups=data["groups"],
             cover=data["cover"],
-            chapters=data["chapter_dict"],
+            chapters=data["chapter_dict"]
         )
 
     @api_cache(prefix="imgchest_pages_dt", time=300)
     async def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
         data = await self.imgchest_common(meta_id)
         return data and ChapterAPI(
-            pages=data["pages_list"], series=data["slug"], chapter=data["slug"]
+            pages=data["pages_list"],
+            series=data["slug"],
+            chapter=data["slug"]
         )
 
     @api_cache(prefix="imgchest_series_page_dt", time=300)
@@ -109,5 +107,5 @@ class ImageChest(ProxySource):
             synopsis=data["description"],
             author=data["author"],
             chapter_list=data["chapter_list"],
-            original_url=data["original_url"],
+            original_url=data["original_url"]
         )

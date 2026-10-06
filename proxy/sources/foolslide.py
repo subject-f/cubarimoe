@@ -1,7 +1,7 @@
-import asyncio
 import json
 import re
 
+import aiohttp
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -85,15 +85,11 @@ class FoolSlide(ProxySource):
 
     async def fs_scrape_common(self, meta_id):
         try:
-            resp = await post_wrapper(
-                f"https://{decode(meta_id)}/", data={"adult": "true"}
-            )
-        except asyncio.exceptions.TimeoutError:
-            resp = await post_wrapper(
-                f"http://{decode(meta_id)}/", data={"adult": "true"}
-            )
-        if resp.status == 200:
-            data = await resp.text()
+            resp = await post_wrapper(f"https://{decode(meta_id)}/", data={"adult": "true"})
+        except aiohttp.ClientConnectionError:
+            resp = await post_wrapper(f"http://{decode(meta_id)}/", data={"adult": "true"})
+        if resp.status_code == 200:
+            data = resp.text
             soup = BeautifulSoup(data, "html.parser")
 
             comic_info = soup.find("div", class_="large comic")
@@ -205,8 +201,8 @@ class FoolSlide(ProxySource):
     @api_cache(prefix="fs_chapter_dt", time=3600)
     async def chapter_api_handler(self, meta_id):
         resp = await get_wrapper(decode(meta_id))
-        if resp.status == 200:
-            data = json.loads(await resp.text())
+        if resp.status_code == 200:
+            data = json.loads(resp.text)
             return ChapterAPI(
                 pages=[e["url"] for e in data["pages"]], series=meta_id, chapter=""
             )
