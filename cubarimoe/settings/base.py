@@ -142,7 +142,7 @@ STATICFILES_DIRS = [
 
 STATIC_VERSION = "?v=" + subprocess.check_output(
     ["git", "-C", str(BASE_DIR), "rev-parse", "--short", "HEAD"], text=True
-)
+).strip()
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
