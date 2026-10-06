@@ -107,7 +107,9 @@ class Reddit(ProxySource):
     async def redlib_gallery(self, meta_id):
         resp = await get_wrapper(
             self._redlib_post_url(meta_id),
-            allow_redirects=True
+            allow_redirects=True,
+            # redlib hides NSFW posts ("NSFW content gated", 403) unless asked to show them.
+            headers={"Cookie": "show_nsfw=on"},
         )
 
         if resp.status_code == 404:
@@ -139,8 +141,14 @@ class Reddit(ProxySource):
         title_el = post.select_one(".post_title")
         title_meta = soup.select_one('meta[name="title"], meta[property="og:title"]')
 
-        if title_el:
-            title = title_el.contents[-1].strip()
+        # The title is the element's own text: skip the flair link and the NSFW tag.
+        title_texts = [
+            text.strip()
+            for text in (title_el.find_all(string=True, recursive=False) if title_el else [])
+            if text.strip()
+        ]
+        if title_texts:
+            title = title_texts[-1]
         elif title_meta and title_meta.get("content"):
             title = title_meta["content"].strip()
         else:
