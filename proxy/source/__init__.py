@@ -93,6 +93,21 @@ class ProxySource(metaclass=abc.ABCMeta):
             f"{settings.EXTERNAL_PROXY_URL}/v1/image/{encode(url)}?source=cubari_host"
         )
 
+    @staticmethod
+    def _equivalent_chapter(chapter, chapters):
+        """Find the chapter key numerically equal to `chapter` (e.g. "4" for key "04")."""
+        try:
+            wanted = float(chapter)
+        except ValueError:
+            return None
+        for key in chapters:
+            try:
+                if float(key) == wanted:
+                    return key
+            except ValueError:
+                continue
+        return None
+
     async def reader_view(self, request, meta_id, chapter, page=None):
         if page:
             try:
@@ -117,6 +132,19 @@ class ProxySource(metaclass=abc.ABCMeta):
                     return self._cached_response(
                         request,
                         lambda request: render(request, "reader/reader.html", data),
+                    )
+                equivalent = self._equivalent_chapter(
+                    chapter.replace("-", "."), data["chapters"]
+                )
+                if equivalent is not None:
+                    return self._cached_response(
+                        request,
+                        lambda request: redirect(
+                            f"reader-{self.get_reader_prefix()}-chapter-page",
+                            meta_id,
+                            equivalent.replace(".", "-"),
+                            page,
+                        ),
                     )
             return self._api_error(request)
         else:
