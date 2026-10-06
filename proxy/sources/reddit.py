@@ -104,8 +104,8 @@ class Reddit(ProxySource):
 
         return f"https://www.reddit.com/comments/{meta_id}"
 
-    def redlib_gallery(self, meta_id):
-        resp = get_wrapper(
+    async def redlib_gallery(self, meta_id):
+        resp = await get_wrapper(
             self._redlib_post_url(meta_id),
             allow_redirects=True
         )
@@ -201,12 +201,12 @@ class Reddit(ProxySource):
             "original_url": original_url,
         }
 
-    def reddit_api(self, meta_id):
-        return self.redlib_gallery(meta_id)
+    async def reddit_api(self, meta_id):
+        return await self.redlib_gallery(meta_id)
 
     @api_cache(prefix="reddit_series_dt", time=3600)
-    def series_api_handler(self, meta_id):
-        data = self.redlib_gallery(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.redlib_gallery(meta_id)
 
         return (
             SeriesAPI(
@@ -224,8 +224,8 @@ class Reddit(ProxySource):
         )
 
     @api_cache(prefix="reddit_pages_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
-        data = self.redlib_gallery(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.redlib_gallery(meta_id)
 
         return (
             ChapterAPI(
@@ -238,8 +238,8 @@ class Reddit(ProxySource):
         )
 
     @api_cache(prefix="reddit_series_page_dt", time=3600)
-    def series_page_handler(self, meta_id):
-        data = self.redlib_gallery(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.redlib_gallery(meta_id)
 
         return (
             SeriesPage(

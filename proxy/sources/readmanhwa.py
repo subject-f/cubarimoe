@@ -1,8 +1,7 @@
+import asyncio
 import json
-from concurrent import futures
 from datetime import datetime
 
-import requests
 from django.shortcuts import redirect
 from django.urls import re_path
 
@@ -16,9 +15,9 @@ class ReadManhwa(ProxySource):
         return "readmanhwa"
 
     def shortcut_instantiator(self):
-        def chapter_handler(request, series_slug, chapter_slug, page=None):
+        async def chapter_handler(request, series_slug, chapter_slug, page=None):
             if page:
-                data = self.series_api_handler(series_slug)
+                data = await self.series_api_handler(series_slug)
                 if data:
                     data = data.objectify()
                     search_str = encode(f"{series_slug}/{chapter_slug}")
@@ -34,7 +33,7 @@ class ReadManhwa(ProxySource):
                         page,
                     )
             else:
-                return chapter_handler(request, series_slug, chapter_slug, "1")
+                return await chapter_handler(request, series_slug, chapter_slug, "1")
 
         def series_handler(request, series_slug):
             return redirect(
@@ -58,15 +57,18 @@ class ReadManhwa(ProxySource):
         ]
 
     @api_cache(prefix="readmanhwa_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        with futures.ThreadPoolExecutor(max_workers=2) as executor:
-            result = executor.map(
-                lambda req: {
-                    "type": req["type"],
-                    "res": get_wrapper(
-                        req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
-                    ),
-                },
+    async def series_api_handler(self, meta_id):
+        async def fetch(req):
+            return {
+                "type": req["type"],
+                "res": await get_wrapper(
+                    req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
+                ),
+            }
+
+        result = await asyncio.gather(
+            *map(
+                fetch,
                 [
                     {
                         "type": "main",
@@ -78,6 +80,7 @@ class ReadManhwa(ProxySource):
                     },
                 ],
             )
+        )
         slug = None
         title = None
         description = None
@@ -133,8 +136,8 @@ class ReadManhwa(ProxySource):
         )
 
     @api_cache(prefix="readmanhwa_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
-        resp = get_wrapper(
+    async def chapter_api_handler(self, meta_id):
+        resp = await get_wrapper(
             f"https://readmanhwa.com/api/comics/{decode(meta_id)}/images",
             headers={"X-NSFW": "true"},
             params={"nsfw": "true"},
@@ -151,15 +154,18 @@ class ReadManhwa(ProxySource):
             return None
 
     @api_cache(prefix="readmanhwa_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        with futures.ThreadPoolExecutor(max_workers=2) as executor:
-            result = executor.map(
-                lambda req: {
-                    "type": req["type"],
-                    "res": get_wrapper(
-                        req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
-                    ),
-                },
+    async def series_page_handler(self, meta_id):
+        async def fetch(req):
+            return {
+                "type": req["type"],
+                "res": await get_wrapper(
+                    req["url"], headers={"X-NSFW": "true"}, params={"nsfw": "true"}
+                ),
+            }
+
+        result = await asyncio.gather(
+            *map(
+                fetch,
                 [
                     {
                         "type": "main",
@@ -171,6 +177,7 @@ class ReadManhwa(ProxySource):
                     },
                 ],
             )
+        )
         series = None
         alt_titles = []
         alt_titles_str = None

@@ -59,7 +59,6 @@ CACHES = {
 }
 
 MIDDLEWARE = [
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -95,6 +94,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "cubarimoe.wsgi.application"
+ASGI_APPLICATION = "cubarimoe.asgi.application"
 
 
 # Database
@@ -129,8 +129,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 
@@ -170,3 +168,6 @@ EXTERNAL_REDLIB_URL = "https://reddit.hasuki.moe"
 PROXY_BASE_PATH = "read"
 
 METRICS_ENDPOINT = ""
+
+# Keep 32-bit primary keys; BigAutoField would generate migrations for every existing table.
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

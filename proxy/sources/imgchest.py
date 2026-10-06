@@ -24,10 +24,10 @@ class ImageChest(ProxySource):
         return [re_path(r"^p/(?P<album_hash>\w+)/$", handler)]
 
     @api_cache(prefix="imgchest_api_dt", time=300)
-    def imgchest_common(self, meta_id: str) -> Optional[Dict]:
+    async def imgchest_common(self, meta_id: str) -> Optional[Dict]:
         url = f"https://imgchest.com/p/{meta_id}"
 
-        resp = get_wrapper(url)
+        resp = await get_wrapper(url)
         if resp.status_code != 200:
             return None
 
@@ -72,8 +72,8 @@ class ImageChest(ProxySource):
         }
 
     @api_cache(prefix="imgchest_series_dt", time=300)
-    def series_api_handler(self, meta_id: str) -> SeriesAPI:
-        data = self.imgchest_common(meta_id)
+    async def series_api_handler(self, meta_id: str) -> SeriesAPI:
+        data = await self.imgchest_common(meta_id)
         return data and SeriesAPI(
             slug=data["slug"],
             title=data["title"],
@@ -86,8 +86,8 @@ class ImageChest(ProxySource):
         )
 
     @api_cache(prefix="imgchest_pages_dt", time=300)
-    def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
-        data = self.imgchest_common(meta_id)
+    async def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
+        data = await self.imgchest_common(meta_id)
         return data and ChapterAPI(
             pages=data["pages_list"],
             series=data["slug"],
@@ -95,8 +95,8 @@ class ImageChest(ProxySource):
         )
 
     @api_cache(prefix="imgchest_series_page_dt", time=300)
-    def series_page_handler(self, meta_id: str) -> SeriesPage:
-        data = self.imgchest_common(meta_id)
+    async def series_page_handler(self, meta_id: str) -> SeriesPage:
+        data = await self.imgchest_common(meta_id)
         return data and SeriesPage(
             series=data["title"],
             alt_titles=[],

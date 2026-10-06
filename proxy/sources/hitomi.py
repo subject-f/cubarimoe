@@ -36,8 +36,8 @@ class Hitomi(ProxySource):
 
 
     @staticmethod
-    def get_partial_gg():
-        resp = get_wrapper("https://ltn.hitomi.la/gg.js")
+    async def get_partial_gg():
+        resp = await get_wrapper("https://ltn.hitomi.la/gg.js")
         text = resp.text
         m_groups = [int(re.search(r'[0-9]+', case)[0]) for case in re.findall(r'case\s+[0-9]+:', text)]
         gg = dict()
@@ -68,10 +68,10 @@ class Hitomi(ProxySource):
         page_url = f"https://{base}.hitomi.la/{path}/{gg['b']}/{location_id}/{hsh}.{ext}"
         return page_url
 
-    def ht_api_common(self, meta_id):
-        gg = Hitomi.get_partial_gg()
+    async def ht_api_common(self, meta_id):
+        gg = await Hitomi.get_partial_gg()
         ht_series_api = f"https://ltn.hitomi.la/galleries/{meta_id}.js"
-        resp = get_wrapper(ht_series_api)
+        resp = await get_wrapper(ht_series_api)
         if resp.status_code == 200:
             data = resp.text.replace("var galleryinfo = ", "")
             api_data = json.loads(data)
@@ -130,8 +130,8 @@ class Hitomi(ProxySource):
             return None
 
     @api_cache(prefix="ht_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.ht_api_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.ht_api_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -147,16 +147,16 @@ class Hitomi(ProxySource):
             return None
 
     @api_cache(prefix="ht_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
-        data = self.ht_api_common(meta_id)
+    async def chapter_api_handler(self, meta_id):
+        data = await self.ht_api_common(meta_id)
         if data:
             return ChapterAPI(pages=data["pages"], series=data["slug"], chapter="1",)
         else:
             return None
 
     @api_cache(prefix="ht_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.ht_api_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.ht_api_common(meta_id)
         if data:
             return SeriesPage(
                 series=data["title"],

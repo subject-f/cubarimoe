@@ -45,13 +45,13 @@ class MangAdventure(ProxySource):
         ]
 
     @api_cache(prefix="ma_series_dt", time=600)
-    def series_api_handler(self, meta_id: str):
+    async def series_api_handler(self, meta_id: str):
         scheme, domain, slug = decode(meta_id).split("/", 2)
         if domain not in self.whitelist:
             return None
         base = f"{scheme}/{domain}/{slug}/"
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
         data = res.json()
@@ -94,24 +94,24 @@ class MangAdventure(ProxySource):
         )
 
     @api_cache(prefix="ma_series_page_dt", time=600)
-    def chapter_api_handler(self, meta_id: str):
+    async def chapter_api_handler(self, meta_id: str):
         scheme, domain, slug, id = decode(meta_id).split("/", 3)
         if domain not in self.whitelist:
             return None
         url = f"{scheme}://{domain}/api/v2/chapters/{id}/pages?track=true"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
         pages = [page["image"] for page in res.json()["results"]]
         return ChapterAPI(series=slug, pages=pages, chapter=id)
 
     @api_cache(prefix="ma_series_page_dt", time=600)
-    def series_page_handler(self, meta_id: str):
+    async def series_page_handler(self, meta_id: str):
         scheme, domain, slug = decode(meta_id).split("/", 2)
         if domain not in self.whitelist:
             return None
         url = f"{scheme}://{domain}/api/v2/cubari/{slug}"
-        res = get_wrapper(url, headers=self.headers)
+        res = await get_wrapper(url, headers=self.headers)
         if res.status_code != 200:
             return None
         data = res.json()

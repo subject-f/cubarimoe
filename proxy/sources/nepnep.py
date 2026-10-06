@@ -14,10 +14,10 @@ class NepNep(ProxySource):
         return "weebcentral"
 
     def shortcut_instantiator(self):
-        def handler(request, raw_url):
+        async def handler(request, raw_url):
             if "/chapters/" in raw_url:
-                slug_name = self.get_slug_name_with_chapter_url(raw_url)
-                data = self.nn_scrape_common(slug_name)
+                slug_name = await self.get_slug_name_with_chapter_url(raw_url)
+                data = await self.nn_scrape_common(slug_name)
                 canonical_chapter = data["chapter_id_map"][raw_url.split(
                     "/")[-1]]
                 return redirect(
@@ -41,10 +41,10 @@ class NepNep(ProxySource):
         return normalized_url.split("/")[-2]
 
     @staticmethod
-    def get_slug_name_with_chapter_url(chapter_url):
+    async def get_slug_name_with_chapter_url(chapter_url):
         # An extra call here, can be optimised
         url = 'https://weebcentral.com/chapters/' + chapter_url.split("/")[-1]
-        resp = get_wrapper(url, use_proxy=True)
+        resp = await get_wrapper(url, use_proxy=True)
         if resp.status_code == 200:
             pattern = r'\'series_id\'\s*:\s*\'([A-Z0-9]+)\''
             match = re.search(pattern, resp.text)
@@ -52,17 +52,17 @@ class NepNep(ProxySource):
             return series_id
 
     @api_cache(prefix="nn_common_scrape_dt", time=600)
-    def nn_scrape_common(self, meta_id):
+    async def nn_scrape_common(self, meta_id):
         is_fallback_enabled = False
         series_url = 'https://weebcentral.com/series/' + meta_id
         chapter_list_url = 'https://weebcentral.com/series/' + \
             meta_id + "/full-chapter-list"
-        series_resp = get_wrapper(series_url, use_proxy=True)
-        chapter_list_resp = get_wrapper(chapter_list_url, use_proxy=True)
+        series_resp = await get_wrapper(series_url, use_proxy=True)
+        chapter_list_resp = await get_wrapper(chapter_list_url, use_proxy=True)
         if chapter_list_resp.status_code != 200:
             chapter_list_url_fallback = 'https://weebcentral.com/series/' + \
                 meta_id + "/chapter-select?current_chapter=0&current_page=0"
-            chapter_list_resp = get_wrapper(chapter_list_url_fallback, use_proxy=True)
+            chapter_list_resp = await get_wrapper(chapter_list_url_fallback, use_proxy=True)
             is_fallback_enabled = True
         if series_resp.status_code == 200 and chapter_list_resp.status_code == 200:
             series_resp_data = series_resp.text
@@ -160,8 +160,8 @@ class NepNep(ProxySource):
         else:
             return None
 
-    def series_api_handler(self, meta_id):
-        data = self.nn_scrape_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.nn_scrape_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -177,10 +177,10 @@ class NepNep(ProxySource):
             return None
 
     @api_cache(prefix="nn_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         url = 'https://weebcentral.com/chapters/' + meta_id + \
             "/images?is_prev=False&current_page=1&reading_style=long_strip"
-        resp = get_wrapper(url, use_proxy=True)
+        resp = await get_wrapper(url, use_proxy=True)
         images = []
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -191,8 +191,8 @@ class NepNep(ProxySource):
         else:
             return None
 
-    def series_page_handler(self, meta_id):
-        data = self.nn_scrape_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.nn_scrape_common(meta_id)
         original_url = 'https://weebcentral.com/series/' + meta_id
 
         if data:

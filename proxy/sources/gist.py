@@ -7,10 +7,10 @@ from typing import Dict, Tuple
 
 from django.shortcuts import redirect
 from django.urls import re_path
-from requests.models import Response
 
 from ..source import ProxySource
 from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
+from ..source.session import ProxyResponse as Response
 from ..source.helpers import api_cache, decode, encode, get_wrapper
 from ..source.markdown_parser import parse_html
 
@@ -108,7 +108,7 @@ class Gist(ProxySource):
             raise ProxyException(f"Failed to parse chapter as a number: {e}")
 
     @staticmethod
-    def request_handler(meta_id: str) -> Tuple[str, Response]:
+    async def request_handler(meta_id: str) -> Tuple[str, Response]:
         """
         Handler that supports legacy git.io links, as well as the newest schema.
 
@@ -132,29 +132,29 @@ class Gist(ProxySource):
                 )
 
             url: str = DOMAIN_MAPPING[location] + path
-            resp: Response = get_wrapper(f"{url}?{random.random()}")
+            resp: Response = await get_wrapper(f"{url}?{random.random()}")
 
         except (binascii.Error, ValueError):
             # If it fails to decode, it's _probably_ a legacy git.io link
             url: str = f"https://git.io/{meta_id}"
-            resp: Response = get_wrapper(
+            resp: Response = await get_wrapper(
                 f"https://git.io/{meta_id}", allow_redirects=False
             )
 
             if resp.status_code not in [301, 302] or not resp.headers["location"]:
                 raise ProxyException("The git.io redirect did not succeed.")
 
-            resp: Response = get_wrapper(
+            resp: Response = await get_wrapper(
                 f"{resp.headers['location']}?{random.random()}"
             )
 
         return (url, resp)
 
     @api_cache(prefix="gist_common_dt", time=300)
-    def gist_common(self, meta_id):
+    async def gist_common(self, meta_id):
         original_url: str
         resp: Response
-        original_url, resp = self.request_handler(meta_id)
+        original_url, resp = await self.request_handler(meta_id)
 
         if not resp.headers["content-type"].startswith("text/plain"):
             raise ProxyException("The requested content doesn't direct to a raw file.")
@@ -277,8 +277,8 @@ class Gist(ProxySource):
             raise ProxyException("Failed to resolve the given URL.")
 
     @api_cache(prefix="gist_dt", time=300)
-    def series_api_handler(self, meta_id):
-        data = self.gist_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.gist_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -293,12 +293,12 @@ class Gist(ProxySource):
         else:
             return None
 
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         pass
 
     @api_cache(prefix="gist_page_dt", time=300)
-    def series_page_handler(self, meta_id):
-        data = self.gist_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.gist_common(meta_id)
         if data:
             return SeriesPage(
                 series=data["title"],

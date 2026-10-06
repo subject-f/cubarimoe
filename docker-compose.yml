@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  cubarimoe:
+    container_name: cubarimoe
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - cubarimoe_staticfiles:/cubarimoe/static
+    restart: always
+    networks:
+      - nginx_nw
+      - memcached_nw
+    depends_on:
+      - memcached
+  memcached:
+    container_name: memcached
+    image: memcached:latest
+    entrypoint:
+      - memcached
+      - -m 512
+    restart: always
+    networks:
+      - memcached_nw
+volumes:
+  cubarimoe_staticfiles:
+    external: true
+networks:
+  memcached_nw:
+    external: true
+  nginx_nw:
+    external: true

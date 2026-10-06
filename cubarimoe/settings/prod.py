@@ -64,21 +64,25 @@ LOGGING = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": "127.0.0.1:11211",
+        # Treat an unreachable memcached as a cache miss (python-memcached's behaviour)
+        # instead of failing every request.
+        "OPTIONS": {"ignore_exc": True},
     }
 }
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASS"),
-        "HOST": "localhost",
-        "PORT": "",
+if os.environ.get("DB_NAME"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME"),
+            "USER": os.environ.get("DB_USER"),
+            "PASSWORD": os.environ.get("DB_PASS"),
+            "HOST": "localhost",
+            "PORT": "",
+        }
     }
-}
 
 OCR_SCRIPT_PATH = os.path.join(PARENT_DIR, "ocr_tool.sh")
 

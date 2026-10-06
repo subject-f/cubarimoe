@@ -19,8 +19,8 @@ class Catbox(ProxySource):
         return [re_path(r"^c/(?P<album_hash>\w+)/$", handler)]
 
     @api_cache(prefix="catbox_api_dt", time=300)
-    def catbox_common(self, meta_id: str) -> Optional[Dict]:
-        resp = post_wrapper(f"https://catbox.moe/user/api.php", data={"reqtype": "getalbum", "short": meta_id})
+    async def catbox_common(self, meta_id: str) -> Optional[Dict]:
+        resp = await post_wrapper(f"https://catbox.moe/user/api.php", data={"reqtype": "getalbum", "short": meta_id})
 
         if resp.status_code != 200:
             return None
@@ -77,8 +77,8 @@ class Catbox(ProxySource):
         }
 
     @api_cache(prefix="catbox_series_dt", time=300)
-    def series_api_handler(self, meta_id: str) -> SeriesAPI:
-        data = self.catbox_common(meta_id)
+    async def series_api_handler(self, meta_id: str) -> SeriesAPI:
+        data = await self.catbox_common(meta_id)
         return data and SeriesAPI(
             slug=data["slug"],
             title=data["title"],
@@ -91,8 +91,8 @@ class Catbox(ProxySource):
         )
 
     @api_cache(prefix="catbox_pages_dt", time=300)
-    def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
-        data = self.catbox_common(meta_id)
+    async def chapter_api_handler(self, meta_id: str) -> ChapterAPI:
+        data = await self.catbox_common(meta_id)
         return data and ChapterAPI(
             pages=data["pages_list"],
             series=data["slug"],
@@ -100,8 +100,8 @@ class Catbox(ProxySource):
         )
 
     @api_cache(prefix="catbox_series_page_dt", time=300)
-    def series_page_handler(self, meta_id: str) -> SeriesPage:
-        data = self.catbox_common(meta_id)
+    async def series_page_handler(self, meta_id: str) -> SeriesPage:
+        data = await self.catbox_common(meta_id)
         return data and SeriesPage(
             series=data["title"],
             alt_titles=[],

@@ -59,9 +59,9 @@ class MangaKatana(ProxySource):
         else:
             return [ch for ch in raw_url.split("/") if ch][-1].replace("c", "")
 
-    def mk_scrape_common(self, meta_id):
+    async def mk_scrape_common(self, meta_id):
         decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
+        resp = await get_wrapper(decoded_url)
         if resp.status_code == 200:
             data = resp.text
             soup = BeautifulSoup(data, "html.parser")
@@ -139,8 +139,8 @@ class MangaKatana(ProxySource):
             return None
 
     @api_cache(prefix="mk_series_dt", time=600)
-    def series_api_handler(self, meta_id):
-        data = self.mk_scrape_common(meta_id)
+    async def series_api_handler(self, meta_id):
+        data = await self.mk_scrape_common(meta_id)
         if data:
             return SeriesAPI(
                 slug=data["slug"],
@@ -156,26 +156,26 @@ class MangaKatana(ProxySource):
             return None
 
     @api_cache(prefix="mk_chapter_dt", time=3600)
-    def chapter_api_handler(self, meta_id):
+    async def chapter_api_handler(self, meta_id):
         decoded_url = self.construct_url(meta_id)
-        resp = get_wrapper(decoded_url)
+        resp = await get_wrapper(decoded_url)
         if resp.status_code == 200:
             data = resp.text
             search = re.search(r"'data-src',\s+([\w]+)\[", data)
             if search is None:
                 raise ProxyException("Can't decode image array.")
             img_array = search.group(1)
-            r = re.compile(f'{img_array}\s?=\s?.+,\]')
+            r = re.compile(rf'{img_array}\s?=\s?.+,\]')
             m = re.search(r, data)
-            str_pages = re.split(re.compile(f'{img_array}\s?=\s?'), m.group(0))[1]
+            str_pages = re.split(re.compile(rf'{img_array}\s?=\s?'), m.group(0))[1]
             pages = ast.literal_eval(str_pages)
             return ChapterAPI(pages=pages, series=meta_id, chapter="")
         else:
             return None
 
     @api_cache(prefix="mk_series_page_dt", time=600)
-    def series_page_handler(self, meta_id):
-        data = self.mk_scrape_common(meta_id)
+    async def series_page_handler(self, meta_id):
+        data = await self.mk_scrape_common(meta_id)
         original_url = decode(meta_id)
         if not original_url.startswith("http"):
             original_url = "https://" + original_url
