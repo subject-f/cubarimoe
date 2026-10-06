@@ -51,59 +51,99 @@ class Imgur(ProxySource):
                 api_data = resp.json()["data"]
                 if not api_data.get("images"):
                     raise ProxyNotFound("This Imgur album has no images.")
-                date = datetime.utcfromtimestamp(api_data["datetime"])
-                return {
-                    "slug": meta_id,
-                    "title": api_data["title"] or "Untitled",
-                    "description": api_data["description"] or "No description.",
-                    "author": api_data["account_id"] or "Unknown",
-                    "artist": api_data["account_id"] or "Unknown",
-                    "cover": api_data["images"][0]["link"],
-                    "groups": {"1": "Imgur"},
-                    "chapter_dict": {
-                        "1": {
-                            "volume": "1",
-                            "title": api_data["title"] or "No title.",
-                            "groups": {
-                                "1": [
-                                    {
-                                        "description": obj["description"] or "",
-                                        "src": self.image_url_handler(obj),
-                                    }
-                                    for obj in api_data["images"]
-                                ]
-                            },
-                        }
-                    },
-                    "chapter_list": [
-                        [
-                            "1",
-                            "1",
-                            api_data["title"] or "Untitled",
-                            "1",
-                            api_data["account_id"] or "No group",
-                            [
-                                date.year,
-                                date.month - 1,
-                                date.day,
-                                date.hour,
-                                date.minute,
-                                date.second,
-                            ],
-                            "1",
-                        ],
-                    ],
-                    "pages_list": [
-                        {
-                            "description": obj["description"] or "",
-                            "src": self.image_url_handler(obj),
-                        }
-                        for obj in api_data["images"]
-                    ],
-                    "original_url": api_data["link"],
-                }
+                return self._album_from_api_data(meta_id, api_data)
             else:
                 raise ProxyException("Imgur failed to load.")
+
+    def _album_from_api_data(self, meta_id, api_data):
+        """Build the album dict from v3-API-shaped data (also used for post/v1 albums)."""
+        date = datetime.utcfromtimestamp(api_data["datetime"])
+        return {
+            "slug": meta_id,
+            "title": api_data["title"] or "Untitled",
+            "description": api_data["description"] or "No description.",
+            "author": api_data["account_id"] or "Unknown",
+            "artist": api_data["account_id"] or "Unknown",
+            "cover": api_data["images"][0]["link"],
+            "groups": {"1": "Imgur"},
+            "chapter_dict": {
+                "1": {
+                    "volume": "1",
+                    "title": api_data["title"] or "No title.",
+                    "groups": {
+                        "1": [
+                            {
+                                "description": obj["description"] or "",
+                                "src": self.image_url_handler(obj),
+                            }
+                            for obj in api_data["images"]
+                        ]
+                    },
+                }
+            },
+            "chapter_list": [
+                [
+                    "1",
+                    "1",
+                    api_data["title"] or "Untitled",
+                    "1",
+                    api_data["account_id"] or "No group",
+                    [
+                        date.year,
+                        date.month - 1,
+                        date.day,
+                        date.hour,
+                        date.minute,
+                        date.second,
+                    ],
+                    "1",
+                ],
+            ],
+            "pages_list": [
+                {
+                    "description": obj["description"] or "",
+                    "src": self.image_url_handler(obj),
+                }
+                for obj in api_data["images"]
+            ],
+            "original_url": api_data["link"],
+        }
+
+    async def imgur_post_common(self, meta_id):
+        """Newer imgur "post" albums, which the embed page and the v3 album API don't serve."""
+        resp = await get_wrapper(
+            f"https://api.imgur.com/post/v1/albums/{meta_id}"
+            f"?client_id={settings.IMGUR_CLIENT_ID}&include=media",
+            use_proxy=True,
+        )
+        if resp.status_code == 404:
+            raise ProxyNotFound("This Imgur album doesn't exist.")
+        if resp.status_code != 200:
+            raise ProxyException("Imgur failed to load.")
+        post = resp.json()
+        images = [
+            {
+                "link": media["url"],
+                "width": media.get("width", 0),
+                "height": media.get("height", 0),
+                "description": (media.get("metadata") or {}).get("description"),
+            }
+            for media in post.get("media", [])
+            if media.get("type") == "image"
+        ]
+        if not images:
+            raise ProxyNotFound("This Imgur album has no images.")
+        return self._album_from_api_data(
+            meta_id,
+            {
+                "title": post.get("title"),
+                "description": post.get("description"),
+                "account_id": None,
+                "datetime": datetime.fromisoformat(post["created_at"]).timestamp(),
+                "images": images,
+                "link": post.get("url") or f"https://imgur.com/a/{meta_id}",
+            },
+        )
 
     def imgur_chapter_collection(self, meta_id):
         chapters = {
@@ -237,7 +277,14 @@ class Imgur(ProxySource):
         except ProxyNotFound:
             raise
         except ProxyException:
+            pass
+        try:
             return await self.imgur_api_common(meta_id)
+        except ProxyNotFound:
+            raise
+        except ProxyException:
+            # Newer "post" albums: the embed page redirects and the v3 album API 404s.
+            return await self.imgur_post_common(meta_id)
 
     @api_cache(prefix="imgur_series_dt", time=300)
     async def series_api_handler(self, meta_id):
