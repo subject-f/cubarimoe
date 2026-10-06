@@ -165,9 +165,9 @@ class MangaKatana(ProxySource):
             if search is None:
                 raise ProxyException("Can't decode image array.")
             img_array = search.group(1)
-            r = re.compile(f'{img_array}\s?=\s?.+,\]')
+            r = re.compile(rf'{img_array}\s?=\s?.+,\]')
             m = re.search(r, data)
-            str_pages = re.split(re.compile(f'{img_array}\s?=\s?'), m.group(0))[1]
+            str_pages = re.split(re.compile(rf'{img_array}\s?=\s?'), m.group(0))[1]
             pages = ast.literal_eval(str_pages)
             return ChapterAPI(pages=pages, series=meta_id, chapter="")
         else:

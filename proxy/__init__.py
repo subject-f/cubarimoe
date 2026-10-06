@@ -1,5 +1,4 @@
 # from .sources.foolslide import FoolSlide
-import imp
 from proxy.sources.dynasty import Dynasty
 from .sources.imgbb import Imgbb
 from .sources.imgur import Imgur
