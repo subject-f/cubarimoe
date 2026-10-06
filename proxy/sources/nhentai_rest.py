@@ -6,7 +6,7 @@ from django.urls import re_path
 from django.conf import settings
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyNotFound, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, encode, get_wrapper
 
 import logging as log
@@ -61,7 +61,8 @@ class NHentai(ProxySource):
         nh_series_api = f"https://nhentai.net/api/v2/galleries/{meta_id}"
         resp = await get_wrapper(nh_series_api, use_proxy=False, secondary=True)
 
-        if resp.status_code != 200:
+        # A direct 404 is definitive ("Gallery not found"); only retry other failures.
+        if resp.status_code not in (200, 404):
             resp = await get_wrapper(
                 f"{settings.EXTERNAL_PROXY_URL}/v2/cors/{encode(nh_series_api)}?source=cubari_host"
             )
@@ -114,6 +115,8 @@ class NHentai(ProxySource):
             }
 
             return final
+        elif resp.status_code == 404:
+            raise ProxyNotFound("This gallery doesn't exist.")
         else:
             return None
 

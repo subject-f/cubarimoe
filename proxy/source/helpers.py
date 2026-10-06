@@ -72,15 +72,26 @@ async def _request(method, url, *, headers, use_proxy, secondary, **kwargs):
         else url
     )
 
-    async def handler():
+    async def fetch(auto_decompress=True):
         async with get_session().request(
             method,
             request_url,
             headers={**GLOBAL_HEADERS, **headers},
             timeout=REQUEST_TIMEOUT,
+            auto_decompress=auto_decompress,
             **kwargs,
         ) as resp:
             return ProxyResponse(resp, await resp.read())
+
+    async def handler():
+        try:
+            return await fetch()
+        except aiohttp.ClientPayloadError:
+            if method != "GET":
+                raise
+            # The CORS proxy labels some plain error bodies (e.g. upstream 404s) as
+            # gzip; re-read undecoded so callers still see the real status code.
+            return await fetch(auto_decompress=False)
 
     return await sensored_request_handler(handler, url)
 

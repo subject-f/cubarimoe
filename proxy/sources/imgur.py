@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, ProxyNotFound, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
 
@@ -50,7 +50,7 @@ class Imgur(ProxySource):
             if resp.status_code == 200:
                 api_data = resp.json()["data"]
                 if not api_data.get("images"):
-                    raise ProxyException("This Imgur album has no images.")
+                    raise ProxyNotFound("This Imgur album has no images.")
                 date = datetime.utcfromtimestamp(api_data["datetime"])
                 return {
                     "slug": meta_id,
@@ -174,7 +174,7 @@ class Imgur(ProxySource):
                     date = datetime.now()
                 images = api_data["album_images"]["images"]
                 if not images:
-                    raise ProxyException("This Imgur album has no images.")
+                    raise ProxyNotFound("This Imgur album has no images.")
                 for image in images:
                     image["link"] = f"https://i.imgur.com/{image['hash']}{image['ext']}"
                 return {
@@ -234,6 +234,8 @@ class Imgur(ProxySource):
     async def imgur_common(self, meta_id):
         try:
             return await self.imgur_embed_common(meta_id)
+        except ProxyNotFound:
+            raise
         except ProxyException:
             return await self.imgur_api_common(meta_id)
 

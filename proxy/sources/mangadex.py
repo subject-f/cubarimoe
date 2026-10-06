@@ -9,7 +9,7 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, ProxyNotFound, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper, post_wrapper
 from ..source.markdown_parser import parse_html
 
@@ -163,6 +163,8 @@ class MangaDex(ProxySource):
         chapter_data = None
 
         for res in result:
+            if res["res"].status_code == 404:
+                raise ProxyNotFound("This doesn't exist on MangaDex.")
             if res["res"].status_code != 200:
                 raise ProxyException(
                     f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"
@@ -410,6 +412,8 @@ class MangaDex(ProxySource):
         at_home_data: Optional[Dict[str, str]] = None
         chapter_data: Optional[Dict[str, str]] = None
         for res in result:
+            if res["res"].status_code == 404:
+                raise ProxyNotFound("This doesn't exist on MangaDex.")
             if res["res"].status_code != 200:
                 raise ProxyException(
                     f"The MangaDex API failed to load. Got status code: {res['res'].status_code}"

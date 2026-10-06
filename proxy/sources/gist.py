@@ -9,7 +9,13 @@ from django.shortcuts import redirect
 from django.urls import re_path
 
 from ..source import ProxySource
-from ..source.data import ProxyException, SeriesAPI, SeriesPage, WrappedProxyDict
+from ..source.data import (
+    ProxyException,
+    ProxyNotFound,
+    SeriesAPI,
+    SeriesPage,
+    WrappedProxyDict,
+)
 from ..source.session import ProxyResponse as Response
 from ..source.helpers import api_cache, decode, encode, get_wrapper
 from ..source.markdown_parser import parse_html
@@ -141,6 +147,8 @@ class Gist(ProxySource):
                 f"https://git.io/{meta_id}", allow_redirects=False
             )
 
+            if resp.status_code == 404:
+                raise ProxyNotFound("This git.io link doesn't exist.")
             if resp.status_code not in [301, 302] or not resp.headers["location"]:
                 raise ProxyException("The git.io redirect did not succeed.")
 
@@ -273,6 +281,10 @@ class Gist(ProxySource):
                 "chapter_list": chapter_list,
                 "original_url": original_url,
             }
+        elif resp.status_code == 404:
+            raise ProxyNotFound(
+                "The file wasn't found on GitHub. It may have been moved or deleted."
+            )
         else:
             raise ProxyException("Failed to resolve the given URL.")
 

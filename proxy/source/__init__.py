@@ -76,14 +76,20 @@ class ProxySource(metaclass=abc.ABCMeta):
             error_msg = exception.message
         else:
             error_msg = "Processing error. This could be a Cubari problem."
+        status = 404 if isinstance(exception, ProxyNotFound) else 500
 
         return self._uncached_response(
             request,
             lambda request: render(
                 request,
                 "homepage/thonk_500.html",
-                {"error": error_msg, "error_uwu": uwuify.uwu(error_msg)},
-                status=500,
+                {
+                    "error": error_msg,
+                    "error_uwu": uwuify.uwu(error_msg),
+                    "status": status,
+                    "status_text": "Not Found" if status == 404 else "Server Error",
+                },
+                status=status,
             ),
         )
 
@@ -146,6 +152,9 @@ class ProxySource(metaclass=abc.ABCMeta):
                             page,
                         ),
                     )
+                return self._processing_error(
+                    request, ProxyNotFound("This chapter doesn't exist in the series.")
+                )
             return self._api_error(request)
         else:
             return self._cached_response(

@@ -53,6 +53,10 @@ class ProxyException(Exception):
         self.message = message
 
 
+class ProxyNotFound(ProxyException):
+    """The upstream says the content doesn't exist (deleted, moved, never existed): a 404, not a 500."""
+
+
 class WrappedProxyDict(dict):
     def get(self, key, default=None, exception: str = None):
         _default_res = super().get(key, default)

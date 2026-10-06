@@ -9,7 +9,7 @@ from django.urls import re_path
 from django.conf import settings
 
 from ..source import ProxySource
-from ..source.data import ChapterAPI, ProxyException, SeriesAPI, SeriesPage
+from ..source.data import ChapterAPI, ProxyException, ProxyNotFound, SeriesAPI, SeriesPage
 from ..source.helpers import api_cache, get_wrapper
 
 class Reddit(ProxySource):
@@ -110,6 +110,8 @@ class Reddit(ProxySource):
             allow_redirects=True
         )
 
+        if resp.status_code == 404:
+            raise ProxyNotFound("This post doesn't exist.")
         if resp.status_code != 200:
             raise ProxyException("Unable to fetch post.")
         

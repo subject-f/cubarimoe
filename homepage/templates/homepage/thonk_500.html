@@ -57,8 +57,8 @@
 			<content>
 				<p>Could not complete the request due to the following error:</p>
 				<code onclick="">{{ error }}</code>
-				<p>500</p>
-				<p>Server Error</p>
+				<p>{{ status|default:"500" }}</p>
+				<p>{{ status_text|default:"Server Error" }}</p>
 				<a href="https://status.cubari.moe">System status</a>
 				<a href="/">Return to main page</a>
 			</content>
