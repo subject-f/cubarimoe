@@ -43,6 +43,9 @@ class ProxyResponse:
         self.content = content
         self.encoding = resp.get_encoding()
 
+    def __repr__(self) -> str:
+        return f"<ProxyResponse [{self.status_code}]>"
+
     @property
     def ok(self) -> bool:
         return self.status_code < 400
