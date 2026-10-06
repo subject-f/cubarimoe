@@ -49,6 +49,8 @@ class Imgur(ProxySource):
             )
             if resp.status_code == 200:
                 api_data = resp.json()["data"]
+                if not api_data.get("images"):
+                    raise ProxyException("This Imgur album has no images.")
                 date = datetime.utcfromtimestamp(api_data["datetime"])
                 return {
                     "slug": meta_id,
@@ -151,16 +153,28 @@ class Imgur(ProxySource):
                     use_proxy=True,
                     secondary=True
                 )
+            # Last resort: the primary proxy, in case the secondary one is down.
+            if (
+                resp.status_code != 200
+                and settings.SECONDARY_PROXY_URL != settings.EXTERNAL_PROXY_URL
+            ):
+                resp = await get_wrapper(request_url, use_proxy=True)
             if resp.status_code == 200:
                 data = re.search(
                     r"(?:album[\s]+?: )([\s\S]+)(?:,[\s]+?images[\s]+?:)", resp.text
                 )
-                api_data = json.loads(data.group(1))
+                if data is None:
+                    # Some albums don't serve an embed page and redirect to the home page.
+                    raise ProxyException("Imgur failed to load.")
+                # strict=False: descriptions can contain raw control characters.
+                api_data = json.loads(data.group(1), strict=False)
                 try:
                     date = datetime.strptime(api_data["datetime"], "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     date = datetime.now()
                 images = api_data["album_images"]["images"]
+                if not images:
+                    raise ProxyException("This Imgur album has no images.")
                 for image in images:
                     image["link"] = f"https://i.imgur.com/{image['hash']}{image['ext']}"
                 return {
@@ -218,7 +232,10 @@ class Imgur(ProxySource):
 
     @api_cache(prefix="imgur_api_dt", time=300)
     async def imgur_common(self, meta_id):
-        return await self.imgur_embed_common(meta_id)
+        try:
+            return await self.imgur_embed_common(meta_id)
+        except ProxyException:
+            return await self.imgur_api_common(meta_id)
 
     @api_cache(prefix="imgur_series_dt", time=300)
     async def series_api_handler(self, meta_id):
