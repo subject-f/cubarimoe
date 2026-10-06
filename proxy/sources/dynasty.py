@@ -65,15 +65,17 @@ class Dynasty(ProxySource):
         if resp.status_code == 200:
             data = resp.text
             soup = BeautifulSoup(data, "html.parser")
+            # str(): NavigableStrings keep references to the whole parse tree, which
+            # would otherwise get pickled into the cache along with them.
             try:
-                title = soup.find("h2").find("b").contents[0]
+                title = str(soup.find("h2").find("b").contents[0])
             except AttributeError:
                 return None
 
             author = "None"
-            description = soup.find("div", class_="description").find("p").contents[0]
+            description = str(soup.find("div", class_="description").find("p").contents[0])
             try:
-                author = soup.find("h2").find("a").contents[0]
+                author = str(soup.find("h2").find("a").contents[0])
             except:
                 pass
             try:
@@ -93,7 +95,7 @@ class Dynasty(ProxySource):
             for ch in chapter_data:
                 chapters.append(
                     [
-                        ch.find("a", class_="name").contents[0],
+                        str(ch.find("a", class_="name").contents[0]),
                         base_url + ch.find("a", class_="name")["href"],
                         datetime.strptime(
                             ch.find("small").contents[0].replace("released ", ""),
